@@ -6,6 +6,8 @@ use Psr\Http\Message\{RequestInterface, ResponseInterface};
 use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware};
 use Carbon\Carbon;
 
+use function Psy\debug;
+
 class JamfController extends Controller
 {
     //
@@ -75,6 +77,7 @@ class JamfController extends Controller
             'headers' => [
                 'Authorization' => 'Bearer '.$this->token,
                 'Accept' => 'application/json',
+                'Connection' => 'keep-alive',
                 'Accept-Encoding' => 'gzip, deflate',
             ]
         ];
@@ -86,16 +89,14 @@ class JamfController extends Controller
         $gotAll = false;
         $results = [];
         while (!$gotAll):
-            echo "Henter side $page\n";
-            $uri = '/api/v1/computers-inventory?section=GENERAL&section=HARDWARE&section=USER_AND_LOCATION&page='.$page.'&page-size='.$page_size;
+            $uri = '/api/v1/computers-inventory?section=GENERAL&section=HARDWARE&section=USER_AND_LOCATION&section=OPERATING_SYSTEM&page='.$page.'&page-size='.$page_size;
             $response = $this->api->request('GET', $uri, $this->options);
             $data = json_decode($response->getBody()->getContents(), true);
             $results = array_merge($results, $data['results']);
-            $gotAll = $data['totalCount'] > $page_size * ($page + 1) ? false : true;
+            $gotAll = $data['totalCount'] <= $page_size * ($page + 1);
             $page++;
         endwhile;
         $iResultCount = count($results);
-        echo 'Hentet i alt '.$iResultCount.' maskiner.';
 
         return $results;
     }
@@ -106,18 +107,23 @@ class JamfController extends Controller
         $gotAll = false;
         $results = [];
         while (!$gotAll):
-            echo "Henter side $page\n";
             $uri = '/api/v2/mobile-devices?page='.$page.'&page-size='.$page_size;
             $response = $this->api->request('GET', $uri, $this->options);
             $data = json_decode($response->getBody()->getContents(), true);
             $results = array_merge($results, $data['results']);
-            $gotAll = $data['totalCount'] > $page_size * ($page + 1) ? false : true;
+            $gotAll = $data['totalCount'] <= $page_size * ($page + 1);
             $page++;
         endwhile;
         $iResultCount = count($results);
-        echo 'Hentet i alt '.$iResultCount.' mobilenheter.';
+        $detailedResults = [];
+        foreach ($results as $dev):
+            $uri = '/api/v2/mobile-devices/'.$dev['id'].'/detail';
+            $response = $this->api->request('GET', $uri, $this->options);
+            $data = json_decode($response->getBody()->getContents(), true);
+            $detailedResults[] = $data;
+        endforeach;
 
-        return $results;
+        return $detailedResults;
     }
 
     public function getJamfAssetsAsPsAssets() {
@@ -129,19 +135,44 @@ class JamfController extends Controller
             $psAsset = [];
             $psAsset[$fp.'Navn'] = $mac['general']['name'];
             $psAsset[$fp.'Serienr'] = $mac['hardware']['serialNumber'];
-            $psAsset[$fp.'ModelID'] = $mac['hardware']['modelIdentifier'];
             $psAsset[$fp.'Modell'] = $mac['hardware']['model'];
+            $psAsset[$fp.'ModelID'] = $mac['hardware']['modelIdentifier'];
             $psAsset[$fp.'Prosessor'] = $mac['hardware']['processorType'];
+            $psAsset[$fp.'OS_45_versjon'] = $mac['operatingSystem']['version'];
             $psAsset[$fp.'Innkjøpsdato'] = Carbon::create($mac['general']['initialEntryDate'], 'Europe/Oslo')
                 ->format('Y-m-d');
             $psAsset[$fp.'EOL'] = Carbon::create($mac['general']['initialEntryDate'], 'Europe/Oslo')
-                ->addYears(config('pureservice.lifespan', 4))->format('Y-m-d');
-
+                ->addYears(config('pureservice.computer_lifespan', 4))->format('Y-m-d');
             $psAsset[$fp.'Sist_32_sett'] = ($mac['general']['lastContactTime'] != null) ? Carbon::create($mac['general']['lastContactTime'], 'Europe/Oslo')->format('Y-m-d') : null;
-            $psAsset['link']['username'] = $mac['userAndLocation']['username'];
-            $psAssets[] = $psAsset;
-        endforeach;
+            $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/computers.html?id='.$mac['id'].'&o=r';
 
+            $psAsset['username'] = $mac['userAndLocation']['username'];
+            $psAssets[] = $psAsset;
+            unset($psAsset);
+        endforeach;
+        unset($computers);
+
+        $devices = $this->getJamfDevices();
+        foreach ($devices as $dev):
+            $psAsset = [];
+            $psAsset[$fp.'Navn'] = $dev['name'];
+            $psAsset[$fp.'Serienr'] = $dev['serialNumber'];
+            $psAsset[$fp.'Modell'] = $dev[$dev['type']]['model'];
+            $psAsset[$fp.'ModelID'] = $dev[$dev['type']]['modelIdentifier'];
+            $psAsset[$fp.'Prosessor'] = null;
+            $psAsset[$fp.'OS_45_versjon'] = $dev['osVersion'];
+            $psAsset[$fp.'Innkjøpsdato'] = Carbon::create($dev['initialEntryTimestamp'], 'Europe/Oslo')
+                ->format('Y-m-d');
+            $psAsset[$fp.'EOL'] = Carbon::create($dev['initialEntryTimestamp'], 'Europe/Oslo')
+                ->addYears(config('pureservice.device_lifespan', 3))->format('Y-m-d');
+            $psAsset[$fp.'Sist_32_sett'] = ($dev['lastInventoryUpdateTimestamp'] != null) ? Carbon::create($dev['lastInventoryUpdateTimestamp'], 'Europe/Oslo')->format('Y-m-d') : null;
+            $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/mobileDevices.html?id='.$dev['id'].'&o=r';
+
+            $psAsset['username'] = $dev['location']['username'];
+            $psAssets[] = $psAsset;
+            unset($psAsset);
+        endforeach;
+        unset($devices);
         return $psAssets;
     }
 }
