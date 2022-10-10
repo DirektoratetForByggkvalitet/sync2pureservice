@@ -168,7 +168,7 @@ class JamfController extends Controller
             $psAsset[$fp.'Sist_32_sett'] = ($dev['lastInventoryUpdateTimestamp'] != null) ? Carbon::create($dev['lastInventoryUpdateTimestamp'], 'Europe/Oslo')->format('Y-m-d') : null;
             $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/mobileDevices.html?id='.$dev['id'].'&o=r';
 
-            $psAsset['username'] = $dev['location']['username'];
+            $psAsset['usernames'] = [$dev['location']['username']];
             $psAssets[] = $psAsset;
             unset($psAsset);
         endforeach;

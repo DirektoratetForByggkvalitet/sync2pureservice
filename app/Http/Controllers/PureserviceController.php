@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Psr\Http\Message\{RequestInterface, ResponseInterface};
-use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware};
+use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware, RequestOptions};
 use Carbon\Carbon;
 
 class PureserviceController extends Controller
@@ -73,7 +73,9 @@ class PureserviceController extends Controller
     }
 
     protected function apiPOST($uri, $body) {
-        $response = $this->api->request('POST', $uri, $this->options);
+        $options = $this->options;
+        $options[RequestOptions::JSON] = $body;
+        $response = $this->api->request('POST', $uri, $options);
         return json_decode($response->getBody()->getContents(), true);
     }
 
@@ -108,15 +110,43 @@ class PureserviceController extends Controller
 
     }
 
+    public function getRelationships($assetId) {
+        $uri = $this->pre.'/relationship/' . $assetId . '/fromAsset?include=type,type.relationshipTypeGroup,toUser,toUser.emailaddress&filter=toUserId != NULL';
+        return $this->apiGet($uri);
+    }
+
+    public function getRelatedUsernames($assetId) {
+        if ($relations = $this->getRelationships($assetId)['linked']):
+            $linkedUsers = &$relations['users'];
+            $linkedEmails = collect($relations['emailaddresses']);
+            $usernames = [];
+            foreach($linkedUsers as $user):
+                $usernames[] = $linkedEmails->firstWhere('id', $user['emailAddressId'])['email'];
+            endforeach;
+            return $usernames;
+        endif;
+        return null;
+    }
+
     public function getAllAssets() {
         $uri = $this->pre.'/asset/?filter=typeID=='.config('pureservice.asset_type_id');
-        return $this->apiGet($uri);
+        $assets = $this->apiGet($uri)['assets'];
+        foreach ($assets as &$asset):
+            $asset['usernames'] = $this->getRelatedUsernames($asset['id']);
+        endforeach;
+        return $assets;
     }
 
     public function createAsset($psAsset) {
         $fp = config('pureservice.field_prefix');
         $uri = $this->pre.'/asset/'.config('pureservice.className');
-        $body = [];
+        $usernames = $psAsset['usernames'];
+        $psAsset = collect($psAsset)->except('usernames');
+        $psAsset['links'] = [
+            'type' => ['id' => config('pureservice.asset_type_id')],
+
+        ];
+        $body = [config('pureservice.className') => []];
 
     }
 }
