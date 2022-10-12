@@ -114,7 +114,6 @@ class JamfController extends Controller
             $gotAll = $data['totalCount'] <= $page_size * ($page + 1);
             $page++;
         endwhile;
-        $iResultCount = count($results);
         $detailedResults = [];
         foreach ($results as $dev):
             $uri = '/api/v2/mobile-devices/'.$dev['id'].'/detail';
@@ -137,19 +136,26 @@ class JamfController extends Controller
             $psAsset[$fp.'Serienr'] = $mac['hardware']['serialNumber'];
             $psAsset[$fp.'Modell'] = $mac['hardware']['model'];
             $psAsset[$fp.'ModelID'] = $mac['hardware']['modelIdentifier'];
-            $psAsset[$fp.'Prosessor'] = $mac['hardware']['processorType'];
-            $psAsset[$fp.'OS_45_versjon'] = $mac['operatingSystem']['version'];
-            $psAsset[$fp.'Innkjøpsdato'] = Carbon::create($mac['general']['initialEntryDate'])
+            if ($mac['hardware']['processorType'] != null):
+                $psAsset[$fp.'Prosessor'] = $mac['hardware']['processorType'];
+            endif;
+            if ($mac['operatingSystem']['version'] != null):
+                $psAsset[$fp.'OS_45_versjon'] = $mac['operatingSystem']['version'];
+            endif;
+
+            $psAsset[$fp.'Innmeldt'] = Carbon::create($mac['general']['initialEntryDate'])
                 ->timezone(config('app.timezone'))
                 ->toJSON();
             $psAsset[$fp.'EOL'] = Carbon::create($mac['general']['initialEntryDate'])
                 ->timezone(config('app.timezone'))
                 ->addYears(config('pureservice.computer_lifespan', 4))
                 ->toJSON();
-            $psAsset[$fp.'Sist_32_sett'] = ($mac['general']['lastContactTime'] != null) ?
-                Carbon::create($mac['general']['lastContactTime'])
+            if ($mac['general']['lastContactTime'] != null):
+                $psAsset[$fp.'Sist_32_sett'] = Carbon::create($mac['general']['lastContactTime'])
                     ->timezone(config('app.timezone'))
-                    ->toJSON() : null;
+                    ->toJSON();
+            endif;
+
             $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/computers.html?id='.$mac['id'].'&o=r';
 
             $psAsset['usernames'] = ($mac['userAndLocation']['username'] != null) ? [$mac['userAndLocation']['username']]: [];
@@ -166,18 +172,23 @@ class JamfController extends Controller
             $psAsset[$fp.'Modell'] = $dev[$dev['type']]['model'];
             $psAsset[$fp.'ModelID'] = $dev[$dev['type']]['modelIdentifier'];
             $psAsset[$fp.'Prosessor'] = null;
-            $psAsset[$fp.'OS_45_versjon'] = $dev['osVersion'];
-            $psAsset[$fp.'Innkjøpsdato'] = Carbon::create($dev['initialEntryTimestamp'])
+            if ($dev['osVersion'] != null):
+                $psAsset[$fp.'OS_45_versjon'] = $dev['osVersion'];
+            endif;
+
+            $psAsset[$fp.'Innmeldt'] = Carbon::create($dev['initialEntryTimestamp'])
                 ->timezone(config('app.timezone'))
                 ->toJSON();
             $psAsset[$fp.'EOL'] = Carbon::create($dev['initialEntryTimestamp'])
                 ->timezone(config('app.timezone'))
                 ->addYears(config('pureservice.device_lifespan', 3))
                 ->toJSON();
-            $psAsset[$fp.'Sist_32_sett'] = ($dev['lastInventoryUpdateTimestamp'] != null) ?
-                Carbon::create($dev['lastInventoryUpdateTimestamp'])
+            if ($dev['lastInventoryUpdateTimestamp'] != null):
+                $psAsset[$fp.'Sist_32_sett'] = Carbon::create($dev['lastInventoryUpdateTimestamp'])
                     ->timezone(config('app.timezone'))
-                    ->toJSON() : null;
+                    ->toJSON();
+            endif;
+
             $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/mobileDevices.html?id='.$dev['id'].'&o=r';
 
             $psAsset['usernames'] = $dev['location']['username'] != 0 ? [$dev['location']['username']] : [];
