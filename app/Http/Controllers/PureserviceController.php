@@ -10,13 +10,15 @@ class PureserviceController extends Controller
 {
     protected $api;
     protected $options;
-    protected $statuses;
+    protected $statuses = [];
     protected $pre = '/agent/api'; // Standard prefix for API-kall
+    public $up = false;
 
     public function __construct() {
         $this->getClient();
         $this->setOptions();
         $this->fetchAssetStatuses();
+        if (count($this->statuses)) $this->up = true;
     }
 
     private function getClient() {
@@ -65,6 +67,7 @@ class PureserviceController extends Controller
                 'Accept-Encoding' => 'gzip, deflate',
             ]
         ];
+        //$this->options['http_errors'] = false;
         return false;
     }
 
@@ -75,12 +78,14 @@ class PureserviceController extends Controller
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    protected function apiPOST($uri, $body) {
+    protected function apiPOST($uri, $body, $contentType='application/json; charset=utf-8') {
         $uri = $this->pre.$uri;
         $options = $this->options;
         $options['json'] = $body;
+        $options['headers']['Content-Type'] = $contentType;
         return $this->api->post($uri, $options);
     }
+
 
     protected function apiPATCH($uri, $body) {
         $uri = $this->pre.$uri;
@@ -132,16 +137,17 @@ class PureserviceController extends Controller
     }
 
     public function getRelatedUsernames($assetId) {
-        if ($relations = $this->getRelationships($assetId)['linked']):
-            $linkedUsers = &$relations['users'];
-            $linkedEmails = collect($relations['emailaddresses']);
-            $usernames = [];
-            foreach($linkedUsers as $user):
-                $usernames[] = $linkedEmails->firstWhere('id', $user['emailAddressId'])['email'];
-            endforeach;
-            return $usernames;
-        endif;
-        return null;
+        $relations_full = $this->getRelationships($assetId);
+
+        if (count($relations_full['relationships']) == 0) return [];
+
+        $linkedUsers = &$relations_full['linked']['users'];
+        $linkedEmails = collect($relations_full['linked']['emailaddresses']);
+        $usernames = [];
+        foreach($linkedUsers as $user):
+            $usernames[] = $linkedEmails->firstWhere('id', $user['emailAddressId'])['email'];
+        endforeach;
+        return $usernames;
     }
 
     public function getAllAssets() {
@@ -155,8 +161,8 @@ class PureserviceController extends Controller
 
     /** getInitialStatus
      * Bestemmer initiell status før oppretting av asset i Pureservice
-     * @param   assoc_array $psAsset
-     * @return  integer
+     * @param   psAsset     assoc_array     Asset-array som følger Pureservice sine felt-definisjoner
+     * @return  integer                     Status-ID som kan brukes mot Pureservice
      */
     protected function getInitialStatus($psAsset) {
         $fp = config('pureservice.field_prefix');
@@ -175,7 +181,14 @@ class PureserviceController extends Controller
         return $status;
     }
 
-    protected function calculateStatus($psAsset) {
+    /** calculateStatus
+     * Bestemmer statusendring for eksisterende asset.
+     * @param   psAsset         assoc_array   Asset-array som følger Pureservice sine felt-definisjoner
+     * @param   notDeployed     boolean       Bestemmer om vurderingen skal ta høyde for at maskinen ikke skal være tildelt
+     *
+     * @return  integer                       Status-ID som kan brukes mot Pureservice
+     */
+    public function calculateStatus($psAsset, $notDeployed=false) {
         $fp = config('pureservice.field_prefix');
         $status = $psAsset['statusId'];
         $active_statuses = [$this->statuses['active_deployed'], $this->statuses['active_inStorage'], $this->statuses['active_phaseOut']];
@@ -183,12 +196,13 @@ class PureserviceController extends Controller
             $today = Carbon::today();
             $EOL = Carbon::create($psAsset[$fp.'EOL']);
             if ($EOL->lessThanOrEqualTo($today->copy()->addMonth(3))) $status = $this->statuses['active_phaseOut'];
+            if ($notDeployed && ($status == $this->statuses['active_deployed'])) $status = $this->statuses['active_phaseOut'];
         endif;
         return $status;
     }
 
 
-    protected function relateAssetToUsernames($assetId, $usernames) {
+    public function relateAssetToUsernames($assetId, $usernames) {
         $jsonBody = ['relationships' => []];
         if (! is_array($usernames)) $usernames = [$usernames];
         foreach ($usernames as $username):
@@ -199,21 +213,25 @@ class PureserviceController extends Controller
             if (count($emailaddresses) > 0):
                 $userId = $emailaddresses[0]['userId'];
 
-                $uri = '/relationship';
                 $user_relationship = [
-                    'main' => 'toUser',
-                    'inverseMain' => 'fromAssetId',
+                    'main' => 'ToAssetId',
+                    'inverseMain' => 'FromAssetId',
+
                     'links' => [
-                        'type' => ['id' => config('pureservice.relationship_type_id')],
-                        'toUser' => ['id' => $userId],
-                        'fromAsset' => ['id' => $assetId],
+                        'type' => ['id' => (int) config('pureservice.relationship_type_id')],
+                        'toAsset' => ['id' => $assetId],
+                        'fromUser' => ['id' => $userId],
                     ]
                 ];
                 $jsonBody['relationships'][] = $user_relationship;
             endif;
         endforeach;
-        if ($relationship = $this->apiPOST($uri, $jsonBody)):
-            return true;
+
+        if (count($jsonBody['relationships']) > 0):
+            $uri = '/relationship/';
+            if ($relationship = $this->apiPOST($uri, $jsonBody, 'application/vnd.api+json')):
+                return true;
+            endif;
         endif;
         return false;
     }
@@ -221,8 +239,8 @@ class PureserviceController extends Controller
 
     public function createAsset($jamfAsset) {
         $fp = config('pureservice.field_prefix');
-        $uri = '/asset/'.$jamfAsset['id'];
-        $statusId = (string) $this->calculateStatus($jamfAsset);
+        $uri = '/asset/'.config('pureservice.className');
+        $statusId = (string) $this->getInitialStatus($jamfAsset);
         $usernames = $jamfAsset['usernames'];
         $jamfAsset = collect($jamfAsset)->except('usernames');
         $jamfAsset['links'] = [
@@ -236,7 +254,7 @@ class PureserviceController extends Controller
         ];
         $response = $this->apiPOST($uri, $body);
         unset($uri, $body, $jamfAsset);
-        if ($response->getStausCode() == 200):
+        if ($response->getStatusCode() == 200):
             $psAsset = json_decode($response->getBody()->getContents(), true)['assets'][0];
             return $psAsset['id'];
         else:
@@ -244,15 +262,45 @@ class PureserviceController extends Controller
         endif;
     }
 
-    public function updateAsset($jamfAsset, $psId) {
-        $psUsernames = $this->getRelatedUsernames($psId);
-        $usernames = $jamfAsset['usernames'];
+    public function updateAsset($jamfAsset, $psAsset) {
+        //$jamfAsset['id'] = $psAsset['id'];
+        $jamfAsset['statusId'] = $psAsset['statusId'];
         $statusId = $this->calculateStatus($jamfAsset);
+        $uri = '/asset/'.$psAsset['id'];
         $jamfAsset = collect($jamfAsset)->except('usernames');
-        $jamfAsset['links'] = [
+        /*$jamfAsset['links'] = [
+            'type' => ['id' => config('pureservice.asset_type_id')],
+            'status' => ['id' => $statusId]
+        ];*/
+        $jamfAsset['statusId'] = $statusId;
+        $body = $jamfAsset->toArray();
+        $response = $this->apiPATCH($uri, $body);
+        unset($uri, $body, $jamfAsset, $psAsset);
+        if ($response->getStatusCode() == 200):
+            $psAsset = json_decode($response->getBody()->getContents(), true)['assets'][0];
+            return $psAsset['id'];
+        else:
+            return false;
+        endif;
+    }
+
+    public function updateAssetStatus($psId, $statusId) {
+        $uri = '/asset/'.$psId;
+        $links = [
             'type' => ['id' => config('pureservice.asset_type_id')],
             'status' => ['id' => $statusId]
         ];
-
+        $body = [
+            'statusId' => $statusId
+        ];
+        $response = $this->apiPATCH($uri, $body);
+        unset($uri, $body);
+        if ($response->getStatusCode() == 200):
+            $psAsset = json_decode($response->getBody()->getContents(), true)['assets'][0];
+            return $psAsset['id'];
+        else:
+            return false;
+        endif;
     }
+
 }

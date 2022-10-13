@@ -14,11 +14,13 @@ class JamfController extends Controller
     protected $token;
     protected $api;
     protected $options;
+    public $up = false;
 
     public function __construct() {
         $this->getClient();
         $this->getBearerToken();
         $this->setOptions();
+        if ($this->token) $this->up = true;
     }
 
     private function getClient() {
@@ -131,8 +133,11 @@ class JamfController extends Controller
         $computers = $this->getJamfComputers();
         $psAssets = [];
         foreach ($computers as $mac):
+            // Skipper enheten hvis den ikke har serienummer
+            if ($mac['hardware']['serialNumber'] == null || $mac['hardware']['serialNumber'] == '') continue;
+
             $psAsset = [];
-            $psAsset[$fp.'Navn'] = $mac['general']['name'];
+            $psAsset[$fp.'Navn'] = $mac['general']['name'] != '' ? $mac['general']['name'] : '-maskin-uten-navn-';
             $psAsset[$fp.'Serienr'] = $mac['hardware']['serialNumber'];
             $psAsset[$fp.'Modell'] = $mac['hardware']['model'];
             $psAsset[$fp.'ModelID'] = $mac['hardware']['modelIdentifier'];
@@ -158,7 +163,8 @@ class JamfController extends Controller
 
             $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/computers.html?id='.$mac['id'].'&o=r';
 
-            $psAsset['usernames'] = ($mac['userAndLocation']['username'] != null) ? [$mac['userAndLocation']['username']]: [];
+            $psAsset['usernames'] = [];
+            if ($mac['userAndLocation']['username'] != null) $psAsset['usernames'][] = $mac['userAndLocation']['username'];
             $psAssets[] = $psAsset;
             unset($psAsset);
         endforeach;
@@ -166,8 +172,11 @@ class JamfController extends Controller
 
         $devices = $this->getJamfDevices();
         foreach ($devices as $dev):
+            // Skipper enheten hvis den ikke har serienummer
+            if ($dev['serialNumber'] == null || $dev['serialNumber'] == '') continue;
+
             $psAsset = [];
-            $psAsset[$fp.'Navn'] = $dev['name'];
+            $psAsset[$fp.'Navn'] = $dev['name'] == '' ? '-uten-navn-': $dev['name'];
             $psAsset[$fp.'Serienr'] = $dev['serialNumber'];
             $psAsset[$fp.'Modell'] = $dev[$dev['type']]['model'];
             $psAsset[$fp.'ModelID'] = $dev[$dev['type']]['modelIdentifier'];
@@ -191,7 +200,8 @@ class JamfController extends Controller
 
             $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/mobileDevices.html?id='.$dev['id'].'&o=r';
 
-            $psAsset['usernames'] = $dev['location']['username'] != 0 ? [$dev['location']['username']] : [];
+            $psAsset['usernames'] = [];
+            if ($dev['location']['username'] != null) $psAsset['usernames'][] = $dev['location']['username'];
             $psAssets[] = $psAsset;
             unset($psAsset);
         endforeach;

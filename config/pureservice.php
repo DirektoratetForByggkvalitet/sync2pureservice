@@ -5,7 +5,7 @@ return [
   'apikey' =>  env('PURESERVICE_APIKEY'),
   'field_prefix' => 'assets_UDF_95_',
   'asset_type_id' => env('PURESERVICE_ASSETTYPE_ID', 1),
-  'relationship_type_id' => env('PURESERVICE_RELATIONSHIP_TYPE_ID', 20),
+  'relationship_type_id' => env('PURESERVICE_RELATIONSHIP_TYPE_ID', 1),
   'className' => '_'.env('PURESERVICE_ASSETTYPE_ID', 1).'_Assets_'.env('PURESERVICE_ASSETTYPE_NAME'),
   'status' => [
     'active_deployed' => env('PURESERVICE_STATUS_DEPLOYED', 'Tildelt bruker'),
