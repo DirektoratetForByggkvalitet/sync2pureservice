@@ -137,7 +137,7 @@ class JamfController extends Controller
             if ($mac['hardware']['serialNumber'] == null || $mac['hardware']['serialNumber'] == '') continue;
 
             $psAsset = [];
-            $psAsset[$fp.'Navn'] = $mac['general']['name'] != '' ? $mac['general']['name'] : $mac['hardware']['serialNumber'];
+            $psAsset[$fp.'Navn'] = $mac['general']['name'] != '' ? $mac['general']['name'] : '-maskin-uten-navn-';
             $psAsset[$fp.'Serienr'] = $mac['hardware']['serialNumber'];
             $psAsset[$fp.'Modell'] = $mac['hardware']['model'];
             $psAsset[$fp.'ModelID'] = $mac['hardware']['modelIdentifier'];
@@ -177,7 +177,7 @@ class JamfController extends Controller
             if ($dev['serialNumber'] == null || $dev['serialNumber'] == '') continue;
 
             $psAsset = [];
-            $psAsset[$fp.'Navn'] = $dev['name'] == '' ? $dev['serialNumber'] : $dev['name'];
+            $psAsset[$fp.'Navn'] = $dev['name'] == '' ? '-uten-navn-': $dev['name'];
             $psAsset[$fp.'Serienr'] = $dev['serialNumber'];
             $psAsset[$fp.'Modell'] = $dev[$dev['type']]['model'];
             $psAsset[$fp.'ModelID'] = $dev[$dev['type']]['modelIdentifier'];
