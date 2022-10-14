@@ -1,0 +1,24 @@
+
+image: *dibkphp
+
+definitions:
+  images:
+    - image: &dibkphp
+        name: dibknoe.azurecr.io/php:latest
+        username: $REGISTRY_USERNAME
+        password: $REGISTRY_PASSWORD
+
+# Setter maksimum kjøretid for et steg
+options:
+  max-time: 60
+
+pipelines:
+  custom:
+    sync:
+      - step:
+          name: Synkroniser mellom Jamf Pro og Pureservice
+          deployment: production
+          script:
+            - composer install --no-dev
+            - cp .env.example .env
+            - ./artisan jamf2pureservice:sync
