@@ -1,5 +1,5 @@
 
-image: *dibkphp
+image: dibknoe.azurecr.io/php:latest
 
 definitions:
   images:
