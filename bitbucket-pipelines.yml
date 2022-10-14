@@ -14,9 +14,10 @@ options:
 
 pipelines:
   custom:
-    sync:
+    jamf2pureservice:
       - step:
           name: Synkroniser mellom Jamf Pro og Pureservice
+          image: *dibkphp
           deployment: production
           script:
             - composer install --no-dev
