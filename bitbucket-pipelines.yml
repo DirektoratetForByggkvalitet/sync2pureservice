@@ -1,5 +1,4 @@
 
-image: dibknoe.azurecr.io/php:latest
 
 definitions:
   images:
@@ -12,12 +11,13 @@ definitions:
 options:
   max-time: 60
 
+image: *dibkphp
+
 pipelines:
   custom:
     jamf2pureservice:
       - step:
           name: Synkroniser mellom Jamf Pro og Pureservice
-          image: *dibkphp
           deployment: production
           script:
             - composer install --no-dev
