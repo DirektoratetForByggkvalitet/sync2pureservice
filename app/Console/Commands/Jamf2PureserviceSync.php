@@ -24,7 +24,9 @@ class Jamf2PureserviceSync extends Command
     protected $l1 = '';
     protected $l2 = '> ';
     protected $l3 = '  ';
-
+    protected $start;
+    protected $jamfCount;
+    protected $psCount;
     /**
      * The console command description.
      *
@@ -37,8 +39,8 @@ class Jamf2PureserviceSync extends Command
      *
      * @return int
      */
-    public function handle()
-    {
+    public function handle() {
+        $this->start = microtime(true);
         $this->info('Jamf2Pureservice v'.$this->version);
         $this->line($this->description);
         $this->line('');
@@ -61,39 +63,41 @@ class Jamf2PureserviceSync extends Command
             return Command::FAILURE;
         endif;
 
+        $this->line('');
 
         $this->info($this->ts().$this->l1.'Henter inn fra Pureservice');
         $psDevices = collect($this->psApi->getAllAssets());
-        $this->line($this->l3.count($psDevices).' enheter');
+        $this->psCount = count($psDevices);
+        $this->line($this->l3.$this->psCount.' enheter');
 
         $this->info($this->ts().$this->l1.'Henter inn fra Jamf Pro');
         $jamfDevices = collect($this->jpsApi->getJamfAssetsAsPsAssets());
-        $this->line($this->l3.count($jamfDevices).' enheter');
+        $this->jamfCount = count($jamfDevices);
+        $this->line($this->l3.$this->jamfCount.' enheter');
 
         // Looper gjennom Jamf-enheter for å oppdatere eller legge dem til i Pureservice
         $this->info($this->ts().$this->l1.'Starter behandling av enheter fra Jamf Pro');
         $itemno = 0;
-        $count = count($jamfDevices);
+        $fp = config('pureservice.field_prefix');
         foreach ($jamfDevices as $jamfDev):
             $itemno++;
             $time1 = microtime(true);
-            $this->line($this->l2.$itemno.'/'.$count.' \''.$jamfDev[config('pureservice.field_prefix').'Navn'].'\'');
-            $uniqueField = config('pureservice.field_prefix').'Serienr';
-            $psDev = $psDevices->firstWhere($uniqueField, $jamfDev[$uniqueField]);
+            $this->line($this->l2.$itemno.'/'.$this->jamfCount.' \''.$jamfDev[$fp.'Navn'].'\'');
+            $psDev = $psDevices->firstWhere('links.unique.id', $jamfDev[$fp.'Serienr']);
 
             if ($psDev != null):
                 $psDevId = $psDev['id'];
                 $this->line($this->l3.'Enheten finnes i Pureservice fra før. Oppdaterer med data fra Jamf Pro...');
                 if ($ok = $this->psApi->updateAsset($jamfDev, $psDev)):
-                    $this->line($this->l3.'Oppdaterte enheten med id='.$psDevId.' i Pureservice');
+                    $this->line($this->l3.'  Oppdaterte enheten med id='.$psDevId.' i Pureservice');
                 else:
-                    $this->error($this->l3.'Det oppsto en feil under oppdatering...');
+                    $this->error($this->l3.'  Det oppsto en feil under oppdatering...');
                 endif;
 
             else:
                 $this->line($this->l3.'Enheten finnes ikke i Pureservice fra før. Legger til...');
                 if ($psDevId = $this->psApi->createAsset($jamfDev)):
-                    $this->line($this->l3.'Lagt til med id='.$psDevId);
+                    $this->line($this->l3.'  Lagt til med id='.$psDevId);
                 else:
                     $this->error($this->l3.'Det oppsto en feil under innlegging...');
                 endif;
@@ -111,11 +115,11 @@ class Jamf2PureserviceSync extends Command
                 endif;
 
                 if ($doLink):
-                    $this->line($this->l3.'Kobler enheten ('.$psDevId.') til brukerkontoen(e) '.implode(', ', $jamfDev['usernames']));
+                    $this->line($this->l3.'Kobler enheten ('.$psDevId.') til brukerkontoen '.implode(', ', $jamfDev['usernames']));
                     if ($this->psApi->relateAssetToUsernames($psDevId, $jamfDev['usernames'])):
-                        $this->line($this->l3.'Kobling fullført');
+                        $this->line($this->l3.'  Kobling fullført');
                     else:
-                        $this->error($this->l3.'Ingen kobling, brukeren finnes ikke i Pureservice');
+                        $this->info($this->l3.'  Ingen kobling, brukeren finnes ikke i Pureservice');
                     endif;
                 else:
                     $this->line($this->l3.'Brukerkobling trenger ikke oppdatering');
@@ -124,21 +128,20 @@ class Jamf2PureserviceSync extends Command
                 $this->line($this->l3.'Enheten er ikke koblet til noen bruker');
             endif;
             $elapsed = microtime(true) - $time1;
-            $this->line($this->l3.'Operasjonen tok '.round($elapsed, 2).' sekunder');
+            $this->line($this->l3.'Behandlingstid: '.round($elapsed, 2).' sek');
         endforeach;
 
+        $this->line('');
+
         // Looper gjennom Pureservice-enheter for å evt. endre status på enheter som ikke lenger finnes i Jamf Pro
-        $this->info($this->ts().$this->l1. 'Går gjennom enhetene i Pureservice for å oppdatere status for enheter fjernet fra Jamf Pro');
-        $count = count($psDevices);
-        $itemno = 0;
-        $fp = config('pureservice.field_prefix');
+        $this->info($this->ts().$this->l1. 'Oppdaterer status for enheter som er fjernet fra Jamf Pro');
+
         $jamfCollection = collect($jamfDevices);
         foreach ($psDevices as $dev):
-            $itemno++;
-            $this->line($this->l2.$itemno.'/'.$count.': '.$dev[$fp.'Navn']);
             $existsInJamf = ($jamfCollection->firstWhere($fp.'Serienr', $dev[$fp.'Serienr'])) ? true : false;
             if (!$existsInJamf):
-                if ($dev['statusId'] == config('pureservice.status.active_deployed')):
+                if ($dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_deployed')):
+                    $this->line($this->l2.$dev[$fp.'Navn']);
                     $this->line($this->l3.'Enheten er ikke i Jamf, men er merket som tildelt til bruker.');
                     if ($dev['usernames'] != []):
                         $this->line($this->l3.'Enheten er registrert på '.implode(', ', $dev['usernames']));
@@ -155,6 +158,13 @@ class Jamf2PureserviceSync extends Command
                 endif;
             endif;
         endforeach;
+
+        // Oppsummering
+        $this->line('');
+        $this->info('Synkronisering ferdig');
+        $this->line($this->l3.'Totalt ble '.$this->jamfCount.' enheter fra Jamf Pro synkronisert med '.$this->psCount.' enheter i Pureservice.');
+        $this->line($this->l3.'Operasjonen ble fullført på '.round(microtime(true) - $this->start, 2).' sekunder');
+
         return Command::SUCCESS;
     }
 

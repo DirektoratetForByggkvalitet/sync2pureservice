@@ -102,17 +102,18 @@ class PureserviceController extends Controller
         return true;
     }
 
-    protected function fetchAssetStatuses($class = null) {
-        if ($class == null) $class = config('pureservice.className');
-        $uri = '/assettype/'. config('pureservice.asset_type_id') .'?include=fields,statuses';
-        $result = $this->apiGet($uri);
-        $raw_statuses = collect($result['linked']['assetstatuses']);
-        $config_statuses = config('pureservice.status');
+    protected function fetchAssetStatuses() {
         $this->statuses = [];
-        foreach ($config_statuses as $key=>$value):
-            $raw_status = $raw_statuses->firstWhere('name', $value);
-            $statusId = $raw_status != null ? $raw_status['id'] : null;
-            $this->statuses[$key] = $statusId;
+        foreach(['computer', 'mobile'] as $type):
+            $uri = '/assettype/'. config('pureservice.'.$type.'.asset_type_id') .'?include=fields,statuses';
+            $result = $this->apiGet($uri);
+            $raw_statuses = collect($result['linked']['assetstatuses']);
+            $this->statuses[$type] = [];
+            foreach (config('pureservice.'.$type.'.status') as $key=>$value):
+                $raw_status = $raw_statuses->firstWhere('name', $value);
+                $statusId = $raw_status != null ? $raw_status['id'] : null;
+                $this->statuses[$type][$key] = $statusId;
+            endforeach;
         endforeach;
     }
 
@@ -151,12 +152,17 @@ class PureserviceController extends Controller
     }
 
     public function getAllAssets() {
-        $uri = '/asset/?filter=typeID=='.config('pureservice.asset_type_id');
-        $assets = $this->apiGet($uri)['assets'];
-        foreach ($assets as &$asset):
-            $asset['usernames'] = $this->getRelatedUsernames($asset['id']);
+        $totalAssets = [];
+        foreach (['computer', 'mobile'] as $type):
+            $uri = '/asset/?filter=typeID=='.config('pureservice.'.$type.'.asset_type_id');
+            $assets = $this->apiGet($uri)['assets'];
+            foreach ($assets as $asset):
+                $asset['type'] = $type;
+                $asset['usernames'] = $this->getRelatedUsernames($asset['id']);
+                $totalAssets[] = $asset;
+            endforeach;
         endforeach;
-        return $assets;
+        return $totalAssets;
     }
 
     /** getInitialStatus
@@ -165,18 +171,19 @@ class PureserviceController extends Controller
      * @return  integer                     Status-ID som kan brukes mot Pureservice
      */
     protected function getInitialStatus($psAsset) {
+        $type = &$psAsset['type'];
         $fp = config('pureservice.field_prefix');
         // Standard status for nye enheter
-        $status = $this->statuses['active_inStorage'];
+        $status = $this->statuses[$type]['active_inStorage'];
 
         $today = Carbon::today();
         $EOL = Carbon::create($psAsset[$fp.'EOL']);
         if (count($psAsset['usernames']) > 0):
             // Enheten er tildelt en bruker
-            $status = $this->statuses['active_deployed'];
+            $status = $this->statuses[$type]['active_deployed'];
         endif;
         // Dersom EOL er mindre enn 3 mnd unna settes status til utfasing
-        if ($EOL->lessThanOrEqualTo($today->copy()->addMonth(3))) $status = $this->statuses['active_phaseOut'];
+        if ($EOL->lessThanOrEqualTo($today->copy()->addMonth(3))) $status = $this->statuses[$type]['active_phaseOut'];
 
         return $status;
     }
@@ -190,19 +197,24 @@ class PureserviceController extends Controller
      */
     public function calculateStatus($psAsset, $notDeployed=false) {
         $fp = config('pureservice.field_prefix');
+        $type = &$psAsset['type'];
         $status = $psAsset['statusId'];
-        $active_statuses = [$this->statuses['active_deployed'], $this->statuses['active_inStorage'], $this->statuses['active_phaseOut']];
+        $active_statuses = [
+            $this->statuses[$type]['active_deployed'],
+            $this->statuses[$type]['active_inStorage'],
+            $this->statuses[$type]['active_phaseOut']
+        ];
         if (in_array($status, $active_statuses)):
             $today = Carbon::today();
             $EOL = Carbon::create($psAsset[$fp.'EOL']);
-            if ($EOL->lessThanOrEqualTo($today->copy()->addMonth(3))) $status = $this->statuses['active_phaseOut'];
-            if ($notDeployed && ($status == $this->statuses['active_deployed'])) $status = $this->statuses['active_phaseOut'];
+            if ($EOL->lessThanOrEqualTo($today->copy()->addMonth(3))) $status = $this->statuses[$type]['active_phaseOut'];
+            if ($notDeployed && ($status == $this->statuses[$type]['active_deployed'])) $status = $this->statuses[$type]['active_phaseOut'];
         endif;
         return $status;
     }
 
 
-    public function relateAssetToUsernames($assetId, $usernames) {
+    public function relateAssetToUsernames($assetId, $usernames, $type='computer') {
         $jsonBody = ['relationships' => []];
         if (! is_array($usernames)) $usernames = [$usernames];
         foreach ($usernames as $username):
@@ -218,7 +230,7 @@ class PureserviceController extends Controller
                     'inverseMain' => 'FromAssetId',
 
                     'links' => [
-                        'type' => ['id' => (int) config('pureservice.relationship_type_id')],
+                        'type' => ['id' => (int) config('pureservice.'.$type.'.relationship_type_id')],
                         'toAsset' => ['id' => $assetId],
                         'fromUser' => ['id' => $userId],
                     ]
@@ -238,17 +250,16 @@ class PureserviceController extends Controller
 
 
     public function createAsset($jamfAsset) {
-        $fp = config('pureservice.field_prefix');
-        $uri = '/asset/'.config('pureservice.className');
+        $type = $jamfAsset['type'];
+        $uri = '/asset/'.config('pureservice.'.$type.'.className');
         $statusId = (string) $this->getInitialStatus($jamfAsset);
-        $usernames = $jamfAsset['usernames'];
-        $jamfAsset = collect($jamfAsset)->except('usernames');
+        $jamfAsset = collect($jamfAsset)->except(['usernames', 'type']);
         $jamfAsset['links'] = [
-            'type' => ['id' => config('pureservice.asset_type_id')],
+            'type' => ['id' => config('pureservice.'.$type.'.asset_type_id')],
             'status' => ['id' => $statusId]
         ];
         $body = [
-            config('pureservice.className') => [
+            config('pureservice.'.$type.'.className') => [
                 $jamfAsset->toArray()
             ]
         ];
@@ -263,11 +274,10 @@ class PureserviceController extends Controller
     }
 
     public function updateAsset($jamfAsset, $psAsset) {
-        //$jamfAsset['id'] = $psAsset['id'];
         $jamfAsset['statusId'] = $psAsset['statusId'];
         $statusId = $this->calculateStatus($jamfAsset);
         $uri = '/asset/'.$psAsset['id'];
-        $jamfAsset = collect($jamfAsset)->except('usernames');
+        $jamfAsset = collect($jamfAsset)->except(['usernames', 'type']);
         /*$jamfAsset['links'] = [
             'type' => ['id' => config('pureservice.asset_type_id')],
             'status' => ['id' => $statusId]
@@ -286,10 +296,6 @@ class PureserviceController extends Controller
 
     public function updateAssetStatus($psId, $statusId) {
         $uri = '/asset/'.$psId;
-        $links = [
-            'type' => ['id' => config('pureservice.asset_type_id')],
-            'status' => ['id' => $statusId]
-        ];
         $body = [
             'statusId' => $statusId
         ];

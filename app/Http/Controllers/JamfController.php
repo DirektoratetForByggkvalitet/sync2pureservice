@@ -137,7 +137,7 @@ class JamfController extends Controller
             if ($mac['hardware']['serialNumber'] == null || $mac['hardware']['serialNumber'] == '') continue;
 
             $psAsset = [];
-            $psAsset[$fp.'Navn'] = $mac['general']['name'] != '' ? $mac['general']['name'] : '-maskin-uten-navn-';
+            $psAsset[$fp.'Navn'] = $mac['general']['name'] != '' ? $mac['general']['name'] : $mac['hardware']['serialNumber'];
             $psAsset[$fp.'Serienr'] = $mac['hardware']['serialNumber'];
             $psAsset[$fp.'Modell'] = $mac['hardware']['model'];
             $psAsset[$fp.'ModelID'] = $mac['hardware']['modelIdentifier'];
@@ -165,6 +165,7 @@ class JamfController extends Controller
 
             $psAsset['usernames'] = [];
             if ($mac['userAndLocation']['username'] != null) $psAsset['usernames'][] = $mac['userAndLocation']['username'];
+            $psAsset['type'] = 'computer';
             $psAssets[] = $psAsset;
             unset($psAsset);
         endforeach;
@@ -176,11 +177,10 @@ class JamfController extends Controller
             if ($dev['serialNumber'] == null || $dev['serialNumber'] == '') continue;
 
             $psAsset = [];
-            $psAsset[$fp.'Navn'] = $dev['name'] == '' ? '-uten-navn-': $dev['name'];
+            $psAsset[$fp.'Navn'] = $dev['name'] == '' ? $dev['serialNumber'] : $dev['name'];
             $psAsset[$fp.'Serienr'] = $dev['serialNumber'];
             $psAsset[$fp.'Modell'] = $dev[$dev['type']]['model'];
             $psAsset[$fp.'ModelID'] = $dev[$dev['type']]['modelIdentifier'];
-            $psAsset[$fp.'Prosessor'] = null;
             if ($dev['osVersion'] != null):
                 $psAsset[$fp.'OS_45_versjon'] = $dev['osVersion'];
             endif;
@@ -202,6 +202,7 @@ class JamfController extends Controller
 
             $psAsset['usernames'] = [];
             if ($dev['location']['username'] != null) $psAsset['usernames'][] = $dev['location']['username'];
+            $psAsset['type'] = 'mobile';
             $psAssets[] = $psAsset;
             unset($psAsset);
         endforeach;
