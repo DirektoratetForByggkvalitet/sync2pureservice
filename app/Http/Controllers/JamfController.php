@@ -137,7 +137,7 @@ class JamfController extends Controller
             if ($mac['hardware']['serialNumber'] == null || $mac['hardware']['serialNumber'] == '') continue;
 
             $psAsset = [];
-            $psAsset[$fp.'Navn'] = $mac['general']['name'] != '' ? $mac['general']['name'] : '-maskin-uten-navn-';
+            $psAsset[$fp.'Navn'] = $mac['general']['name'] != '' ? $mac['general']['name'] : '-uten-navn-';
             $psAsset[$fp.'Serienr'] = $mac['hardware']['serialNumber'];
             $psAsset[$fp.'Modell'] = $mac['hardware']['model'];
             $psAsset[$fp.'ModelID'] = $mac['hardware']['modelIdentifier'];
