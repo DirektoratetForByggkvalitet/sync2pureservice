@@ -15,7 +15,7 @@ class Jamf2PureserviceSync extends Command
      */
     protected $signature = 'jamf2pureservice:sync';
 
-    protected $version = '1.0';
+    protected $version = '1.0.3';
 
     protected JamfController $jpsApi;
     protected PureserviceController $psApi;
@@ -163,7 +163,7 @@ class Jamf2PureserviceSync extends Command
 
         // Oppsummering
         $this->line('');
-        $this->info('Synkronisering ferdig');
+        $this->info($this->ts().'Synkronisering ferdig');
         $this->line($this->l3.'Totalt ble '.$this->jamfCount.' enheter fra Jamf Pro synkronisert med '.$this->psCount.' enheter i Pureservice.');
         $this->line($this->l3.'Operasjonen ble fullført på '.round(microtime(true) - $this->start, 2).' sekunder');
 
