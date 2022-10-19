@@ -5,6 +5,7 @@ return [
   'apikey' =>  env('PURESERVICE_APIKEY'),
   'field_prefix' => 'assets_UDF_95_',
   'computer' => [
+    'displayName' => env('PURESERVICE_COMPUTER_DISPLAYNAME', 'Datamaskin'),
     'asset_type_id' => env('PURESERVICE_COMPUTER_ASSETTYPE_ID', 1),
     'relationship_type_id' => env('PURESERVICE_COMPUTER_RELATIONSHIP_TYPE_ID', 1),
     'className' => '_'.env('PURESERVICE_COMPUTER_ASSETTYPE_ID', 1).'_Assets_'.env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Computer'),
@@ -21,6 +22,7 @@ return [
     ],
   ],
   'mobile' => [
+    'displayName' => env('PURESERVICE_MOBILE_DISPLAYNAME', 'Mobilenhet'),
     'asset_type_id' => env('PURESERVICE_MOBILE_ASSETTYPE_ID', 2),
     'relationship_type_id' => env('PURESERVICE_MOBILE_RELATIONSHIP_TYPE_ID', 4),
     'className' => '_'.env('PURESERVICE_MOBILE_ASSETTYPE_ID', 2).'_Assets_'.env('PURESERVICE_MOBILE_ASSETTYPE_NAME', 'Mobile'),

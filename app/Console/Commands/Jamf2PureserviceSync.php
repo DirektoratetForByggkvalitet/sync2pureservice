@@ -83,20 +83,21 @@ class Jamf2PureserviceSync extends Command
             $itemno++;
             $time1 = microtime(true);
             $this->line('');
-            $this->line($this->l2.$itemno.'/'.$this->jamfCount.' \''.$jamfDev[$fp.'Serienr'].'\'');
+            $this->line($this->l2.$itemno.'/'.$this->jamfCount.' '.$jamfDev[$fp.'Serienr'].' - '.$jamfDev[$fp.'Navn']);
             $psDev = $psDevices->firstWhere('links.unique.id', $jamfDev[$fp.'Serienr']);
+            $typeName = config('pureservice.'.$jamfDev['type'].'.displayName').'en';
 
             if ($psDev != null):
                 $psDevId = $psDev['id'];
-                $this->line($this->l3.'Enheten finnes i Pureservice fra før. Oppdaterer med data fra Jamf Pro...');
+                $this->line($this->l3.$typeName.' finnes i Pureservice fra før. Oppdaterer med data fra Jamf Pro...');
                 if ($ok = $this->psApi->updateAsset($jamfDev, $psDev)):
-                    $this->line($this->l3.'  Oppdaterte enheten med id='.$psDevId.' i Pureservice');
+                    $this->line($this->l3.'  Oppdaterte '.$typeName.' i Pureservice');
                 else:
                     $this->error($this->l3.'  Det oppsto en feil under oppdatering...');
                 endif;
 
             else:
-                $this->line($this->l3.'Enheten finnes ikke i Pureservice fra før. Legger til...');
+                $this->line($this->l3.$typeName.' finnes ikke i Pureservice fra før. Legger til...');
                 if ($psDevId = $this->psApi->createAsset($jamfDev)):
                     $this->line($this->l3.'  Lagt til med id='.$psDevId);
                 else:
@@ -116,7 +117,7 @@ class Jamf2PureserviceSync extends Command
                 endif;
 
                 if ($doLink):
-                    $this->line($this->l3.'Kobler enheten ('.$psDevId.') til brukerkontoen '.implode(', ', $jamfDev['usernames']));
+                    $this->line($this->l3.'Kobler '.$typeName.' ('.$psDevId.') til brukerkontoen '.implode(', ', $jamfDev['usernames']));
                     if ($this->psApi->relateAssetToUsernames($psDevId, $jamfDev['usernames'])):
                         $this->line($this->l3.'  Kobling fullført');
                     else:
@@ -135,17 +136,21 @@ class Jamf2PureserviceSync extends Command
         $this->line('');
 
         // Looper gjennom Pureservice-enheter for å evt. endre status på enheter som ikke lenger finnes i Jamf Pro
-        $this->info($this->ts().$this->l1. 'Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
+        $this->info($this->ts().$this->l1.'Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
 
         $jamfCollection = collect($jamfDevices);
         foreach ($psDevices as $dev):
-            $existsInJamf = ($jamfCollection->firstWhere($fp.'Serienr', $dev[$fp.'Serienr'])) ? true : false;
-            if (!$existsInJamf):
-                if ($dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_deployed')):
-                    $this->line($this->l2.$dev[$fp.'Serienr']);
-                    $this->line($this->l3.'Enheten er ikke i Jamf, men er merket som tildelt til bruker.');
+            if (!$jamfCollection->contains($fp.'Serienr',$dev[$fp.'Serienr'])):
+                $this->line($this->l2.$dev[$fp.'Serienr'].' - '.$dev[$fp.'Navn']);
+                $typeName = config('pureservice.'.$dev['type'].'.displayName').'en';
+                $this->line($this->l3.$typeName.' er ikke registrert i Jamf Pro');
+                if (
+                    $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_deployed') ||
+                    $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_phaseOut') ||
+                    $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_inStorage')
+                ):
                     if ($dev['usernames'] != []):
-                        $this->line($this->l3.'Enheten er registrert på '.implode(', ', $dev['usernames']));
+                        $this->line($this->l3.$typeName.' er registrert på '.implode(', ', $dev['usernames']));
                         $this->line($this->l3.'Fjerner brukerkobling(er)');
                         $this->removeRelationships($dev['id']);
                     endif;
