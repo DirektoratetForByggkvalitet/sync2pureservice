@@ -66,25 +66,25 @@ class Jamf2PureserviceSync extends Command
         $this->line('');
 
         $this->info($this->ts().$this->l1.'Henter inn fra Pureservice');
-        $psDevices = collect($this->psApi->getAllAssets());
-        $this->psCount = count($psDevices);
+        $this->psDevices = collect($this->psApi->getAllAssets());
+        $this->psCount = count($this->psDevices);
         $this->line($this->l3.$this->psCount.' enheter');
 
         $this->info($this->ts().$this->l1.'Henter inn fra Jamf Pro');
-        $jamfDevices = collect($this->jpsApi->getJamfAssetsAsPsAssets());
-        $this->jamfCount = count($jamfDevices);
+        $this->jamfDevices = collect($this->jpsApi->getJamfAssetsAsPsAssets());
+        $this->jamfCount = count($this->jamfDevices);
         $this->line($this->l3.$this->jamfCount.' enheter');
 
         // Looper gjennom Jamf-enheter for å oppdatere eller legge dem til i Pureservice
         $this->info($this->ts().$this->l1.'Starter behandling av enheter fra Jamf Pro');
         $itemno = 0;
         $fp = config('pureservice.field_prefix');
-        foreach ($jamfDevices as $jamfDev):
+        foreach ($this->jamfDevices as $jamfDev):
             $itemno++;
             $time1 = microtime(true);
             $this->line('');
             $this->line($this->l2.$itemno.'/'.$this->jamfCount.' '.$jamfDev[$fp.'Serienr'].' - '.$jamfDev[$fp.'Navn']);
-            $psDev = $psDevices->firstWhere('links.unique.id', $jamfDev[$fp.'Serienr']);
+            $psDev = $this->psDevices->firstWhere('links.unique.id', $jamfDev[$fp.'Serienr']);
             $typeName = config('pureservice.'.$jamfDev['type'].'.displayName').'en';
 
             if ($psDev != null):
@@ -138,9 +138,8 @@ class Jamf2PureserviceSync extends Command
         // Looper gjennom Pureservice-enheter for å evt. endre status på enheter som ikke lenger finnes i Jamf Pro
         $this->info($this->ts().$this->l1.'Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
 
-        $jamfCollection = collect($jamfDevices);
-        foreach ($psDevices as $dev):
-            if (!$jamfCollection->contains($fp.'Serienr',$dev[$fp.'Serienr'])):
+        foreach ($this->psDevices as $dev):
+            if (!$this->jamfDevices->contains($fp.'Serienr',$dev[$fp.'Serienr'])):
                 $this->line($this->l2.$dev[$fp.'Serienr'].' - '.$dev[$fp.'Navn']);
                 $typeName = config('pureservice.'.$dev['type'].'.displayName').'en';
                 $this->line($this->l3.$typeName.' er ikke registrert i Jamf Pro');
@@ -187,4 +186,5 @@ class Jamf2PureserviceSync extends Command
         endforeach;
         return true;
     }
+
 }
