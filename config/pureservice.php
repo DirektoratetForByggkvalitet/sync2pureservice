@@ -7,7 +7,7 @@ return [
   'computer' => [
     'asset_type_id' => env('PURESERVICE_COMPUTER_ASSETTYPE_ID', 1),
     'relationship_type_id' => env('PURESERVICE_COMPUTER_RELATIONSHIP_TYPE_ID', 1),
-    'className' => '_'.env('PURESERVICE_COMPUTER_ASSETTYPE_ID', 1).'_Assets_'.env('PURESERVICE_COMPUTER_ASSETTYPE_NAME'),
+    'className' => '_'.env('PURESERVICE_COMPUTER_ASSETTYPE_ID', 1).'_Assets_'.env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Computer'),
     'status' => [
         'active_deployed' => env('PURESERVICE_COMPUTER_STATUS_DEPLOYED', 'Tildelt bruker'),
         'active_inStorage' => env('PURESERVICE_COMPUTER_STATUS_IN_STORAGE', 'På lager'),
@@ -23,7 +23,7 @@ return [
   'mobile' => [
     'asset_type_id' => env('PURESERVICE_MOBILE_ASSETTYPE_ID', 2),
     'relationship_type_id' => env('PURESERVICE_MOBILE_RELATIONSHIP_TYPE_ID', 4),
-    'className' => '_'.env('PURESERVICE_MOBILE_ASSETTYPE_ID', 2).'_Assets_'.env('PURESERVICE_MOBILE_ASSETTYPE_NAME'),
+    'className' => '_'.env('PURESERVICE_MOBILE_ASSETTYPE_ID', 2).'_Assets_'.env('PURESERVICE_MOBILE_ASSETTYPE_NAME', 'Mobile'),
     'status' => [
         'active_deployed' => env('PURESERVICE_MOBILE_STATUS_DEPLOYED', 'Tildelt bruker'),
         'active_inStorage' => env('PURESERVICE_MOBILE_STATUS_IN_STORAGE', 'På lager'),

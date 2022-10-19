@@ -82,7 +82,7 @@ class Jamf2PureserviceSync extends Command
         foreach ($jamfDevices as $jamfDev):
             $itemno++;
             $time1 = microtime(true);
-            $this->line($this->l2.$itemno.'/'.$this->jamfCount.' \''.$jamfDev[$fp.'Navn'].'\'');
+            $this->line($this->l2.$itemno.'/'.$this->jamfCount.' \''.$jamfDev[$fp.'Serienr'].'\'');
             $psDev = $psDevices->firstWhere('links.unique.id', $jamfDev[$fp.'Serienr']);
 
             if ($psDev != null):
