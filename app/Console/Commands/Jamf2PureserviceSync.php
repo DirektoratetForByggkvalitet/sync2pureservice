@@ -82,6 +82,7 @@ class Jamf2PureserviceSync extends Command
         foreach ($jamfDevices as $jamfDev):
             $itemno++;
             $time1 = microtime(true);
+            $this->line('');
             $this->line($this->l2.$itemno.'/'.$this->jamfCount.' \''.$jamfDev[$fp.'Serienr'].'\'');
             $psDev = $psDevices->firstWhere('links.unique.id', $jamfDev[$fp.'Serienr']);
 
@@ -134,14 +135,14 @@ class Jamf2PureserviceSync extends Command
         $this->line('');
 
         // Looper gjennom Pureservice-enheter for å evt. endre status på enheter som ikke lenger finnes i Jamf Pro
-        $this->info($this->ts().$this->l1. 'Oppdaterer status for enheter som er fjernet fra Jamf Pro');
+        $this->info($this->ts().$this->l1. 'Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
 
         $jamfCollection = collect($jamfDevices);
         foreach ($psDevices as $dev):
             $existsInJamf = ($jamfCollection->firstWhere($fp.'Serienr', $dev[$fp.'Serienr'])) ? true : false;
             if (!$existsInJamf):
                 if ($dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_deployed')):
-                    $this->line($this->l2.$dev[$fp.'Navn']);
+                    $this->line($this->l2.$dev[$fp.'Serienr']);
                     $this->line($this->l3.'Enheten er ikke i Jamf, men er merket som tildelt til bruker.');
                     if ($dev['usernames'] != []):
                         $this->line($this->l3.'Enheten er registrert på '.implode(', ', $dev['usernames']));
@@ -155,6 +156,7 @@ class Jamf2PureserviceSync extends Command
                     else:
                         $this->error($this->l3.'Fikk ikke endret status');
                     endif;
+                    $this->line('');
                 endif;
             endif;
         endforeach;
