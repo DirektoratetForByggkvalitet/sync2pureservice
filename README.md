@@ -1,8 +1,8 @@
 # Jamf3Pureservice
 
-This is a rather extensive and framework-heavy project designed to sync computers and mobile devices from [Jamf Pro](https://jamf.com) to the [Pureservice Service Management platform](https://pureservice.com).
+Dette er en noe unødvendig stor Laravel-installasjon ment for å synke [Jamf Pro](https://jamf.com) med [Pureservice Assets](https://pureservice.com).
 
-** The documentation is being created... **
+** Dokumentasjonen er under oppretting… **
 
 ## Requirements
 * A Jamf Pro instance
