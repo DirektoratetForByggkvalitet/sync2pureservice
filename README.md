@@ -37,12 +37,8 @@ Det er en rekke variabler som er nødvendige for at skriptet skal få gjort alt 
 | JAMFPRO_PASSWORD | passord | Passord til Jamf Pro-brukeren |
 | PURESERVICE_URL | https://customer.pureservice.com | Bare-adressen til Pureservice-instansen |
 | PURESERVICE_APIKEY | ey... | API-nøkkel til Pureservice |
-| PURESERVICE_COMPUTER_ASSETTYPE_ID | 1 | ID-nr for ressurstypen, kan sees til slutt i URL-feltet når man redigerer ressurstypen |
 | PURESERVICE_COMPUTER_ASSETTYPE_NAME | Device | Navnet til ressurstypen som brukes til datamaskiner |
-| PURESERVICE_COMPUTER_RELATIONSHIP_TYPE_ID | 1 | ID-nr til relasjonstypen som brukes til å koble datamaskin til bruker. Kan være litt vanskelig å finne ut av |
-| PURESERVICE_MOBILE_ASSETTYPE_ID | 2 | ID for ressurstypen for mobilenheter |
 | PURESERVICE_MOBILE_ASSETTYPE_NAME | Mobile | Navnet til ressurstypen som brukes til mobilenheter |
-| PURESERVICE_MOBILE_RELATIONSHIP_TYPE_ID | 4 | ID-nr til relasjonstypen som brukes til å koble mobilenhet til bruker |
 
 ## License
 

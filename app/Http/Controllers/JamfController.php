@@ -103,7 +103,7 @@ class JamfController extends Controller
         return $results;
     }
 
-    public function getJamfDevices() {
+    public function getJamfMobileDevices() {
         $page=0;
         $page_size=100;
         $gotAll = false;
@@ -125,88 +125,5 @@ class JamfController extends Controller
         endforeach;
 
         return $detailedResults;
-    }
-
-    public function getJamfAssetsAsPsAssets() {
-        $fp = config('pureservice.field_prefix');
-        $psClassName = config('pureservice.asset_class');
-        $computers = $this->getJamfComputers();
-        $psAssets = [];
-        foreach ($computers as $mac):
-            // Skipper enheten hvis den ikke har serienummer
-            if ($mac['hardware']['serialNumber'] == null || $mac['hardware']['serialNumber'] == '') continue;
-
-            $psAsset = [];
-            $psAsset[$fp.'Navn'] = $mac['general']['name'] != '' ? $mac['general']['name'] : '-uten-navn-';
-            $psAsset[$fp.'Serienr'] = $mac['hardware']['serialNumber'];
-            $psAsset[$fp.'Modell'] = $mac['hardware']['model'];
-            $psAsset[$fp.'ModelID'] = $mac['hardware']['modelIdentifier'];
-            if ($mac['hardware']['processorType'] != null):
-                $psAsset[$fp.'Prosessor'] = $mac['hardware']['processorType'];
-            endif;
-            if ($mac['operatingSystem']['version'] != null):
-                $psAsset[$fp.'OS_45_versjon'] = $mac['operatingSystem']['version'];
-            endif;
-
-            $psAsset[$fp.'Innmeldt'] = Carbon::create($mac['general']['initialEntryDate'])
-                ->timezone(config('app.timezone'))
-                ->toJSON();
-            $psAsset[$fp.'EOL'] = Carbon::create($mac['general']['initialEntryDate'])
-                ->timezone(config('app.timezone'))
-                ->addYears(config('pureservice.computer_lifespan', 4))
-                ->toJSON();
-            if ($mac['general']['lastContactTime'] != null):
-                $psAsset[$fp.'Sist_32_sett'] = Carbon::create($mac['general']['lastContactTime'])
-                    ->timezone(config('app.timezone'))
-                    ->toJSON();
-            endif;
-
-            $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/computers.html?id='.$mac['id'].'&o=r';
-
-            $psAsset['usernames'] = [];
-            if ($mac['userAndLocation']['username'] != null) $psAsset['usernames'][] = $mac['userAndLocation']['username'];
-            $psAsset['type'] = 'computer';
-            $psAssets[] = $psAsset;
-            unset($psAsset);
-        endforeach;
-        unset($computers);
-
-        $devices = $this->getJamfDevices();
-        foreach ($devices as $dev):
-            // Skipper enheten hvis den ikke har serienummer
-            if ($dev['serialNumber'] == null || $dev['serialNumber'] == '') continue;
-
-            $psAsset = [];
-            $psAsset[$fp.'Navn'] = $dev['name'] == '' ? '-uten-navn-': $dev['name'];
-            $psAsset[$fp.'Serienr'] = $dev['serialNumber'];
-            $psAsset[$fp.'Modell'] = $dev[$dev['type']]['model'];
-            $psAsset[$fp.'ModelID'] = $dev[$dev['type']]['modelIdentifier'];
-            if ($dev['osVersion'] != null):
-                $psAsset[$fp.'OS_45_versjon'] = $dev['osVersion'];
-            endif;
-
-            $psAsset[$fp.'Innmeldt'] = Carbon::create($dev['initialEntryTimestamp'])
-                ->timezone(config('app.timezone'))
-                ->toJSON();
-            $psAsset[$fp.'EOL'] = Carbon::create($dev['initialEntryTimestamp'])
-                ->timezone(config('app.timezone'))
-                ->addYears(config('pureservice.device_lifespan', 3))
-                ->toJSON();
-            if ($dev['lastInventoryUpdateTimestamp'] != null):
-                $psAsset[$fp.'Sist_32_sett'] = Carbon::create($dev['lastInventoryUpdateTimestamp'])
-                    ->timezone(config('app.timezone'))
-                    ->toJSON();
-            endif;
-
-            $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/mobileDevices.html?id='.$dev['id'].'&o=r';
-
-            $psAsset['usernames'] = [];
-            if ($dev['location']['username'] != null) $psAsset['usernames'][] = $dev['location']['username'];
-            $psAsset['type'] = 'mobile';
-            $psAssets[] = $psAsset;
-            unset($psAsset);
-        endforeach;
-        unset($devices);
-        return $psAssets;
     }
 }

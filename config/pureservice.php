@@ -6,9 +6,9 @@ return [
   'field_prefix' => 'assets_UDF_95_',
   'computer' => [
     'displayName' => env('PURESERVICE_COMPUTER_DISPLAYNAME', 'Datamaskin'),
-    'asset_type_id' => env('PURESERVICE_COMPUTER_ASSETTYPE_ID', 1),
-    'relationship_type_id' => env('PURESERVICE_COMPUTER_RELATIONSHIP_TYPE_ID', 1),
-    'className' => '_'.env('PURESERVICE_COMPUTER_ASSETTYPE_ID', 1).'_Assets_'.env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Computer'),
+    'asset_type_id' => null,
+    'relationship_type_id' => null,
+    'className' => '',
     'status' => [
         'active_deployed' => env('PURESERVICE_COMPUTER_STATUS_DEPLOYED', 'Tildelt bruker'),
         'active_inStorage' => env('PURESERVICE_COMPUTER_STATUS_IN_STORAGE', 'På lager'),
@@ -23,9 +23,9 @@ return [
   ],
   'mobile' => [
     'displayName' => env('PURESERVICE_MOBILE_DISPLAYNAME', 'Mobilenhet'),
-    'asset_type_id' => env('PURESERVICE_MOBILE_ASSETTYPE_ID', 2),
-    'relationship_type_id' => env('PURESERVICE_MOBILE_RELATIONSHIP_TYPE_ID', 4),
-    'className' => '_'.env('PURESERVICE_MOBILE_ASSETTYPE_ID', 2).'_Assets_'.env('PURESERVICE_MOBILE_ASSETTYPE_NAME', 'Mobile'),
+    'asset_type_id' => null,
+    'relationship_type_id' => 4,
+    'className' => '',
     'status' => [
         'active_deployed' => env('PURESERVICE_MOBILE_STATUS_DEPLOYED', 'Tildelt bruker'),
         'active_inStorage' => env('PURESERVICE_MOBILE_STATUS_IN_STORAGE', 'På lager'),

@@ -11,13 +11,15 @@ class PureserviceController extends Controller
     protected $api;
     protected $options;
     protected $statuses = [];
+    protected $typeIds = [];
     protected $pre = '/agent/api'; // Standard prefix for API-kall
     public $up = false;
 
     public function __construct() {
         $this->getClient();
         $this->setOptions();
-        $this->fetchAssetStatuses();
+        $this->fetchTypeIds();
+        //$this->fetchAssetStatuses();
         if (count($this->statuses)) $this->up = true;
     }
 
@@ -117,15 +119,49 @@ class PureserviceController extends Controller
         endforeach;
     }
 
-    public function getAssetIfExists($serial) {
-        $uri = '/asset/?filter=uniqueId.equals("'.$serial.'")&uniqueClassName.equals("'.config('pureservice.className').'")';
+    /** fetchTypeIds
+     * Henter inn IDer til forskjellige innholdstyper.
+     * Befolker følgende config-verdier med verdier fra Pureservice:
+     *  config('pureservice.computer.asset_type_id')
+     *  config('pureservice.computer.className')
+     *  config('pureservice.computer.status')
+     *  config('pureservice.computer.relationship_type_id')
+     *
+     *  config('pureservice.mobile.asset_type_id')
+     *  config('pureservice.mobile.className')
+     *  config('pureservice.mobile.status')
+     *  config('pureservice.mobile.relationship_type_id')
+     * @return void
+     */
+    protected function fetchTypeIds() {
+        // Henter ut relasjonstyper allerede i bruk i basen
+        $uri = '/relationship/?include=type&filter=toAssetId!=null AND fromUserId!=null AND solvingRelationship == false';
         $result = $this->apiGet($uri);
+        $relationshipTypes = collect($result['linked']['relationshiptypes']);
+        $this->statuses = [];
+        foreach(['computer', 'mobile'] as $type):
+            // Henter ut ressurstypen basert på displayName
+            $uri = '/assettype/?filter=name.equals("'.config('pureservice.'.$type.'.displayName').'")&include=fields,statuses';
+            $result = $this->apiGet($uri);
+            if (count($result['assettypes']) > 0):
+                // setter asset_type_id og className i config basert på resultatet
+                config(['pureservice.'.$type.'.asset_type_id' => $result['assettypes'][0]['id']]);
+                config(['pureservice.'.$type.'.className' => '_'.config('pureservice.'.$type.'.asset_type_id').'_Assets_'.config('pureservice.'.$type.'.displayName')]);
 
-        // Hvis eiendelen ikke finnes i basen
-        if ($result['assets'] == []) return false;
-
-        return $result['assets'][0];
-
+                // Henter ut status-IDer
+                $raw_statuses = collect($result['linked']['assetstatuses']);
+                $this->statuses[$type] = [];
+                foreach (config('pureservice.'.$type.'.status') as $key=>$value):
+                    $raw_status = $raw_statuses->firstWhere('name', $value);
+                    $statusId = $raw_status != null ? $raw_status['id'] : null;
+                    $this->statuses[$type][$key] = $statusId;
+                endforeach;
+            endif;
+            // Finner relasjonstypens ID for brukerkoblingen
+            if ($relationshipType = $relationshipTypes->firstWhere('fromAssetTypeId', config('pureservice.'.$type.'.asset_type_id'))):
+                config(['pureservice.'.$type.'.relationship_type_id' => $relationshipType['id']]);
+            endif;
+        endforeach;
     }
 
     public function getRelationships($assetId) {
@@ -278,10 +314,6 @@ class PureserviceController extends Controller
         $statusId = $this->calculateStatus($jamfAsset);
         $uri = '/asset/'.$psAsset['id'];
         $jamfAsset = collect($jamfAsset)->except(['usernames', 'type']);
-        /*$jamfAsset['links'] = [
-            'type' => ['id' => config('pureservice.asset_type_id')],
-            'status' => ['id' => $statusId]
-        ];*/
         $jamfAsset['statusId'] = $statusId;
         $body = $jamfAsset->toArray();
         $response = $this->apiPATCH($uri, $body);
