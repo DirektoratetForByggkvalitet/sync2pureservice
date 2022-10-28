@@ -52,7 +52,9 @@ Vi har lagt opp til at jamf2pureservice kun vedlikeholder en relasjon mellom res
 1. Last ned eller klon jamf2pureservice
 2. Kjør `composer install` for å installere biblioteker og rammeverk
 3. Kopier .env.example til .env, og fyll ut nødvendige verdier for koblinger mot Jamf Pro og Pureservice
-4. Kjør synkroniseringen med `php artisan jamf2pureservice:sync`
+4. Synkroniseringen kjøres med `php artisan jamf2pureservice:sync`
+
+Fila bitbucket-pipelines.yml gir et eksempel på hvordan dette kan kjøres gjennom Pipelines. I sånne tilfeller kan innholdet i .env være erstattet med miljøvariabler som settes i Pipeline-oppsettet.
 
 ## Nødvendige .env-variabler
 
@@ -62,15 +64,30 @@ Det er en rekke variabler som er nødvendige for at skriptet skal få gjort alt 
 | ----------- | ----------- | ----------- |
 | JAMFPRO_URL | https://customer.jamfcloud.com | Angir base-adressen til Jamf Pro-instansen. Det er ikke nødvendig å bruke /api el.l. |
 | JAMFPRO_USER | let-me | Brukernavn for en bruker i Jamf Pro som har global lesetilgang |
-| JAMFPRO_PASSWORD | passord | Passord til Jamf Pro-brukeren |
-| PURESERVICE_URL | https://customer.pureservice.com | Bare-adressen til Pureservice-instansen |
+| JAMFPRO_PASSWORD | pass | Passord til Jamf Pro-brukeren |
+| PURESERVICE_URL | https://customer.pureservice.com | Base-adressen til Pureservice-instansen |
 | PURESERVICE_APIKEY | ey... | API-nøkkel til Pureservice |
-| PURESERVICE_COMPUTER_ASSETTYPE_NAME | Device | Navnet til ressurstypen som brukes til datamaskiner |
+| PURESERVICE_COMPUTER_ASSETTYPE_NAME | Computer | Navnet til ressurstypen som brukes til datamaskiner |
 | PURESERVICE_MOBILE_ASSETTYPE_NAME | Mobile | Navnet til ressurstypen som brukes til mobilenheter |
 
 ## Nødvendige statusverdier
 
 Vi har lagt opp til at systemet bruker en rekke statuser for å angi hvor i livsløpet en enhet befinner seg. Statusnavnene settes opp som miljøvariabler, og jamf2pureservice vil finne de IDer til de oppgitte statusene og lenke dem opp til enhetene.
+
+Følgende statuser er forventet inne i Pureservice, der de tre første regnes som aktive statuser, mens de øvrige er inaktive. [TYPE] skal være enten COMPUTER eller MOBILE, som tidligere nevnt.
+
+| Miljøvariabel | Standardverdi | Beskrivelse |
+| ----------- | ----------- | ----------- |
+| PURESERVICE_[TYPE]_STATUS_DEPLOYED | Tildelt bruker | Vanlig status for enhet som er utlevert til bruker |
+| PURESERVICE_[TYPE]_STATUS_IN_STORAGE | På lager | Status for en utleverbar enhet som står på lager |
+| PURESERVICE_[TYPE]_STATUS_PHASEOUT | Under utfasing | Enheten nærmer seg eller har passert EOL, men er fremdeles utlevert |
+| ----------- | ----------- | ----------- |
+| PURESERVICE_[TYPE]_STATUS_REUSED | Sendt til ombruk | Enheten er ikke lenger i bruk, og har blitt overlevert til ombruk |
+| PURESERVICE_[TYPE]_STATUS_RECYCLED | Sendt til gjenvinning | Enheten er ikke i bruk, og har blitt sendt til gjenbruk |
+| PURESERVICE_[TYPE]_STATUS_STOLEN | Stjålet | Enheten er meldt stjålet |
+| PURESERVICE_[TYPE]_STATUS_LOST | Mistet | Enheten har kommet bort |
+| PURESERVICE_[TYPE]_STATUS_SERVICE | Sendt til service | Enheten har blitt sendt til reparasjon |
+| PURESERVICE_[TYPE]_STATUS_PHASEDOUT | Utfasing - innlevert | Enheten er levert inn av bruker, klar for ombruk eller gjenvinning |
 
 ## License
 
