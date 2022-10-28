@@ -95,5 +95,6 @@ Fila bitbucket-pipelines.yml gir et eksempel på hvordan dette kan kjøres gjenn
 | ----------- | ----------- | ----------- |
 | PURESERVICE_COMPUTER_LIFESPAN | 4 | Forventet levetid for datamaskiner, oppgitt i antall år |
 | PURESERVICE_MOBILE_LIFESPAN | 3 | Forventet levetid for mobilenheter, oppgitt i antall år |
-## License
+
+# License
 This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
