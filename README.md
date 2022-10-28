@@ -49,7 +49,7 @@ Feltene er stort sett felles for de to ressurstypene, men feltnavnene kan også 
 | Serienr | Unik verdi | PURESERVICE_[TYPE]_FIELD_SERIAL | Enhetens serienummer |
 | Modell | Tekst | PURESERVICE_[TYPE]_FIELD_MODEL | Inneholder enhetens modellnavn |
 | ModelID | Tekst | PURESERVICE_[TYPE]_FIELD_MODELID | Enhetens modell-ID, f.eks. 'MacMini11,1' |
-| OS-versjon | Tekst | PURESERVICE_[TYPE]_FIELD_OS | Enhetens OS-versjon, merk at '-' må oversettes til '_45_' i APIet |
+| OS-versjon | Tekst | PURESERVICE_[TYPE]_FIELD_OS | Enhetens OS-versjon |
 | Prosessor | Tekst | PURESERVICE_COMPUTER_FIELD_PROCESSOR | Enhetens prosessortype, brukes ikke av mobilenheter |
 | Jamf-URL | Tekst med klikkbar lenke | PURESERVICE_[TYPE]_FIELD_JAMFURL | Lenke til enheten i Jamf Pro |
 | Sist sett | Dato | PURESERVICE_[TYPE]_FIELD_LASTSEEN | Tidsangivelse for når enheten ble sist sett av Jamf Pro |
@@ -57,7 +57,7 @@ Feltene er stort sett felles for de to ressurstypene, men feltnavnene kan også 
 | EOL | Dato | PURESERVICE_[TYPE]_FIELD_EOL | Dato for når enheten forventes å skiftes ut. Regnes ut av jamf2pureservice |
 | Kommentarer | Tekst | Brukes ikke | Tekstfelt for å skrive inn kommentarer for selve enheten. Brukes ikke av Pureservice |
 
-Merk at enkelte tegn i feltnavnene må oversettes til koder i jamf2pureservice for å fungere med Pureservice sitt API. F.eks. må '-' erstattes med '_45_' og mellomrom (' ') må erstattes med '_32_'. Vi har lagt opp til at jamf2pureservice oversetter '-' og ' '. Kan være lurt å ikke bruke for mye spesialtegn i feltnavnene.
+Vi har lagt opp til at jamf2pureservice henter inn riktige property-navn fra Pureseservice, basert på feltnavnene som oppgis i miljøvariablene. På den måten kan man fritt bruke spesialtegn i feltnavnene.
 
 ### Statuser for ressurstypene
 
