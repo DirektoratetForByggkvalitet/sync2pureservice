@@ -49,7 +49,7 @@ Feltene er stort sett felles for de to ressurstypene, men feltnavnene kan også 
 | ModelID | Tekst | PURESERVICE_[TYPE]_FIELD_MODELID | Enhetens modell-ID, f.eks. 'MacMini11,1' |
 | OS-versjon | Tekst | PURESERVICE_[TYPE]_FIELD_OS | Enhetens OS-versjon |
 | Prosessor | Tekst | PURESERVICE_COMPUTER_FIELD_PROCESSOR | Enhetens prosessortype, brukes ikke av mobilenheter |
-| Jamf-URL | Tekst med klikkbar lenke | PURESERVICE_[TYPE]_FIELD_JAMFURL | Lenke til enheten i Jamf Pro |
+| Jamf-URL | Tekst med knapphandling URL: %@ | PURESERVICE_[TYPE]_FIELD_JAMFURL | Lenke til enheten i Jamf Pro |
 | Sist sett | Dato | PURESERVICE_[TYPE]_FIELD_LASTSEEN | Tidsangivelse for når enheten ble sist sett av Jamf Pro |
 | Innmeldt | Dato | PURESERVICE_[TYPE]_FIELD_MEMBERSINCE | Tidsangivelse for når enheten første gang ble innrullert i Jamf Pro |
 | EOL | Dato | PURESERVICE_[TYPE]_FIELD_EOL | Dato for når enheten forventes å skiftes ut. Regnes ut av jamf2pureservice |
@@ -90,5 +90,4 @@ Det er best om man lager en test-enhet for hver ressurs før man kjører jamf2pu
 Fila bitbucket-pipelines.yml gir et eksempel på hvordan dette kan kjøres gjennom Pipelines. I sånne tilfeller kan innholdet i .env være erstattet med miljøvariabler som settes i Pipeline-oppsettet.
 
 ## License
-
 This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
