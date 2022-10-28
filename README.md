@@ -1,7 +1,4 @@
-# Jamf2Pureservice
-
-Dette er en noe unødvendig stor Laravel-installasjon ment for å synke [Jamf Pro](https://jamf.com) med [Pureservice Assets](https://pureservice.com).
-## Hva gjør jamf2pureservice?
+# Hva gjør jamf2pureservice?
 
 Ferdig installert vil jamf2pureservice tilby én kommandolinje-kommando som utfører følgende operasjoner:
 
@@ -16,11 +13,10 @@ Ferdig installert vil jamf2pureservice tilby én kommandolinje-kommando som utf�
 ## Systemkrav
 - En instans av Jamf Pro
 - En Pureservice-instans med brukersynkronisering (f.eks. Azure AD) som er ajour med brukerne i Jamf Pro
-- Pureservice Assets satt opp med to typer: Datamaskin og mobilenhet
-- PHP 8.x og PHP composer på maskinen som skal utføre synkroniseringen
+- Pureservice Assets satt opp med to ressurstyper: Datamaskin og mobilenhet
+- PHP 8.x og PHP composer på maskinen som skal kjøre synkroniseringen
 
 ## Nødvendige .env-variabler
-
 Det er en rekke variabler som er nødvendige for at skriptet skal få gjort alt som trengs. Mye av dette krever oppsett i Pureservice. Variablene kan settes i .env-fila, eller de kan settes opp som runtime-variabler før kjøring. Sistnevnte er å foretrekke om man bruker Pipelines el.l. for å kjøre synkroniseringen.
 
 | Variabel | Standardverdi | Beskrivelse |
@@ -48,7 +44,7 @@ Feltene er stort sett felles for de to ressurstypene, men feltnavnene kan også 
 | PURESERVICE_[TYPE]_FIELD_MODEL | Modell | Tekst | Enhetens modellnavn fra Jamf Pro |
 | PURESERVICE_[TYPE]_FIELD_MODELID | ModelID | Tekst | Enhetens modell-ID, f.eks. 'MacMini11,1' |
 | PURESERVICE_[TYPE]_FIELD_OS | OS-versjon | Tekst | Enhetens OS-versjon |
-| PURESERVICE_COMPUTER_FIELD_PROCESSOR | Prosessor | Tekst | Enhetens prosessortype, brukes ikke av mobilenheter |
+| PURESERVICE_COMPUTER_FIELD_PROCESSOR | Prosessor | Tekst | Enhetens prosessortype - brukes ikke av mobilenheter |
 | PURESERVICE_[TYPE]_FIELD_JAMFURL | Jamf-URL | Tekst med knapphandling URL: %@ | Lenke til enheten i Jamf Pro |
 | PURESERVICE_[TYPE]_FIELD_LASTSEEN | Sist sett | Dato | Tidsangivelse for når enheten ble sist sett av Jamf Pro |
 | PURESERVICE_[TYPE]_FIELD_MEMBERSINCE | Innmeldt | Dato | Tidsangivelse for når enheten første gang ble innrullert i Jamf Pro |
@@ -96,5 +92,5 @@ Fila bitbucket-pipelines.yml gir et eksempel på hvordan dette kan kjøres gjenn
 | PURESERVICE_COMPUTER_LIFESPAN | 4 | Forventet levetid for datamaskiner, oppgitt i antall år |
 | PURESERVICE_MOBILE_LIFESPAN | 3 | Forventet levetid for mobilenheter, oppgitt i antall år |
 
-# License
-This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Lisens
+jamf2pureservice publiseres som åpen kildekode lisensiert under [MIT license](https://opensource.org/licenses/MIT).
