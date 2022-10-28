@@ -76,18 +76,17 @@ Vi har lagt opp til at systemet bruker en rekke statuser for å angi hvor i livs
 
 Følgende statuser er forventet inne i Pureservice, der de tre første regnes som aktive statuser, mens de øvrige er inaktive. [TYPE] skal være enten COMPUTER eller MOBILE, som tidligere nevnt.
 
-| Miljøvariabel | Standardverdi | Beskrivelse |
-| ----------- | ----------- | ----------- |
-| PURESERVICE_[TYPE]_STATUS_DEPLOYED | Tildelt bruker | Vanlig status for enhet som er utlevert til bruker |
-| PURESERVICE_[TYPE]_STATUS_IN_STORAGE | På lager | Status for en utleverbar enhet som står på lager |
-| PURESERVICE_[TYPE]_STATUS_PHASEOUT | Under utfasing | Enheten nærmer seg eller har passert EOL, men er fremdeles utlevert |
-| ----------- | ----------- | ----------- |
-| PURESERVICE_[TYPE]_STATUS_REUSED | Sendt til ombruk | Enheten er ikke lenger i bruk, og har blitt overlevert til ombruk |
-| PURESERVICE_[TYPE]_STATUS_RECYCLED | Sendt til gjenvinning | Enheten er ikke i bruk, og har blitt sendt til gjenbruk |
-| PURESERVICE_[TYPE]_STATUS_STOLEN | Stjålet | Enheten er meldt stjålet |
-| PURESERVICE_[TYPE]_STATUS_LOST | Mistet | Enheten har kommet bort |
-| PURESERVICE_[TYPE]_STATUS_SERVICE | Sendt til service | Enheten har blitt sendt til reparasjon |
-| PURESERVICE_[TYPE]_STATUS_PHASEDOUT | Utfasing - innlevert | Enheten er levert inn av bruker, klar for ombruk eller gjenvinning |
+| Miljøvariabel | Standardverdi | Type status | Beskrivelse |
+| ----------- | ----------- | ----------- | ----------- |
+| PURESERVICE_[TYPE]_STATUS_DEPLOYED | Tildelt bruker | Aktiv | Vanlig status for enhet som er utlevert til bruker |
+| PURESERVICE_[TYPE]_STATUS_IN_STORAGE | På lager | Aktiv | Status for en utleverbar enhet som står på lager |
+| PURESERVICE_[TYPE]_STATUS_PHASEOUT | Under utfasing | Aktiv | Enheten nærmer seg eller har passert EOL, men er fremdeles utlevert |
+| PURESERVICE_[TYPE]_STATUS_REUSED | Sendt til ombruk | Inaktiv | Enheten er ikke lenger i bruk, og har blitt overlevert til ombruk |
+| PURESERVICE_[TYPE]_STATUS_RECYCLED | Sendt til gjenvinning | Inaktiv | Enheten er ikke i bruk, og har blitt sendt til gjenbruk |
+| PURESERVICE_[TYPE]_STATUS_STOLEN | Stjålet | Inaktiv | Enheten er meldt stjålet |
+| PURESERVICE_[TYPE]_STATUS_LOST | Mistet | Inaktiv | Enheten har kommet bort |
+| PURESERVICE_[TYPE]_STATUS_SERVICE | Sendt til service | Inaktiv | Enheten har blitt sendt til reparasjon |
+| PURESERVICE_[TYPE]_STATUS_PHASEDOUT | Utfasing - innlevert | Inaktiv | Enheten er levert inn av bruker, klar for ombruk eller gjenvinning |
 
 ## License
 
