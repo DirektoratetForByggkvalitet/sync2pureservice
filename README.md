@@ -6,13 +6,14 @@ Dette er en noe unødvendig stor Laravel-installasjon ment for å synke [Jamf Pr
 ## Hva gjør jamf2pureservice?
 
 Ferdig installert vil jamf2pureservice tilby én kommandolinje-kommando som utfører følgende operasjoner:
+
 1. Kobler til Jamf Pro og sjekker tilkoblingen
 2. Kobler til Pureservice og setter opp koblinger mot ressurstyper og statuser basert på ressurstypenes navn
 3. Går gjennom alle enheter fra Jamf Pro
-    - Regner ut EOL og bestemmer status på enheter som skal fases ut
-    - Oppdaterer/oppretter dem i Pureservice
-    - Kobler enheter i Pureservice mot brukere, slik det er registrert i Jamf Pro
-4. Ser etter enheter i Pureservice som ikke lenger eksisterer og oppdaterer status på dem
+4. Regner ut EOL og bestemmer status på enheter som skal fases ut
+5. Oppdaterer/oppretter dem i Pureservice
+6. Kobler enheter i Pureservice mot brukere, slik det er registrert i Jamf Pro
+7. Ser etter enheter i Pureservice som ikke lenger eksisterer og oppdaterer status på dem
 
 ## Systemkrav
 - En instans av Jamf Pro
