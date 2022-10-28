@@ -20,6 +20,21 @@ Ferdig installert vil jamf2pureservice tilby én kommandolinje-kommando som utf�
 - En Pureservice-instans med brukersynkronisering (f.eks. Azure AD) som er ajour med brukerne i Jamf Pro
 - Pureservice Assets satt opp med to typer: Datamaskin og mobilenhet
 - PHP 8.x og PHP composer på maskinen som skal utføre synkroniseringen
+
+## Nødvendige .env-variabler
+
+Det er en rekke variabler som er nødvendige for at skriptet skal få gjort alt som trengs. Mye av dette krever oppsett i Pureservice. Variablene kan settes i .env-fila, eller de kan settes opp som miljøvariabler før kjøring. Sistnevnte er å foretrekke om man bruker Pipelines el.l. for å kjøre synkroniseringen.
+
+| Variabel | Eksempelverdi | Beskrivelse |
+| ----------- | ----------- | ----------- |
+| JAMFPRO_URL | https://customer.jamfcloud.com | Angir base-adressen til Jamf Pro-instansen. Det er ikke nødvendig å bruke /api el.l. |
+| JAMFPRO_USER | let-me | Brukernavn for en bruker i Jamf Pro som har global lesetilgang |
+| JAMFPRO_PASSWORD | pass | Passord til Jamf Pro-brukeren |
+| PURESERVICE_URL | https://customer.pureservice.com | Base-adressen til Pureservice-instansen |
+| PURESERVICE_APIKEY | ey... | API-nøkkel til Pureservice |
+| PURESERVICE_COMPUTER_ASSETTYPE_NAME | Computer | Navnet til ressurstypen som brukes til datamaskiner |
+| PURESERVICE_MOBILE_ASSETTYPE_NAME | Mobile | Navnet til ressurstypen som brukes til mobilenheter |
+
 ## Nødvendig oppsett i Pureservice
 
 Før synkronisering kan kjøres må man definere de to ressurstypene Datamaskin og Mobilenhet i Pureservice. Du kan kalle ressurstypene hva du vil, og oppgi ressurstypenes navn som miljøvariabler.
@@ -44,33 +59,7 @@ Feltene er stort sett felles for de to ressurstypene, men feltnavnene kan også 
 
 Merk at enkelte tegn i feltnavnene må oversettes til koder i jamf2pureservice for å fungere med Pureservice sitt API. F.eks. må '-' erstattes med '_45_' og mellomrom (' ') må erstattes med '_32_'. Vi har lagt opp til at jamf2pureservice oversetter '-' og ' '. Kan være lurt å ikke bruke for mye spesialtegn i feltnavnene.
 
-### Relasjoner
-
-Vi har lagt opp til at jamf2pureservice kun vedlikeholder en relasjon mellom ressurs og tildelt bruker. Øvrige relasjoner blir ikke brukt i synkroniseringen. 
-
-## Installasjon
-1. Last ned eller klon jamf2pureservice
-2. Kjør `composer install` for å installere biblioteker og rammeverk
-3. Kopier .env.example til .env, og fyll ut nødvendige verdier for koblinger mot Jamf Pro og Pureservice
-4. Synkroniseringen kjøres med `php artisan jamf2pureservice:sync`
-
-Fila bitbucket-pipelines.yml gir et eksempel på hvordan dette kan kjøres gjennom Pipelines. I sånne tilfeller kan innholdet i .env være erstattet med miljøvariabler som settes i Pipeline-oppsettet.
-
-## Nødvendige .env-variabler
-
-Det er en rekke variabler som er nødvendige for at skriptet skal få gjort alt som trengs. Mye av dette krever oppsett i Pureservice. Variablene kan settes i .env-fila, eller de kan settes opp som miljøvariabler før kjøring. Sistnevnte er å foretrekke om man bruker Pipelines el.l. for å kjøre synkroniseringen.
-
-| Variabel | Eksempelverdi | Beskrivelse |
-| ----------- | ----------- | ----------- |
-| JAMFPRO_URL | https://customer.jamfcloud.com | Angir base-adressen til Jamf Pro-instansen. Det er ikke nødvendig å bruke /api el.l. |
-| JAMFPRO_USER | let-me | Brukernavn for en bruker i Jamf Pro som har global lesetilgang |
-| JAMFPRO_PASSWORD | pass | Passord til Jamf Pro-brukeren |
-| PURESERVICE_URL | https://customer.pureservice.com | Base-adressen til Pureservice-instansen |
-| PURESERVICE_APIKEY | ey... | API-nøkkel til Pureservice |
-| PURESERVICE_COMPUTER_ASSETTYPE_NAME | Computer | Navnet til ressurstypen som brukes til datamaskiner |
-| PURESERVICE_MOBILE_ASSETTYPE_NAME | Mobile | Navnet til ressurstypen som brukes til mobilenheter |
-
-## Nødvendige statusverdier
+### Statuser for ressurstypene
 
 Vi har lagt opp til at systemet bruker en rekke statuser for å angi hvor i livsløpet en enhet befinner seg. Statusnavnene settes opp som miljøvariabler, og jamf2pureservice vil finne de IDer til de oppgitte statusene og lenke dem opp til enhetene.
 
@@ -87,6 +76,19 @@ Følgende statuser er forventet inne i Pureservice, der de tre første regnes so
 | PURESERVICE_[TYPE]_STATUS_LOST | Mistet | Inaktiv | Enheten har kommet bort |
 | PURESERVICE_[TYPE]_STATUS_SERVICE | Sendt til service | Inaktiv | Enheten har blitt sendt til reparasjon |
 | PURESERVICE_[TYPE]_STATUS_PHASEDOUT | Utfasing - innlevert | Inaktiv | Enheten er levert inn av bruker, klar for ombruk eller gjenvinning |
+
+
+### Relasjoner
+
+Vi har lagt opp til at jamf2pureservice kun vedlikeholder en relasjon mellom ressurs og tildelt bruker. Øvrige relasjoner blir ikke brukt i synkroniseringen. 
+
+## Installasjon
+1. Last ned eller klon jamf2pureservice
+2. Kjør `composer install` for å installere biblioteker og rammeverk
+3. Kopier .env.example til .env, og fyll ut nødvendige verdier for koblinger mot Jamf Pro og Pureservice
+4. Synkroniseringen kjøres med `php artisan jamf2pureservice:sync`
+
+Fila bitbucket-pipelines.yml gir et eksempel på hvordan dette kan kjøres gjennom Pipelines. I sånne tilfeller kan innholdet i .env være erstattet med miljøvariabler som settes i Pipeline-oppsettet.
 
 ## License
 
