@@ -216,7 +216,7 @@ class Jamf2PureserviceSync extends Command
                 ->toJSON();
             $psAsset[$fn['EOL']] = Carbon::create($mac['general']['initialEntryDate'])
                 ->timezone(config('app.timezone'))
-                ->addYears(config('pureservice.computer_lifespan', 4))
+                ->addYears(config('pureservice.computer.lifespan', 4))
                 ->toJSON();
             if ($mac['general']['lastContactTime'] != null):
                 $psAsset[$fn['lastSeen']] = Carbon::create($mac['general']['lastContactTime'])
@@ -254,7 +254,7 @@ class Jamf2PureserviceSync extends Command
                 ->toJSON();
             $psAsset[$fn['EOL']] = Carbon::create($dev['initialEntryTimestamp'])
                 ->timezone(config('app.timezone'))
-                ->addYears(config('pureservice.device_lifespan', 3))
+                ->addYears(config('pureservice.mobile.lifespan', 3))
                 ->toJSON();
             if ($dev['lastInventoryUpdateTimestamp'] != null):
                 $psAsset[$fn['lastSeen']] = Carbon::create($dev['lastInventoryUpdateTimestamp'])

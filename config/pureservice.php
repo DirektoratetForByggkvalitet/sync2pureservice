@@ -5,6 +5,7 @@ return [
   'apikey' =>  env('PURESERVICE_APIKEY'),
   'computer' => [
     'displayName' => env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Datamaskin'),
+    'lifespan' => env('PURESERVICE_COMPUTER_LIFESPAN', 4), // Forventet levetid, oppgitt som år
     'asset_type_id' => null, // Settes automatisk basert på displayName
     'relationship_type_id' => null, // Settes automatisk basert på displayName
     'className' => '', // Settes automatisk basert på displayName
@@ -35,6 +36,7 @@ return [
   ],
   'mobile' => [
     'displayName' => env('PURESERVICE_MOBILE_ASSETTYPE_NAME', 'Mobilenhet'),
+    'lifespan' => env('PURESERVICE_MOBILE_LIFESPAN', 3), // Forventet levetid, oppgitt som år
     'asset_type_id' => null, // Settes automatisk basert på displayName
     'relationship_type_id' => null, // Settes automatisk basert på displayName
     'className' => '', // Settes automatisk basert på displayName
