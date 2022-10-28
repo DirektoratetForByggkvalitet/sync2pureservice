@@ -1,7 +1,5 @@
 # Jamf2Pureservice
 
-** Dokumentasjonen er under oppretting… **
-
 Dette er en noe unødvendig stor Laravel-installasjon ment for å synke [Jamf Pro](https://jamf.com) med [Pureservice Assets](https://pureservice.com).
 ## Hva gjør jamf2pureservice?
 
