@@ -15,7 +15,7 @@ class Jamf2PureserviceSync extends Command
      */
     protected $signature = 'jamf2pureservice:sync';
 
-    protected $version = '1.0.3';
+    protected $version = '1.1.0';
 
     protected JamfController $jpsApi;
     protected PureserviceController $psApi;
@@ -31,7 +31,7 @@ class Jamf2PureserviceSync extends Command
      * The console command description.
      *
      * @var string
-     */
+     **/
     protected $description = 'Henter maskiner og mobile enheter fra Jamf Pro og synkroniserer dem med Pureservice sine Assets';
 
     /**
@@ -65,25 +65,28 @@ class Jamf2PureserviceSync extends Command
 
         $this->line('');
 
-        $this->info($this->ts().$this->l1.'Henter inn fra Pureservice');
+        $this->info($this->ts().$this->l1.'Henter enheter fra Pureservice');
+        $time1 = microtime(true);
         $this->psDevices = collect($this->psApi->getAllAssets());
         $this->psCount = count($this->psDevices);
-        $this->line($this->l3.$this->psCount.' enheter totalt');
+        $this->line($this->l3.$this->psCount.' enheter totalt ('.round((microtime(true) - $time1), 2).' sek)');
 
-        $this->info($this->ts().$this->l1.'Henter inn fra Jamf Pro');
+        $time1 = microtime(true);
+        $this->info($this->ts().$this->l1.'Henter enheter fra Jamf Pro');
         $this->jamfDevices = collect($this->getJamfAssetsAsPsAssets());
-        $this->line($this->l3.$this->jamfCount.' enheter totalt');
+        $this->line($this->l3.$this->jamfCount.' enheter totalt ('.round((microtime(true) - $time1), 2).' sek)');
+        unset($time1);
 
         // Looper gjennom Jamf-enheter for å oppdatere eller legge dem til i Pureservice
         $this->info($this->ts().$this->l1.'Starter behandling av enheter fra Jamf Pro');
         $itemno = 0;
-        $fp = config('pureservice.field_prefix');
+        $fn = config('pureservice.computer.properties');
         foreach ($this->jamfDevices as $jamfDev):
             $itemno++;
             $time1 = microtime(true);
             $this->line('');
-            $this->line($this->l2.$itemno.'/'.$this->jamfCount.' '.$jamfDev[$fp.'Serienr'].' - '.$jamfDev[$fp.'Navn']);
-            $psDev = $this->psDevices->firstWhere('links.unique.id', $jamfDev[$fp.'Serienr']);
+            $this->line($this->l2.$itemno.'/'.$this->jamfCount.' '.$jamfDev[$fn['serial']].' - '.$jamfDev[$fn['name']]);
+            $psDev = $this->psDevices->firstWhere('links.unique.id', $jamfDev[$fn['serial']]);
             $typeName = config('pureservice.'.$jamfDev['type'].'.displayName').'en';
 
             if ($psDev != null):
@@ -139,8 +142,8 @@ class Jamf2PureserviceSync extends Command
         $this->info($this->ts().$this->l1.'Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
 
         foreach ($this->psDevices as $dev):
-            if (!$this->jamfDevices->contains($fp.'Serienr',$dev[$fp.'Serienr'])):
-                $this->line($this->l2.$dev[$fp.'Serienr'].' - '.$dev[$fp.'Navn']);
+            if (!$this->jamfDevices->contains($fn['serial'],$dev['uniqueId'])):
+                $this->line($this->l2.$dev['uniqueId'].' - '.$dev[$fn['name']]);
                 $typeName = config('pureservice.'.$dev['type'].'.displayName').'en';
                 $this->line($this->l3.$typeName.' er ikke registrert i Jamf Pro');
                 if (
@@ -168,7 +171,7 @@ class Jamf2PureserviceSync extends Command
         // Oppsummering
         $this->line('');
         $this->info($this->ts().'Synkronisering ferdig');
-        $this->line($this->l3.'Totalt ble '.$this->jamfCount.' enheter fra Jamf Pro synkronisert med '.$this->psCount.' enheter i Pureservice.');
+        $this->line($this->l3.$this->jamfCount.' enheter fra Jamf Pro ble synkroniserte med '.$this->psCount.' enheter i Pureservice.');
         $this->line($this->l3.'Operasjonen ble fullført på '.round(microtime(true) - $this->start, 2).' sekunder');
 
         return Command::SUCCESS;
@@ -182,13 +185,12 @@ class Jamf2PureserviceSync extends Command
         $relationships = $this->psApi->getRelationships($assetId)['relationships'];
         foreach ($relationships as $rel):
             $uri = '/relationship/'.$rel['id'].'/delete';
-            $this->psApi->apiDELETE($uri);
+            $this->psApi->apiDelete($uri);
         endforeach;
         return true;
     }
 
     public function getJamfAssetsAsPsAssets() {
-        $fp = config('pureservice.field_prefix');
         $psAssets = [];
         $computers = $this->jpsApi->getJamfComputers();
         $this->line($this->l3.count($computers).' datamaskiner');
@@ -196,32 +198,33 @@ class Jamf2PureserviceSync extends Command
             // Skipper enheten hvis den ikke har serienummer
             if ($mac['hardware']['serialNumber'] == null || $mac['hardware']['serialNumber'] == '') continue;
 
+            $fn = config('pureservice.computer.properties'); // strukturerte feltnavn
             $psAsset = [];
-            $psAsset[$fp.'Navn'] = $mac['general']['name'] != '' ? $mac['general']['name'] : '-uten-navn-';
-            $psAsset[$fp.'Serienr'] = $mac['hardware']['serialNumber'];
-            $psAsset[$fp.'Modell'] = $mac['hardware']['model'];
-            $psAsset[$fp.'ModelID'] = $mac['hardware']['modelIdentifier'];
+            $psAsset[$fn['name']] = $mac['general']['name'] != '' ? $mac['general']['name'] : '-uten-navn-';
+            $psAsset[$fn['serial']] = $mac['hardware']['serialNumber'];
+            $psAsset[$fn['model']] = $mac['hardware']['model'];
+            $psAsset[$fn['modelId']] = $mac['hardware']['modelIdentifier'];
             if ($mac['hardware']['processorType'] != null):
-                $psAsset[$fp.'Prosessor'] = $mac['hardware']['processorType'];
+                $psAsset[$fn['processor']] = $mac['hardware']['processorType'];
             endif;
             if ($mac['operatingSystem']['version'] != null):
-                $psAsset[$fp.'OS_45_versjon'] = $mac['operatingSystem']['version'];
+                $psAsset[$fn['OsVersion']] = $mac['operatingSystem']['version'];
             endif;
 
-            $psAsset[$fp.'Innmeldt'] = Carbon::create($mac['general']['initialEntryDate'])
+            $psAsset[$fn['memberSince']] = Carbon::create($mac['general']['initialEntryDate'])
                 ->timezone(config('app.timezone'))
                 ->toJSON();
-            $psAsset[$fp.'EOL'] = Carbon::create($mac['general']['initialEntryDate'])
+            $psAsset[$fn['EOL']] = Carbon::create($mac['general']['initialEntryDate'])
                 ->timezone(config('app.timezone'))
                 ->addYears(config('pureservice.computer_lifespan', 4))
                 ->toJSON();
             if ($mac['general']['lastContactTime'] != null):
-                $psAsset[$fp.'Sist_32_sett'] = Carbon::create($mac['general']['lastContactTime'])
+                $psAsset[$fn['lastSeen']] = Carbon::create($mac['general']['lastContactTime'])
                     ->timezone(config('app.timezone'))
                     ->toJSON();
             endif;
 
-            $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/computers.html?id='.$mac['id'].'&o=r';
+            $psAsset[$fn['jamfUrl']] = config('jamfpro.api_url').'/computers.html?id='.$mac['id'].'&o=r';
 
             $psAsset['usernames'] = [];
             if ($mac['userAndLocation']['username'] != null) $psAsset['usernames'][] = $mac['userAndLocation']['username'];
@@ -238,28 +241,28 @@ class Jamf2PureserviceSync extends Command
             if ($dev['serialNumber'] == null || $dev['serialNumber'] == '') continue;
 
             $psAsset = [];
-            $psAsset[$fp.'Navn'] = $dev['name'] == '' ? '-uten-navn-': $dev['name'];
-            $psAsset[$fp.'Serienr'] = $dev['serialNumber'];
-            $psAsset[$fp.'Modell'] = $dev[$dev['type']]['model'];
-            $psAsset[$fp.'ModelID'] = $dev[$dev['type']]['modelIdentifier'];
+            $psAsset[$fn['name']] = $dev['name'] == '' ? '-uten-navn-': $dev['name'];
+            $psAsset[$fn['serial']] = $dev['serialNumber'];
+            $psAsset[$fn['model']] = $dev[$dev['type']]['model'];
+            $psAsset[$fn['modelId']] = $dev[$dev['type']]['modelIdentifier'];
             if ($dev['osVersion'] != null):
-                $psAsset[$fp.'OS_45_versjon'] = $dev['osVersion'];
+                $psAsset[$fn['OsVersion']] = $dev['osVersion'];
             endif;
 
-            $psAsset[$fp.'Innmeldt'] = Carbon::create($dev['initialEntryTimestamp'])
+            $psAsset[$fn['memberSince']] = Carbon::create($dev['initialEntryTimestamp'])
                 ->timezone(config('app.timezone'))
                 ->toJSON();
-            $psAsset[$fp.'EOL'] = Carbon::create($dev['initialEntryTimestamp'])
+            $psAsset[$fn['EOL']] = Carbon::create($dev['initialEntryTimestamp'])
                 ->timezone(config('app.timezone'))
                 ->addYears(config('pureservice.device_lifespan', 3))
                 ->toJSON();
             if ($dev['lastInventoryUpdateTimestamp'] != null):
-                $psAsset[$fp.'Sist_32_sett'] = Carbon::create($dev['lastInventoryUpdateTimestamp'])
+                $psAsset[$fn['lastSeen']] = Carbon::create($dev['lastInventoryUpdateTimestamp'])
                     ->timezone(config('app.timezone'))
                     ->toJSON();
             endif;
 
-            $psAsset[$fp.'Jamf_45_URL'] = config('jamfpro.api_url').'/mobileDevices.html?id='.$dev['id'].'&o=r';
+            $psAsset[$fn['jamfUrl']] = config('jamfpro.api_url').'/mobileDevices.html?id='.$dev['id'].'&o=r';
 
             $psAsset['usernames'] = [];
             if ($dev['location']['username'] != null) $psAsset['usernames'][] = $dev['location']['username'];
