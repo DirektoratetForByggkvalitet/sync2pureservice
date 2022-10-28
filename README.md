@@ -75,10 +75,11 @@ Følgende statuser er forventet inne i Pureservice, der de tre første regnes so
 | PURESERVICE_[TYPE]_STATUS_SERVICE | Sendt til service | Inaktiv | Enheten har blitt sendt til reparasjon |
 | PURESERVICE_[TYPE]_STATUS_PHASEDOUT | Utfasing - innlevert | Inaktiv | Enheten er levert inn av bruker, klar for ombruk eller gjenvinning |
 
-
 ### Relasjoner
 
 Vi har lagt opp til at jamf2pureservice kun vedlikeholder en relasjon mellom ressurs og tildelt bruker. Øvrige relasjoner blir ikke brukt i synkroniseringen. 
+
+Det er best om man lager en test-enhet for hver ressurs før man kjører jamf2pureservice første gang. Test-ressursene kan gjerne ha serienummer som eksisterer i Jamf Pro, og de må lenkes mot en bruker i Pureservice (gjennom relasjoner). Da vil jamf2pureservice få tak i korrekt relasjonsoppsett når det kjører første gang, og hvis test-ressursene har serienummer som finnes i Jamf Pro vil de uansett bli overskrevne med reelle data når skriptet kjøres.
 
 ## Installasjon
 1. Last ned eller klon jamf2pureservice
