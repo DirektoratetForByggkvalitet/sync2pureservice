@@ -39,12 +39,12 @@ Før synkronisering kan kjøres må man definere de to ressurstypene Datamaskin 
 
 ### Felter for ressurstypene
 
-Feltene er stort sett felles for de to ressurstypene, men feltnavnene kan også overstyres med miljøvariabler. Har lagt opp til at man kan ha forskjellige feltnavn for datamaskiner og mobilenheter, og når man oppgir miljøvariabler må [TYPE] i tabellen under erstattes med enten "COMPUTER" eller "MOBILE".
+Feltene er stort sett felles for de to ressurstypene, men feltnavnene kan også overstyres med miljøvariabler. Har lagt opp til at man kan ha forskjellige feltnavn for datamaskiner og mobilenheter, og når man oppgir miljøvariabler må [TYPE] i tabellen under erstattes med enten "COMPUTER" eller "MOBILE". Feltene som må settes som Påkrevde er i grunnen bare Navn og Serienr.
 
 | Feltnavn | Type | Miljøvariabel | Beskrivelse |
 | ----------- | ----------- | ----------- | ----------- |
-| Navn | Navnefelt | PURESERVICE_[TYPE]_FIELD_NAME | Feltet som brukes som enhetens navn |
-| Serienr | Unik verdi | PURESERVICE_[TYPE]_FIELD_SERIAL | Enhetens serienummer |
+| Navn* | Navnefelt | PURESERVICE_[TYPE]_FIELD_NAME | Feltet som brukes som enhetens navn |
+| Serienr* | Unik verdi | PURESERVICE_[TYPE]_FIELD_SERIAL | Enhetens serienummer |
 | Modell | Tekst | PURESERVICE_[TYPE]_FIELD_MODEL | Inneholder enhetens modellnavn |
 | ModelID | Tekst | PURESERVICE_[TYPE]_FIELD_MODELID | Enhetens modell-ID, f.eks. 'MacMini11,1' |
 | OS-versjon | Tekst | PURESERVICE_[TYPE]_FIELD_OS | Enhetens OS-versjon |
