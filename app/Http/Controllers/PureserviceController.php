@@ -325,7 +325,7 @@ class PureserviceController extends Controller
      * Kjører patch på detaljer på gitt Puserservice Asset
      *
      */
-    public function updateAssetStatus($psId, $body) {
+    public function updateAssetDetail($psId, $body) {
         $uri = '/asset/'.$psId;
 
         $response = $this->apiPATCH($uri, $body);
