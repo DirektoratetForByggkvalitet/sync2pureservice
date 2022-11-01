@@ -321,11 +321,13 @@ class PureserviceController extends Controller
         endif;
     }
 
-    public function updateAssetStatus($psId, $statusId) {
+    /** updateAssetDetail
+     * Kjører patch på detaljer på gitt Puserservice Asset
+     *
+     */
+    public function updateAssetStatus($psId, $body) {
         $uri = '/asset/'.$psId;
-        $body = [
-            'statusId' => $statusId
-        ];
+
         $response = $this->apiPATCH($uri, $body);
         unset($uri, $body);
         if ($response->getStatusCode() == 200):
@@ -335,5 +337,6 @@ class PureserviceController extends Controller
             return false;
         endif;
     }
+
 
 }

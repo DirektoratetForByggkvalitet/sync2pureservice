@@ -80,10 +80,10 @@ class Jamf2PureserviceSync extends Command
         // Looper gjennom Jamf-enheter for å oppdatere eller legge dem til i Pureservice
         $this->info($this->ts().$this->l1.'Starter behandling av enheter fra Jamf Pro');
         $itemno = 0;
-        $fn = config('pureservice.computer.properties');
         foreach ($this->jamfDevices as $jamfDev):
             $itemno++;
             $time1 = microtime(true);
+            $fn = config('pureservice.'.$jamfDev['type'].'.properties');
             $this->line('');
             $this->line($this->l2.$itemno.'/'.$this->jamfCount.' '.$jamfDev[$fn['serial']].' - '.$jamfDev[$fn['name']]);
             $psDev = $this->psDevices->firstWhere('links.unique.id', $jamfDev[$fn['serial']]);
@@ -142,6 +142,7 @@ class Jamf2PureserviceSync extends Command
         $this->info($this->ts().$this->l1.'Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
 
         foreach ($this->psDevices as $dev):
+            $fn = config('pureservice.'.$dev['type'].'.properties');
             if (!$this->jamfDevices->contains($fn['serial'],$dev['uniqueId'])):
                 $this->line($this->l2.$dev['uniqueId'].' - '.$dev[$fn['name']]);
                 $typeName = config('pureservice.'.$dev['type'].'.displayName').'en';
@@ -158,12 +159,20 @@ class Jamf2PureserviceSync extends Command
                     endif;
                     $this->line($this->l3.'Endrer status på enheten i Pureservice');
                     $newStatusId = $this->psApi->calculateStatus($dev, true);
-                    if ($this->psApi->updateAssetStatus($dev['id'], $newStatusId)):
+                    if ($this->psApi->updateAssetDetail($dev['id'], ['statusId' => $newStatusId])):
                         $this->line($this->l3.'Status oppdatert');
                     else:
                         $this->error($this->l3.'Fikk ikke endret status');
                     endif;
                     $this->line('');
+                endif;
+                if ($dev[$fn['jamfUrl']] != null):
+                    $this->line($this->l3.'Tar vekk Jamf-URL');
+                    if ($this->psApi->updateAssetDetail($dev['id'], [$fn['jamfUrl'] => null])):
+                        $this->line($this->l3.'OK');
+                    else:
+                        $this->line($this->l3.'Fikk ikke fjernet Jamf-URL');
+                    endif;
                 endif;
             endif;
         endforeach;
