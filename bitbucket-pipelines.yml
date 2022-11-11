@@ -26,10 +26,11 @@ pipelines:
     build-dekrypter:
       - step:
           image: maven:3.5-jdk-8-alpine
-          name: Laster ned og bygger build-dekrypter
+          name: Laster ned og bygger ks-dekrypter
           clone:
             enabled: false
           script:
+            - apk add git
             - git clone https://github.com/ks-no/dekrypter.git
             - cd dekrypter
             - mvn -e package
