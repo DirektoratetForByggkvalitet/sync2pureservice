@@ -25,7 +25,7 @@ pipelines:
             - ./artisan jamf2pureservice:sync
     build-dekrypter:
       - step:
-          image: maven:3-openjdk-18
+          image: maven:3.5-jdk-8-alpine
           name: Laster ned og bygger build-dekrypter
           clone:
             enabled: false
