@@ -42,7 +42,7 @@ pipelines:
           clone:
             enabled: false
           script:
-            - apk add openjdk-jdk-headless curl unzip
+            - apk add openjdk-jdk-11 curl unzip
             - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/1.0/dekrypter-1.0-dist.zip
             - unzip dekrypter-*.zip
             - cd dekrypter-*/
