@@ -23,7 +23,7 @@ pipelines:
             - composer install --no-dev
             - cp .env.example .env
             - ./artisan jamf2pureservice:sync
-    build-dekrypter:
+    tool-dekrypter:
       - step:
           image: maven:3.8-openjdk-8-slim
           name: Laster ned og bygger ks-dekrypter
@@ -36,4 +36,13 @@ pipelines:
             - mvn -e package
           artifacts:
             - "**/target/*.zip"
-
+    test-dekrypter:
+      - step:
+          name: Laster ned svarut-dekrypter
+          clone:
+            enabled: false
+          script:
+            - apk add openjdk-jdk-headless curl unzip
+            - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/1.0/dekrypter-1.0-dist.zip
+            - unzip dekrypter-*.zip
+            - cd dekrypter-*/
