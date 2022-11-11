@@ -30,6 +30,7 @@ pipelines:
           clone:
             enabled: false
           script:
+            - apt-get update &&	apt-get install -y --no-install-recommends git
             - git clone https://github.com/ks-no/dekrypter.git
             - cd dekrypter
             - mvn -e package
