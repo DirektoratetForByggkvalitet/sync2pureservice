@@ -25,12 +25,11 @@ pipelines:
             - ./artisan jamf2pureservice:sync
     build-dekrypter:
       - step:
-          image: maven:3.5-jdk-8-alpine
+          image: maven:3.8-openjdk-8-slim
           name: Laster ned og bygger ks-dekrypter
           clone:
             enabled: false
           script:
-            - apk add git
             - git clone https://github.com/ks-no/dekrypter.git
             - cd dekrypter
             - mvn -e package
