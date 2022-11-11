@@ -42,7 +42,8 @@ pipelines:
           clone:
             enabled: false
           script:
-            - apk add openjdk18 curl unzip
+            - apk add openjdk19 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+            - apk add curl unzip
             - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/1.0/dekrypter-1.0-dist.zip
             - unzip dekrypter-*.zip
             - cd dekrypter-*/
