@@ -44,6 +44,8 @@ pipelines:
           script:
             - apk add openjdk11
             - apk add curl unzip
-            - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/1.0/dekrypter-1.0-dist.zip
-            - unzip dekrypter-*.zip
-            - cd dekrypter-*/
+            - DVER="1.0"
+            - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/${DVER}/dekrypter-${DVER}-dist.zip
+            - unzip dekrypter-${DVER}-dist.zip
+            - cd dekrypter-${DVER}/
+            - java -jar dekrypter-${DVER}.jar
