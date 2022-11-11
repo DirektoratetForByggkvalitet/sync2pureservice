@@ -23,3 +23,16 @@ pipelines:
             - composer install --no-dev
             - cp .env.example .env
             - ./artisan jamf2pureservice:sync
+    build-dekrypter:
+      - step:
+          image: maven:latest
+          name: Laster ned og bygger build-dekrypter
+          clone:
+            enabled: false
+          script:
+            - git clone https://github.com/ks-no/dekrypter.git
+            - cd dekrypter
+            - mvn package
+          artifacts:
+            - "**/target/*.zip"
+
