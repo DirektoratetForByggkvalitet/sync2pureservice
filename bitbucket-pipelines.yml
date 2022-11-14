@@ -23,10 +23,39 @@ pipelines:
             - composer install --no-dev
             - cp .env.example .env
             - ./artisan jamf2pureservice:sync
-    tool-dekrypter:
+    svarinn2pureservice:
       - step:
-          image: maven:3.8-openjdk-8-slim
-          name: Laster ned og bygger ks-dekrypter
+          name: Henter privatnøkkel for SvarInn fra Azure Key Vault
+          image: mcr.microsoft.com/azure-cli
+          clone:
+            enabled: false
+          artifacts:
+            - "keys/privatekey.pem"
+          script:
+            - mkdir -p keys && cd keys
+            - LOGIN=$(az login --service-principal -u ${AZURE_SP_ID} -p=${AZURE_SP_SECRET} --tenant ${AZURE_SP_TENANT})
+            - az keyvault secret download --file privatekey.tmp --name ${AZURE_KV_KEY_NAME} --vault-name ${AZURE_KV_NAME}
+            - az logout
+            - echo -e "-----BEGIN PRIVATE KEY-----\n$(cat privatekey.tmp)\n-----END PRIVATE KEY-----" > privatekey.pem
+
+      - step:
+          name: Ser etter innkommende forsendelser i SvarInn
+          script:
+            - echo 'Installerer OpenJDK 11 og CMS dekrypter'
+            - apk add openjdk11 unzip
+            - DVER="1.0"
+            - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/${DVER}/dekrypter-${DVER}-dist.zip
+            - unzip dekrypter-${DVER}-dist.zip && rm dekrypter-${DVER}-dist.zip
+            - echo 'Setter opp og legger inn avhengigheter'
+            - cp .env.example .env
+            - composer install --no-dev
+            - echo 'Kjører svarinn2pureservice'
+            - ./artisan svarinn2pureservice:run
+
+    tool-build-dekrypter:
+      - step:
+          image: maven:3.8-openjdk-11-slim
+          name: Laster ned og bygger ks-dekrypter (som test)
           clone:
             enabled: false
           script:
@@ -36,16 +65,4 @@ pipelines:
             - mvn -e package
           artifacts:
             - "**/target/*.zip"
-    test-dekrypter:
-      - step:
-          name: Laster ned svarut-dekrypter
-          clone:
-            enabled: false
-          script:
-            - apk add openjdk11
-            - apk add curl unzip
-            - DVER="1.0"
-            - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/${DVER}/dekrypter-${DVER}-dist.zip
-            - unzip dekrypter-${DVER}-dist.zip
-            - cd dekrypter-${DVER}/
-            - java -jar dekrypter-${DVER}.jar
+

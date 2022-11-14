@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use App\Http\Controllers\{PureserviceController, SvarInnController};
 use Carbon\Carbon;
 use GuzzleHttp\Client as GuzzleClient;
+use Gebler\Encryption\Encryption;
+use ZipArchive;
 
 class SvarInn2Pureservice extends Command
 {
@@ -41,15 +43,15 @@ class SvarInn2Pureservice extends Command
         $this->start = microtime(true);
         $this->info('SvarInn2Pureservice v'.$this->version);
         $this->line($this->description);
+
+        $this->info($this->ts().'Setter opp miljøet...');
+        $this->setConfig();
         $this->line('');
 
         $this->info($this->ts().'Kobler til SvarInn');
         $this->svarInn = new SvarInnController();
 
-        $this->info($this->ts().'Kobler til Pureservice');
-        $this->pureservice = new PureserviceController();
-
-        $this->info($this->ts().'Ser etter nye meldinger i SvarInn');
+        $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
         $msgs = $this->svarInn->sjekkForMeldinger();
         $msgCount = count($msgs);
         $i = 0;
@@ -60,8 +62,30 @@ class SvarInn2Pureservice extends Command
                 $message = collect($message);
                 $this->info($this->l2.$i.'/'.$msgCount.': '.$message['tittel']);
                 $this->line($this->l3.'ID: '.$message['id']);
-                $this->line($this->l3.'Avsender: '.$message['avsender.navn'].', '.$message['avsender.poststed']);
+                $this->line($this->l3.'Avsender: '.$message['svarSendesTil.navn'].', '.$message['svarSendesTil.orgnr']);
                 $this->line($this->l3.'Laster ned forsendelsesfilen');
+                $fileName = $this->hentForsendelsefil($message['downloadUrl']);
+                $this->line($this->l3.'Dekrypterer forsendelsesfila');
+                $decrypted = $this->decryptFile($fileName);
+                $fileEnding = preg_replace('/.*\.(.*)/', '$1', $fileName);
+                $filesToInclude = [];
+                if ( $fileEnding == 'zip' || $fileEnding == 'ZIP' ):
+                    // Må pakke ut zip-fil til enkeltfiler
+                    $this->line($this->l3.'Pakker ut zip-fil');
+                    $tmpPath = config('svarinn.temp_path').'/'.$message['id'];
+                    mkdir($tmpPath, 770, true);
+                    $zipFile = new ZipArchive();
+                    $zipFile->open(config('svarinn.dekrypt_path').'/'.$fileName, ZipArchive::RDONLY);
+                    $zipFile->extractTo($tmpPath);
+                    $zipFile->close();
+                    foreach (new \DirectoryIterator($tmpPath) as $fileInfo):
+                        if($fileInfo->isDot()) continue;
+                        $filesToInclude[] = $tmpPath.'/'.$fileInfo->getFilename();
+                    endforeach;
+                else:
+                    $filesToInclude[] = config('svarinn.dekrypt_path').'/'.$fileName;
+                endif;
+                $this->line($this->l3.'Lastet ned og/eller pakket ut '.count($filesToInclude).' fil(er)');
 
             endforeach;
         else:
@@ -77,6 +101,40 @@ class SvarInn2Pureservice extends Command
         return '['.Carbon::now(config('app.timezone'))->toDateTimeLocalString().'] ';
     }
 
+    /**
+     * Utvider config til å inkludere svarut-dekrypter sitt oppsett
+     */
+    protected function setConfig() {
+        if (config('svarinn.temp_path') == null):
+            config([
+                'svarinn.temp_path' == storage_path('/svarinn_tmp')
+            ]);
+        endif;
+        if (config('svarinn.download_path') == null):
+            config([
+                'svarinn.download_path' => storage_path('/downloads'),
+            ]);
+        endif;
+        if (config('svarinn.dekrypt_path') == null):
+            config([
+                'svarinn.dekrypt_path' => storage_path('/dekryptert'),
+            ]);
+        endif;
+        if (config('svarinn.dekrypter.jar') == null):
+            config([
+                'svarinn.dekrypter.jar' => base_path('/dekrypter-'.config('svarinn.dekrypter.version').'/dekrypter-'.config('svarinn.dekrypter.version').'.jar')
+            ]);
+        endif;
+        if (config('svarinn.privatekey_path') == null):
+            config([
+                'svarinn.privatekey_path' => base_path('/keys/privatekey.pem')
+            ]);
+        endif;
+        // Sikrer at mapper finnes
+        is_dir(config('svarinn.temp_path')) ? true : mkdir(config('svarinn.temp_path', 770, true));
+        is_dir(config('svarinn.dekrypt_path')) ? true : mkdir(config('svarinn.dekrypt_path', 770, true));
+        is_dir(config('svarinn.download_path')) ? true : mkdir(config('svarinn.download_path', 770, true));
+    }
     /**
      * Henter ned forsendelsesfilen som er oppgitt i meldingen
      */
@@ -101,19 +159,26 @@ class SvarInn2Pureservice extends Command
         $contentType = $fileResponse->getHeader('content-type');
         // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
         $fileName = preg_replace('/.*\"(.*)"/','$1', $fileResponse->getHeader('content-disposition'));
-        $this->line($this->l3.'Dekrypterer forsendelsesfila');
+
+        file_put_contents(config('svarinn.download_path').'/'.$fileName, $fileResponse->getBody());
+
+        return $fileName;
     }
 
-    /**
-     * Dekrypterer mottatt fil med privatnøkkelen.
-     */
-    protected function decryptFile($encrypted) {
-        $privateKey = config('svarinn.private_key');
-        $decrypted = null;
-        $algo = 'aes-256-cbc';
-        // Se https://github.com/dwgebler/php-encryption for å endre
-        openssl_private_decrypt($encrypted, $decrypted, $privateKey);
-        return $decrypted;
+    protected function decryptFile($fileName) {
+        if (file_exists(config('svarinn.downloadpath').'/'.$fileName)):
+            $dekrypt = system(
+                'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . config('svarinn.privatekey_path').
+                ' -s ' . config('svarinn.download_path').'/'.$fileName .
+                ' -t '.config('svarinn.dekrypt_path'),
+                $returnValue
+            );
+            if ($returnValue != 0):
+                $this->error($this->l3.'Fila ble ikke dekryptert');
+                $this->line($this->l3.$dekrypt);
+            endif;
+        else:
+            $this->error($this->l3.'Fant ikke fila som skulle dekrypteres');
+        endif;
     }
-
 }
