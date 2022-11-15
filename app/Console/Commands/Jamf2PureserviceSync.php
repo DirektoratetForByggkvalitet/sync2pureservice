@@ -167,9 +167,8 @@ class Jamf2PureserviceSync extends Command
                     $this->line('');
                 endif;
                 if ($dev[$fn['jamfUrl']] != null):
-                    $this->line($this->l3.'Tar vekk Jamf-URL');
                     if ($this->psApi->updateAssetDetail($dev['id'], [$fn['jamfUrl'] => null])):
-                        $this->line($this->l3.'OK');
+                        $this->line($this->l3.'Tok vekk Jamf-URL');
                     else:
                         $this->line($this->l3.'Fikk ikke fjernet Jamf-URL');
                     endif;
