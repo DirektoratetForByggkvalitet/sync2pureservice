@@ -7,6 +7,7 @@ use App\Http\Controllers\{PureserviceController, SvarInnController};
 use Carbon\Carbon;
 use GuzzleHttp\Client as GuzzleClient;
 use Gebler\Encryption\Encryption;
+use JetBrains\PhpStorm\Pure;
 use ZipArchive;
 
 class SvarInn2Pureservice extends Command
@@ -51,6 +52,8 @@ class SvarInn2Pureservice extends Command
         $this->info($this->ts().'Kobler til SvarInn');
         $this->svarInn = new SvarInnController();
 
+        $this->ps = new PureserviceController();
+
         $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
         $msgs = $this->svarInn->sjekkForMeldinger();
         $msgCount = count($msgs);
@@ -63,6 +66,12 @@ class SvarInn2Pureservice extends Command
                 $this->info($this->l2.$i.'/'.$msgCount.': '.$message['tittel']);
                 $this->line($this->l3.'ID: '.$message['id']);
                 $this->line($this->l3.'Avsender: '.$message['svarSendesTil.navn'].', '.$message['svarSendesTil.orgnr']);
+                if ($companyInfo = $this->ps->findCompany($message['svarSendesTil.orgnr'], $message['svarSendesTil.navn'])):
+                    $this->line($this->l3.'Foretaket er registrert i Pureservice');
+                else:
+                    $this->line($this->l3.'Foretaket er ikke registrert i Pureservice, legger det til');
+                    $companyInfo = $this->ps->addCompany($message['svarSendesTil.orgnr'], $message['svarSendesTil.navn']);
+                endif;
                 $this->line($this->l3.'Laster ned forsendelsesfilen');
                 $fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
@@ -160,7 +169,7 @@ class SvarInn2Pureservice extends Command
         // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
         $fileName = preg_replace('/.*\"(.*)"/','$1', $fileResponse->getHeader('content-disposition'));
 
-        file_put_contents(config('svarinn.download_path').'/'.$fileName, $fileResponse->getBody());
+        file_put_contents(config('svarinn.download_path').'/'.$fileName, $fileResponse->getBody()->getContents());
 
         return $fileName;
     }

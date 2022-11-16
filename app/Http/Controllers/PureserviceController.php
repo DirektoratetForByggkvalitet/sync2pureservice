@@ -338,5 +338,41 @@ class PureserviceController extends Controller
         endif;
     }
 
+    public function findCompany($orgNo=null, $companyName=null) {
+        $include = '&include=phonenumber,emailAddress';
+        if ($orgNo != null):
+            $uri = '/company/?filter=(!disabled AND organizationNumber=="'.$orgNo.'")'.$include;
+            $companiesByOrgNo = $this->apiGet($uri)['companies'];
+        else:
+            $companiesByOrgNo = [];
+        endif;
+        if ($companyName != null):
+            $uri = '/company/?filter=(!disabled AND name=="'.$companyName.'")'.$include;
+            $companiesByName = $this->apiGet($uri)['companies'];
+        else:
+            $companiesByName = [];
+        endif;
+        $companyByOrgNo = count($companiesByOrgNo) > 0 ? $companiesByOrgNo[0]: false;
+        $companyByName = count($companiesByName) > 0 ? $companiesByName[0]: false;
+        // Gitt at begge selskaper blir funnet, er de det samme?
+        $sameCompany = ($companyByName && $companyByOrgNo) && ($companyByName['id'] == $companyByOrgNo['id']);
+        if ($sameCompany || (!$companyByName && $companyByOrgNo)):
+            return $companyByOrgNo;
+       else:
+            return $companyByName;
+        endif;
+    }
+
+    public function addCompany($orgNo, $companyName, $email=false, $phone=false) {
+        $uri = '/company&include=phonenumber,emailAddress';
+        $body = [
+            'name' => $companyName,
+            'organizationNumber' => $orgNo
+        ];
+        if ($email) $body['linked']['companyemailaddresses'] = ['email' => $email];
+
+        if ($phone) $body['linked']['phonenumbers'];
+
+    }
 
 }
