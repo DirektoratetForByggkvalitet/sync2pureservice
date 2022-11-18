@@ -174,20 +174,30 @@ class SvarInn2Pureservice extends Command
         return $fileName;
     }
 
+    /**
+     * Dekrypterer fil fra SvarUt
+     * Vi må bruke et java-bibliotek for å dekryptere filer fra SvarUt,
+     * Bouncycastle gjør ting på litt andre måter enn det PHP er i stand til
+     *
+     * @param  string   $fileName    Filnavnet til den krypterte fila
+     * @return int      $returnValue Verdi som angir resultatkoden fra dekrypteringen
+     */
     protected function decryptFile($fileName) {
         if (file_exists(config('svarinn.downloadpath').'/'.$fileName)):
             $dekrypt = system(
                 'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . config('svarinn.privatekey_path').
                 ' -s ' . config('svarinn.download_path').'/'.$fileName .
                 ' -t '.config('svarinn.dekrypt_path'),
-                $returnValue
+                $exitCode
             );
-            if ($returnValue != 0):
+            if ($exitCode != 0):
                 $this->error($this->l3.'Fila ble ikke dekryptert');
                 $this->line($this->l3.$dekrypt);
             endif;
         else:
             $this->error($this->l3.'Fant ikke fila som skulle dekrypteres');
+            $exitCode = 2;
         endif;
+        return $exitCode;
     }
 }

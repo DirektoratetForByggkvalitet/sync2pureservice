@@ -363,16 +363,69 @@ class PureserviceController extends Controller
         endif;
     }
 
-    public function addCompany($orgNo, $companyName, $email=false, $phone=false) {
+    /**
+     * Oppretter et firma i Pureservice, og legger til e-post og telefonnr hvis oppgitt
+     * @param string $companyName   Foretaksnavn, påkrevd
+     * @param string $orgNo         Foretakets organisasjonsnr. Viktig for at SvarInn-integrasjon skal virke
+     * @param string $email         Foretakets e-postadresse
+     * @param string $phone         Foretakets telefonnr
+     *
+     * @return mixed    array med det opprettede foretaket eller false hvis oppretting feilet
+     */
+    public function addCompany($companyName, $orgNo=null, $email=false, $phone=false) {
+        $phoneId = false;
+        $emailId = false;
+        if ($email):
+            $uri = '/companyemailaddress/';
+            $body = [];
+            $body['companyemailaddresses'][] = [
+                'email' => $email,
+                'companyId' => null,
+                'links' => [
+                    'company' => [
+                        'temporaryId' => uniqid()
+                    ]
+                ]
+            ];
+
+            if ($response = $this->apiPOST($uri, $body)):
+                $emailId = $response['companyemailaddresses'][0]['id'];
+            endif;
+        endif;
+        if ($phone):
+            $uri = '/phonenumber/';
+            $body = [];
+            $body['phonenumbers'][] = [
+                'number' => $phone,
+                'type' => 2,
+                'companyId' => null,
+                'userId' => null,
+                'links' => [
+                    'company' => [
+                        'temporaryId' => uniqid()
+                    ]
+                ]
+            ];
+            if ($response = $this->apiPOST($uri, $body)):
+                $phoneId = $response['phonenumbers'][0]['id'];
+            endif;
+        endif;
+
+        // Oppretter selve foretaket
         $uri = '/company&include=phonenumber,emailAddress';
         $body = [
             'name' => $companyName,
             'organizationNumber' => $orgNo
         ];
-        if ($email) $body['linked']['companyemailaddresses'] = ['email' => $email];
+        if ($emailId) $body['emailAddressId'] = $emailId;
 
-        if ($phone) $body['linked']['phonenumbers'];
+        if ($phoneId) $body['phonenumberId'] = $phoneId;
 
+        if ($response = $this->apiPOST($uri, $body)):
+            return $response['companies'][0];
+        endif;
+
+        return false;
     }
 
 }
