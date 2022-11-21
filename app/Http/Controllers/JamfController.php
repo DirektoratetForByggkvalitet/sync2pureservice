@@ -4,9 +4,6 @@ namespace App\Http\Controllers;
 
 use Psr\Http\Message\{RequestInterface, ResponseInterface};
 use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware};
-use Carbon\Carbon;
-
-use function Psy\debug;
 
 class JamfController extends Controller
 {
