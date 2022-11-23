@@ -41,7 +41,7 @@ class Jamf2PureserviceSync extends Command
      */
     public function handle() {
         $this->start = microtime(true);
-        $this->info(get_class($this).' v'.$this->version);
+        $this->info((new \ReflectionClass($this))->getShortName().' v'.$this->version);
         $this->line($this->description);
         $this->line('');
 

@@ -42,7 +42,7 @@ class SvarInn2Pureservice extends Command
      */
     public function handle() {
         $this->start = microtime(true);
-        $this->info(get_class($this).' v'.$this->version);
+        $this->info((new \ReflectionClass($this))->getShortName().' v'.$this->version);
         $this->line($this->description);
 
         $this->info($this->ts().'Setter opp miljøet...');
