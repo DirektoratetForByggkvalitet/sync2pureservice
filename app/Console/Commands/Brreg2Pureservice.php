@@ -36,7 +36,7 @@ class Brreg2Pureservice extends Command {
     public function handle()
     {
         $this->start = microtime(true);
-        $this->info($this->classname.' v'.$this->version);
+        $this->info(get_class($this).' v'.$this->version);
         $this->line($this->description);
 
         $this->info($this->ts().'Setter opp miljøet...');
