@@ -64,4 +64,10 @@ return [
         'inactive_phasedOut' => env('PURESERVICE_MOBILE_STATUS_PHASEDOUT', 'Utfasing - innlevert'),
     ],
   ],
+  'comms' => [
+    'in' => 1,
+    'out' => 2,
+    'internal' => 1,
+    'standard' => 2,
+  ],
 ];

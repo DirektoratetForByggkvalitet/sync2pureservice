@@ -377,17 +377,9 @@ class PureserviceController extends Controller
         $emailId = false;
         if ($email):
             $uri = '/companyemailaddress/';
-            $body = [];
-            $body['companyemailaddresses'][] = [
+            $body = [
                 'email' => $email,
-                'companyId' => null,
-                'links' => [
-                    'company' => [
-                        'temporaryId' => uniqid()
-                    ]
-                ]
             ];
-
             if ($response = $this->apiPOST($uri, $body)):
                 $emailId = $response['companyemailaddresses'][0]['id'];
             endif;
@@ -398,13 +390,6 @@ class PureserviceController extends Controller
             $body['phonenumbers'][] = [
                 'number' => $phone,
                 'type' => 2,
-                'companyId' => null,
-                'userId' => null,
-                'links' => [
-                    'company' => [
-                        'temporaryId' => uniqid()
-                    ]
-                ]
             ];
             if ($response = $this->apiPOST($uri, $body)):
                 $phoneId = $response['phonenumbers'][0]['id'];
