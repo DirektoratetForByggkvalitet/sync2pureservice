@@ -3,12 +3,11 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Http\Controllers\{PureserviceController, SvarInnController};
+use App\Http\Controllers\{PureserviceController, SvarInnController, ExcelLookup};
 use Carbon\Carbon;
 use GuzzleHttp\Client as GuzzleClient;
-use Gebler\Encryption\Encryption;
-use JetBrains\PhpStorm\Pure;
 use ZipArchive;
+use Illuminate\Support\Arr;
 
 class SvarInn2Pureservice extends Command
 {
@@ -62,15 +61,20 @@ class SvarInn2Pureservice extends Command
             $this->line($this->l3.'Fant '.$msgCount.' melding(er)');
             foreach ($msgs as $message):
                 $i++;
-                $message = collect($message);
+
                 $this->info($this->l2.$i.'/'.$msgCount.': '.$message['tittel']);
                 $this->line($this->l3.'ID: '.$message['id']);
-                $this->line($this->l3.'Avsender: '.$message['svarSendesTil.navn'].', '.$message['svarSendesTil.orgnr']);
-                if ($companyInfo = $this->ps->findCompany($message['svarSendesTil.orgnr'], $message['svarSendesTil.navn'])):
+                $this->line($this->l3.'Avsender: '. Arr::get($message, 'svarSendesTil.navn') .', '.Arr::get($message, 'svarSendesTil.orgnr'));
+                if ($companyInfo = $this->ps->findCompany(Arr::get($message,'svarSendesTil.orgnr'), Arr::get($message, 'svarSendesTil.navn'))):
                     $this->line($this->l3.'Foretaket er registrert i Pureservice');
                 else:
                     $this->line($this->l3.'Foretaket er ikke registrert i Pureservice, legger det til');
-                    $companyInfo = $this->ps->addCompany($message['svarSendesTil.orgnr'], $message['svarSendesTil.navn']);
+                    // Henter e-postadresse, dersom vi har den i Excel-fila
+                    $email = false;
+                    if ($fileOrg = ExcelLookup::findByName(Arr::get($message, 'svarSendesTil.navn'))):
+                        $email = $fileOrg[config('excellookup.field.email')];
+                    endif;
+                    $companyInfo = $this->ps->addCompany(Arr::get($message,'svarSendesTil.orgnr'), Arr::get($message,'svarSendesTil.navn'), $email);
                 endif;
                 $this->line($this->l3.'Laster ned forsendelsesfilen');
                 $fileName = $this->hentForsendelsefil($message['downloadUrl']);
@@ -95,6 +99,7 @@ class SvarInn2Pureservice extends Command
                     $filesToInclude[] = config('svarinn.dekrypt_path').'/'.$fileName;
                 endif;
                 $this->line($this->l3.'Lastet ned og/eller pakket ut '.count($filesToInclude).' fil(er)');
+
 
             endforeach;
         else:

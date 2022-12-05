@@ -8,16 +8,30 @@ class ExcelLookup extends Controller
 {
     /**
      * Laster inn Excel-fila som er kilde for e-postadressene til kommunene
-     * @return lazyCollection   Collection-array over kommuner med e-postadresser
+     * @return Collection   Collection-array over kommuner med e-postadresser
      */
-    protected static function loadData() {
+    public static function loadData() {
         $spreadsheet = IOFactory::load(config('excellookup.file'));
         $data = collect($spreadsheet->getActiveSheet()->toArray(null, true, true, true));
         // Fjerner første linje
         $firstrow = $data->shift();
-        $data->forget('G');
-        return $data;
 
+        // Legger til verdier i config
+        config([
+            'excellookup.field.name' => config('excellookup.map.B'),
+            'excellookup.field.email' => config('excellookup.map.F')
+        ]);
+        // Mapper om A, B, C osv til vettige navn etter innstillinger i config
+        return $data->map(function ($item, $key) {
+            return [
+                config('excellookup.map.B') => $item['B'],
+                config('excellookup.map.F') => $item['F'],
+                config('excellookup.map.C') => $item['C'],
+                config('excellookup.map.D') => $item['D'],
+                config('excellookup.map.E') => $item['E'],
+                config('excellookup.map.A') => $item['A'],
+            ];
+        });
     }
 
     /**
@@ -26,7 +40,7 @@ class ExcelLookup extends Controller
     public static function findByName($search) {
         $data = self::loadData();
         $result = $data->filter(function ($item, $key) use ($search) {
-            if (preg_match('/'.$search.'.*/', $item['B'])):
+            if (preg_match('/'.$search.'.*/', $item[config('excellookup.field.name')])):
                 return $item;
             endif;
         });
@@ -36,6 +50,6 @@ class ExcelLookup extends Controller
 
     public static function findByKnr($knr) {
         $data = self::loadData();
-        return $data->firstWhere('A', $knr);
+        return $data->firstWhere(config('excellookup.field.email'), $knr);
     }
 }
