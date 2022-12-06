@@ -3,7 +3,8 @@
 return [
     'base_uri' => 'https://svarut.ks.no',
     'urlHentForsendelser' => '/tjenester/svarinn/mottaker/hentNyeForsendelser',
-    'urlSettMottatt' => '/tjenester/svarinn/mottaker/settForsendelseMottatt',
+    'urlSettMottatt' => '/tjenester/svarinn/kvitterMottatt/forsendelse',
+    'urlMottakFeilet' => '/tjenester/svarinn/mottakFeilet/forsendelse',
     'username' => env('SVARINN_USER', null),
     'secret' => env('SVARINN_SECRET', null),
     'privatekey_path' => env('SVARINN_PRIVATEKEY_PATH', null),

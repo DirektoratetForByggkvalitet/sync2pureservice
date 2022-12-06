@@ -100,7 +100,17 @@ class SvarInn2Pureservice extends Command
                 endif;
                 $this->line($this->l3.'Lastet ned og/eller pakket ut '.count($filesToInclude).' fil(er)');
 
-
+                if ($result = $this->ps->createFromSvarInn($message, $filesToInclude)):
+                    $this->line($this->l3.'Opprettet i Pureservice med Sak-ID'.$result['id']);
+                    if ($this->kvitterForMottak($message['id'])):
+                        $this->line($this->l3.'Forsendelsen er kvittert mottatt hos KS');
+                    else:
+                        $this->error($this->l3.'Forsendelsen kunne ikke settes som mottatt');
+                    endif;
+                else:
+                    $this->error($this->l3.'Feil under oppretting av sak i Pureservice');
+                    $this->forsendelseFeilet($message['id']);
+                endif;
             endforeach;
         else:
             $this->line($this->l2.'Ingen meldinger å hente');
@@ -149,11 +159,9 @@ class SvarInn2Pureservice extends Command
         is_dir(config('svarinn.dekrypt_path')) ? true : mkdir(config('svarinn.dekrypt_path', 770, true));
         is_dir(config('svarinn.download_path')) ? true : mkdir(config('svarinn.download_path', 770, true));
     }
-    /**
-     * Henter ned forsendelsesfilen som er oppgitt i meldingen
-     */
-    protected function hentForsendelsefil($uri) {
-        $options = [
+
+    protected function getOptions() {
+        return [
             'headers' => [
                 'Accept-Encoding' => 'gzip, deflate, br',
                 'Accept' => '*/*'
@@ -164,11 +172,21 @@ class SvarInn2Pureservice extends Command
                 config('svarinn.secret')
             ]
         ];
-        $api = new GuzzleClient([
+    }
+
+    /**
+     * Returnerer en GuzzleHttp-klient
+     */
+    protected function getClient() {
+        return new GuzzleClient([
             'allow_redirects' => true,
         ]);
-
-        $fileResponse = $api->get($uri, $options);
+    }
+    /**
+     * Henter ned forsendelsesfilen som er oppgitt i meldingen
+     */
+    protected function hentForsendelsefil($uri) {
+        $fileResponse = $this->getClient()->get($uri, $this->getOptions());
 
         $contentType = $fileResponse->getHeader('content-type');
         // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
@@ -177,6 +195,39 @@ class SvarInn2Pureservice extends Command
         file_put_contents(config('svarinn.download_path').'/'.$fileName, $fileResponse->getBody()->getContents());
 
         return $fileName;
+    }
+
+    /**
+     * Kvitterer for at meldingen er mottatt
+     * @param string    $id     Meldingens ID i SvarUt
+     */
+    protected function kvitterForMottak($id) {
+        $uri = config('svarinn.base_uri').config('svarinn.urlSettMottatt').'/'.$id;
+
+        $result = $this->getClient()->post($uri, $this->getOptions());
+
+        if ($result->getStatusCode() == '200') return true;
+
+        return false;
+    }
+
+    /**
+     * Merker en forsendelse som feilet
+     */
+    protected function forsendelseFeilet($id, $permanent = false, $melding = null) {
+        $uri = config('svarinn.base_uri').config('svarinn.urlMottakFeilet').'/'.$id;
+
+        $melding = $melding == null ? 'En feil oppsto under innhenting.': $melding;
+        $body = [
+            'feilmelding' => $melding,
+            'permanent' => $permanent,
+        ];
+        $options = $this->getOptions();
+        $options['json'] = $body;
+        $result = $this->getClient()->post($uri, $options);
+        if ($result->getStatusCode() == '200') return true;
+
+        return false;
     }
 
     /**
