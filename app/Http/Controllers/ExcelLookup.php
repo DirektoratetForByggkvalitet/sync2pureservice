@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use PhpOffice\PhpSpreadsheet\{Spreadsheet, IOFactory};
+use Illuminate\Support\Str;
 
 class ExcelLookup extends Controller
 {
@@ -24,8 +25,8 @@ class ExcelLookup extends Controller
         // Mapper om A, B, C osv til vettige navn etter innstillinger i config
         return $data->map(function ($item, $key) {
             return [
-                config('excellookup.map.B') => $item['B'],
-                config('excellookup.map.F') => $item['F'],
+                config('excellookup.map.B') => Str::upper($item['B']),
+                config('excellookup.map.F') => Str::lower($item['F']),
                 config('excellookup.map.C') => $item['C'],
                 config('excellookup.map.D') => $item['D'],
                 config('excellookup.map.E') => $item['E'],

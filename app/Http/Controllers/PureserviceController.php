@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Psr\Http\Message\{RequestInterface, ResponseInterface};
 use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware, RequestOptions};
 use Carbon\Carbon;
+use Illuminate\Support\{Str, Arr};
 
 class PureserviceController extends Controller
 {
@@ -15,10 +16,10 @@ class PureserviceController extends Controller
     protected $pre = '/agent/api'; // Standard prefix for API-kall
     public $up = false;
 
-    public function __construct() {
+    public function __construct($fetchTypeIds = true) {
         $this->getClient();
         $this->setOptions();
-        $this->fetchTypeIds();
+        if ($fetchTypeIds) $this->fetchTypeIds();
         //$this->fetchAssetStatuses();
         if (count($this->statuses)) $this->up = true;
     }
@@ -381,7 +382,8 @@ class PureserviceController extends Controller
                 'email' => $email,
             ];
             if ($response = $this->apiPOST($uri, $body)):
-                $emailId = $response['companyemailaddresses'][0]['id'];
+                $result = json_decode($response->getBody()->getContents(), true);
+                $emailId = $result['companyemailaddresses'][0]['id'];
             endif;
         endif;
         if ($phone):
@@ -392,12 +394,13 @@ class PureserviceController extends Controller
                 'type' => 2,
             ];
             if ($response = $this->apiPOST($uri, $body)):
-                $phoneId = $response['phonenumbers'][0]['id'];
+                $result = json_decode($response->getBody()->getContents(), true);
+                $phoneId = $result['phonenumbers'][0]['id'];
             endif;
         endif;
 
         // Oppretter selve foretaket
-        $uri = '/company&include=phonenumber,emailAddress';
+        $uri = '/company?include=phonenumber,emailAddress';
         $body = [
             'name' => $companyName,
             'organizationNumber' => $orgNo
@@ -407,10 +410,75 @@ class PureserviceController extends Controller
         if ($phoneId) $body['phonenumberId'] = $phoneId;
 
         if ($response = $this->apiPOST($uri, $body)):
-            return $response['companies'][0];
+            $result = json_decode($response->getBody()->getContents(), true);
+            return $result['companies'][0];
         endif;
 
         return false;
     }
+
+    public function findUser($email) {
+        $uri = '/user/?limit=1&include=emailAddress&filter=emailaddress.email == "'.$email.'"';
+        if ($result = $this->apiGet($uri)):
+            if (count($result['users']) == 1) return $result['users'][0];
+        endif;
+        return false;
+    }
+    /**
+     * Oppretter en standardbruker for foretak/virksomhet
+     */
+    public function addCompanyUser($companyInfo, $emailaddress) {
+        $emailId = null;
+        if ($emailaddress):
+            $uri = '/emailaddress/';
+            $body = [
+                'email' => $emailaddress,
+            ];
+            if ($response = $this->apiPOST($uri, $body)):
+                $result = json_decode($response->getBody()->getContents(), true);
+                $emailId = $result['emailaddresses'][0]['id'];
+            endif;
+        endif;
+
+        $uri = '/user/?include=emailAddress,company';
+        $body = [
+            'firstName' => 'SvarUt',
+            'lastName' => Str::limit($companyInfo['name'], 29),
+            'role' => 10,
+            'links' => [
+                'company' => [
+                    'id' => $companyInfo['id'],
+                ],
+                'emailAddress' => [
+                    'id' => $emailId,
+                ],
+            ],
+            /*
+            'users' => [
+                [
+                    'firstName' => 'SvarUt',
+                    'lastName' => Str::limit($companyInfo['name'], 25),
+                    //'fullName' => $companyInfo['name'],
+                    'disabled' => false,
+                    'role' => 10, // Sluttbruker
+                    'links' => [
+                        'company' => [
+                            'id' => $companyInfo['id'],
+                        ],
+                        'emailAddress' => [
+                            'id' => $emailId,
+                        ],
+                    ],
+                ],
+            ]
+            */
+        ];
+
+        if ($response = $this->apiPOST($uri, $body)):
+            $result = json_decode($response->getBody()->getContents(), true);
+            return $result['users'][0];
+        endif;
+        return false;
+}
 
 }

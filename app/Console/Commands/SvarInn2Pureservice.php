@@ -7,7 +7,7 @@ use App\Http\Controllers\{PureserviceController, SvarInnController, ExcelLookup}
 use Carbon\Carbon;
 use GuzzleHttp\Client as GuzzleClient;
 use ZipArchive;
-use Illuminate\Support\Arr;
+use Illuminate\Support\{Arr, Str};
 
 class SvarInn2Pureservice extends Command
 {
@@ -51,10 +51,12 @@ class SvarInn2Pureservice extends Command
         $this->info($this->ts().'Kobler til SvarInn');
         $this->svarInn = new SvarInnController();
 
-        $this->ps = new PureserviceController();
+        $this->ps = new PureserviceController(false);
 
         $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
-        $msgs = $this->svarInn->sjekkForMeldinger();
+        //$msgs = $this->svarInn->sjekkForMeldinger();
+        /** Testing: Hent data fra eksempelfil */
+        $msgs = json_decode(file_get_contents(storage_path('example.json')), true);
         $msgCount = count($msgs);
         $i = 0;
         if ($msgCount > 0):
@@ -64,17 +66,34 @@ class SvarInn2Pureservice extends Command
 
                 $this->info($this->l2.$i.'/'.$msgCount.': '.$message['tittel']);
                 $this->line($this->l3.'ID: '.$message['id']);
-                $this->line($this->l3.'Avsender: '. Arr::get($message, 'svarSendesTil.navn') .', '.Arr::get($message, 'svarSendesTil.orgnr'));
+                $this->line($this->l3.'Avsender: \''. Arr::get($message, 'svarSendesTil.navn') .'\', '.Arr::get($message, 'svarSendesTil.orgnr'));
+                // Henter e-postadresse, dersom vi har den i Excel-fila
+                $email = false;
+                if ($fileOrg = ExcelLookup::findByName(Str::upper(Arr::get($message, 'svarSendesTil.navn')))):
+                    $email = $fileOrg[config('excellookup.field.email')];
+                endif;
                 if ($companyInfo = $this->ps->findCompany(Arr::get($message,'svarSendesTil.orgnr'), Arr::get($message, 'svarSendesTil.navn'))):
                     $this->line($this->l3.'Foretaket er registrert i Pureservice');
                 else:
                     $this->line($this->l3.'Foretaket er ikke registrert i Pureservice, legger det til');
-                    // Henter e-postadresse, dersom vi har den i Excel-fila
-                    $email = false;
-                    if ($fileOrg = ExcelLookup::findByName(Arr::get($message, 'svarSendesTil.navn'))):
-                        $email = $fileOrg[config('excellookup.field.email')];
+                    $companyInfo = $this->ps->addCompany(Arr::get($message,'svarSendesTil.navn'), Arr::get($message,'svarSendesTil.orgnr'), $email);
+                endif;
+                if ($email === false):
+                    /**
+                     * Hvordan løse problematikk når e-postadresse ikke finnes?
+                     * Vi oppretter en falsk e-postadresse basert på orgnr. som brukes til å lage bruker.
+                     */
+                    $email = Arr::get($message,'svarSendesTil.orgnr').'.no_email@dibk.pureservice.com';
+                endif;
+                if ($userInfo = $this->ps->findUser($email)):
+                    $this->line($this->l3.'Foretaksbruker er registrert i Pureservice');
+                else:
+                    $this->line($this->l3.'Foretaksbruker er ikke registrert i Pureservice');
+                    if ($userInfo = $this->ps->addCompanyUser($companyInfo, $email)):
+                        $this->line($this->l3.'Foretaksbruker opprettet');
+                    else:
+                        $this->error($this->l3.'Foretaksbruker ble ikke opprettet');
                     endif;
-                    $companyInfo = $this->ps->addCompany(Arr::get($message,'svarSendesTil.orgnr'), Arr::get($message,'svarSendesTil.navn'), $email);
                 endif;
                 $this->line($this->l3.'Laster ned forsendelsesfilen');
                 $fileName = $this->hentForsendelsefil($message['downloadUrl']);
@@ -86,7 +105,7 @@ class SvarInn2Pureservice extends Command
                     // Må pakke ut zip-fil til enkeltfiler
                     $this->line($this->l3.'Pakker ut zip-fil');
                     $tmpPath = config('svarinn.temp_path').'/'.$message['id'];
-                    mkdir($tmpPath, 770, true);
+                    mkdir($tmpPath, 0770, true);
                     $zipFile = new ZipArchive();
                     $zipFile->open(config('svarinn.dekrypt_path').'/'.$fileName, ZipArchive::RDONLY);
                     $zipFile->extractTo($tmpPath);
@@ -100,6 +119,7 @@ class SvarInn2Pureservice extends Command
                 endif;
                 $this->line($this->l3.'Lastet ned og/eller pakket ut '.count($filesToInclude).' fil(er)');
 
+                /**
                 if ($result = $this->ps->createFromSvarInn($message, $filesToInclude)):
                     $this->line($this->l3.'Opprettet i Pureservice med Sak-ID'.$result['id']);
                     if ($this->kvitterForMottak($message['id'])):
@@ -111,6 +131,7 @@ class SvarInn2Pureservice extends Command
                     $this->error($this->l3.'Feil under oppretting av sak i Pureservice');
                     $this->forsendelseFeilet($message['id']);
                 endif;
+                */
             endforeach;
         else:
             $this->line($this->l2.'Ingen meldinger å hente');
@@ -129,48 +150,29 @@ class SvarInn2Pureservice extends Command
      * Utvider config til å inkludere svarut-dekrypter sitt oppsett
      */
     protected function setConfig() {
-        if (config('svarinn.temp_path') == null):
-            config([
-                'svarinn.temp_path' == storage_path('/svarinn_tmp')
-            ]);
-        endif;
-        if (config('svarinn.download_path') == null):
-            config([
-                'svarinn.download_path' => storage_path('/downloads'),
-            ]);
-        endif;
-        if (config('svarinn.dekrypt_path') == null):
-            config([
-                'svarinn.dekrypt_path' => storage_path('/dekryptert'),
-            ]);
-        endif;
         if (config('svarinn.dekrypter.jar') == null):
             config([
-                'svarinn.dekrypter.jar' => base_path('/dekrypter-'.config('svarinn.dekrypter.version').'/dekrypter-'.config('svarinn.dekrypter.version').'.jar')
+                'svarinn.dekrypter.jar' => base_path('dekrypter-'.config('svarinn.dekrypter.version').'/dekrypter-'.config('svarinn.dekrypter.version').'.jar')
             ]);
         endif;
-        if (config('svarinn.privatekey_path') == null):
-            config([
-                'svarinn.privatekey_path' => base_path('/keys/privatekey.pem')
-            ]);
-        endif;
+
         // Sikrer at mapper finnes
-        is_dir(config('svarinn.temp_path')) ? true : mkdir(config('svarinn.temp_path', 770, true));
-        is_dir(config('svarinn.dekrypt_path')) ? true : mkdir(config('svarinn.dekrypt_path', 770, true));
-        is_dir(config('svarinn.download_path')) ? true : mkdir(config('svarinn.download_path', 770, true));
+        is_dir(config('svarinn.temp_path')) ? true : mkdir(config('svarinn.temp_path'), 0770, true);
+        is_dir(config('svarinn.dekrypt_path')) ? true : mkdir(config('svarinn.dekrypt_path'), 0770, true);
+        is_dir(config('svarinn.download_path')) ? true : mkdir(config('svarinn.download_path'), 0770, true);
     }
 
     protected function getOptions() {
         return [
             'headers' => [
                 'Accept-Encoding' => 'gzip, deflate, br',
-                'Accept' => '*/*'
+                'Accept' => '*/*',
             ],
             'stream' => true,
             'auth' => [
                 config('svarinn.username'),
                 config('svarinn.secret')
-            ]
+            ],
         ];
     }
 
@@ -190,10 +192,8 @@ class SvarInn2Pureservice extends Command
 
         $contentType = $fileResponse->getHeader('content-type');
         // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
-        $fileName = preg_replace('/.*\"(.*)"/','$1', $fileResponse->getHeader('content-disposition'));
-
+        $fileName = preg_replace('/.*\"(.*)"/','$1', $fileResponse->getHeader('content-disposition')[0]);
         file_put_contents(config('svarinn.download_path').'/'.$fileName, $fileResponse->getBody()->getContents());
-
         return $fileName;
     }
 
@@ -239,7 +239,7 @@ class SvarInn2Pureservice extends Command
      * @return int      $returnValue Verdi som angir resultatkoden fra dekrypteringen
      */
     protected function decryptFile($fileName) {
-        if (file_exists(config('svarinn.downloadpath').'/'.$fileName)):
+        if (file_exists(config('svarinn.download_path').'/'.$fileName)):
             $dekrypt = system(
                 'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . config('svarinn.privatekey_path').
                 ' -s ' . config('svarinn.download_path').'/'.$fileName .
@@ -251,7 +251,7 @@ class SvarInn2Pureservice extends Command
                 $this->line($this->l3.$dekrypt);
             endif;
         else:
-            $this->error($this->l3.'Fant ikke fila som skulle dekrypteres');
+            $this->error($this->l3.'Fant ikke fila som skulle dekrypteres ['.config('svarinn.download_path').'/'.$fileName.']');
             $exitCode = 2;
         endif;
         return $exitCode;
