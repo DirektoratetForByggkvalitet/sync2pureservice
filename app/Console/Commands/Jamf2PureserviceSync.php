@@ -46,7 +46,7 @@ class Jamf2PureserviceSync extends Command
         $this->line('');
 
         $this->line($this->l2.'Logger inn på Pureservice');
-        $this->psApi = new PureserviceController();
+        $this->psApi = new PureserviceController(true);
         if ($this->psApi->up):
             $this->line($this->l3.'Pureservice er tilkoblet og svarer normalt');
         else:

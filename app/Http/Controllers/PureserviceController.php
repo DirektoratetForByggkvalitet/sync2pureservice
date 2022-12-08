@@ -16,7 +16,10 @@ class PureserviceController extends Controller
     protected $pre = '/agent/api'; // Standard prefix for API-kall
     public $up = false;
 
-    public function __construct($fetchTypeIds = true) {
+    /**
+     * Oppgi $fetchTypeIds som true for at assetType-IDer skal lastes inn
+     */
+    public function __construct($fetchTypeIds = false) {
         $this->getClient();
         $this->setOptions();
         if ($fetchTypeIds) $this->fetchTypeIds();
@@ -24,6 +27,9 @@ class PureserviceController extends Controller
         if (count($this->statuses)) $this->up = true;
     }
 
+    /**
+     * Oppretter en GuzzleHttp-klient til bruk mot Pureservice
+     */
     private function getClient() {
         $maxRetries = config('pureservice.maxretries', 3);
 
@@ -60,6 +66,10 @@ class PureserviceController extends Controller
             'handler' => $stack
         ]);
     }
+
+    /**
+     * Setter standardvalg for GuzzleHttp-klienten
+     */
     private function setOptions() {
         $this->options = [
             'headers' => [
@@ -74,6 +84,13 @@ class PureserviceController extends Controller
         return false;
     }
 
+    /**
+     * Brukes til å kjøre en GET-forespørsel mot Pureservice
+     * @param   string  $uri                Relativ URI for forespørselen
+     * @param   bool    $returnResponse     Angir om returverdien skal være et responsobjet eller et array
+     *
+     * @return  Psr\Http\Message\ResponseInterface/assoc_array  Resultat som array eller objekt
+     */
     public function apiGet($uri, $returnResponse=false) {
         $uri = $this->pre.$uri;
         $response = $this->api->get($uri, $this->options);
@@ -81,14 +98,29 @@ class PureserviceController extends Controller
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    public function apiPOST($uri, $body, $contentType='application/json; charset=utf-8') {
+    /**
+     * Brukes til å kjøre en POST-forespørsel mot Pureservice
+     * @param   string      $uri    Relativ URI for forespørselen
+     * @param   assoc_array $body   JSON-innholdet til forespørselen, som assoc_array
+     * @param   string      $ct     Content-Type for forespørselen, med standardverdi
+     *
+     * @return  Psr\Http\Message\ResponseInterface  Resultatobjekt for forespørselen
+     */
+    public function apiPOST($uri, $body, $ct='application/json; charset=utf-8') {
         $uri = $this->pre.$uri;
         $options = $this->options;
         $options['json'] = $body;
-        $options['headers']['Content-Type'] = $contentType;
+        $options['headers']['Content-Type'] = $ct;
         return $this->api->post($uri, $options);
     }
 
+     /**
+     * Brukes til å kjøre en PATCH-forespørsel mot Pureservice
+     * @param   string      $uri    Relativ URI for forespørselen
+     * @param   assoc_array $body   JSON-innholdet til forespørselen, som assoc_array
+     *
+     * @return  Psr\Http\Message\ResponseInterface  Resultatobjekt for forespørselen
+     */
     public function apiPATCH($uri, $body) {
         $uri = $this->pre.$uri;
         $options = $this->options;
@@ -96,14 +128,21 @@ class PureserviceController extends Controller
         return $this->api->patch($uri, $options);
     }
 
+    /**
+     * Brukes til å kjøre en DELETE-forespørsel mot Pureservice
+     * @param   string      $uri    Relativ URI for forespørselen
+     *
+     * @return  bool                true hvis slettingen ble gjennomført, false hvis ikke
+     */
     public function apiDelete($uri) {
         $uri = $this->pre.$uri;
         $response = $this->api->delete($uri, $this->options);
-        if ($response->getStatusCode() != 200):
+        if ((int) $response->getStatusCode() >= 300):
             return false;
         endif;
         return true;
     }
+
 
     /** fetchTypeIds
      * Henter inn IDer til forskjellige innholdstyper.
@@ -160,11 +199,65 @@ class PureserviceController extends Controller
         endforeach;
     }
 
+    /**
+     * Henter inn ID for en kilde med oppgitt navn
+     * @param string    $sourceName     Navnet på kilden i Pureservice
+     *
+     * @return mixed    Returnerer ID-verdien til kilden dersom den finnes, eller null-verdi
+     */
+    protected function getSourceId($sourceName) {
+        $uri = '/source/?filter=!disabled AND name=="'.$sourceName.'"';
+        if ($result = $this->apiGet($uri)):
+            if (count($result['sources']) > 0) return $result['sources'][0]['id'];
+        endif;
+        // Hvis ikke funnet
+        return null;
+    }
+
+    /**
+     * Henter inn ID for en navngitt Sone
+     * @param string    $name   Navnet på sonen
+     *
+     * @return mixed    ID-verdien til sonen, eller null hvis den ikke finnes
+     */
+    protected function getZoneId($name) {
+        $uri = '/department?filter=name == "'.$name.'"';
+        if ($result = $this->apiGet($uri)):
+            if (count($result['departments']) > 0) return $result['departments'][0]['id'];
+        endif;
+        return null; // Hvis ikke funnet
+    }
+
+    /**
+     * Henter inn ID for et navngitt Team
+     * @param string    $name   Navnet på teamet
+     *
+     * @return mixed    ID-verdien til teamet, eller null hvis det ikke finnes
+     */
+    protected function getTeamId($name) {
+        $uri = '/team?filter=name == "'.$name.'"';
+        if ($result = $this->apiGet($uri)):
+            if (count($result['teams']) > 0) return $result['teams'][0]['id'];
+        endif;
+        return null; // Hvis ikke funnet
+    }
+    /**
+     * Henter relasjoner for en gitt ressurs
+     * @param string    $assetId    Ressursens ID
+     *
+     * @return assoc_array  Array over relasjonene knyttet til ressursen
+     */
     public function getRelationships($assetId) {
         $uri = '/relationship/' . $assetId . '/fromAsset?include=type,type.relationshipTypeGroup,toUser,toUser.emailaddress&filter=toUserId != NULL';
         return $this->apiGet($uri);
     }
 
+    /**
+     * Sletter en relasjon i Pureservice
+     * @param   string  $relationshipId     Relasjonen sin ID
+     *
+     * @return  bool    angir om slettingeb lyktes eller ikke
+     */
     public function deleteRelation($relationshipId) {
         return $this->apiDELETE('/relationship/'.$relationshipId.'/delete');
     }
@@ -183,6 +276,10 @@ class PureserviceController extends Controller
         return $usernames;
     }
 
+    /**
+     * Henter alle datamaskin- og mobilenhet-ressurser fra Pureservice
+     * @return  assoc_array     Array over ressursene
+     */
     public function getAllAssets() {
         $totalAssets = [];
         foreach (['computer', 'mobile'] as $type):
@@ -245,7 +342,14 @@ class PureserviceController extends Controller
         return $status;
     }
 
-
+    /**
+     * Kobler en ressurs til brukernavn
+     * @param string    $assetId    Ressursens ID
+     * @param array     $usernames  Array over brukernavn som skal relateres til ressursen
+     * @param string    $type       Angir ressurstypen, slik at man bruker korrekt relasjons-ID
+     *
+     * @return bool     Angir om koblingen ble utført eller ikke
+     */
     public function relateAssetToUsernames($assetId, $usernames, $type='computer') {
         $jsonBody = ['relationships' => []];
         if (! is_array($usernames)) $usernames = [$usernames];
@@ -374,9 +478,9 @@ class PureserviceController extends Controller
      * @return mixed    array med det opprettede foretaket eller false hvis oppretting feilet
      */
     public function addCompany($companyName, $orgNo=null, $email=false, $phone=false) {
-        $phoneId = false;
-        $emailId = false;
-        if ($email):
+        $phoneId = null;
+        $emailId = $email ? $this->findEmailaddressId($email, true): null;
+        if ($email != null):
             $uri = '/companyemailaddress/';
             $body = [
                 'email' => $email,
@@ -386,7 +490,7 @@ class PureserviceController extends Controller
                 $emailId = $result['companyemailaddresses'][0]['id'];
             endif;
         endif;
-        if ($phone):
+        if ($phone != null):
             $uri = '/phonenumber/';
             $body = [];
             $body['phonenumbers'][] = [
@@ -405,9 +509,9 @@ class PureserviceController extends Controller
             'name' => $companyName,
             'organizationNumber' => $orgNo
         ];
-        if ($emailId) $body['emailAddressId'] = $emailId;
+        if ($emailId != null) $body['emailAddressId'] = $emailId;
 
-        if ($phoneId) $body['phonenumberId'] = $phoneId;
+        if ($phoneId != null) $body['phonenumberId'] = $phoneId;
 
         if ($response = $this->apiPOST($uri, $body)):
             $result = json_decode($response->getBody()->getContents(), true);
@@ -424,12 +528,32 @@ class PureserviceController extends Controller
         endif;
         return false;
     }
+
+    /**
+     * Henter ID for e-postadresse registrert i Pureservice
+     * @param string    $email          E-postadressen
+     * @param bool      $companyAddress Angir om man skal se etter en firma-adresse
+     *
+     * @return mixed    null hvis den ikke finnes, IDen dersom den finnes.
+     */
+    protected function findEmailaddressId($email, $companyAddress=false) {
+        $prefix = $companyAddress ? 'company' : '';
+        $uri = '/'.$prefix.'emailaddress?filter=email == "'.$email.'"';
+        if ($result = $this->apiGet($uri)):
+            $found = count($result[$prefix.'emailaddresses']);
+            if ($found > 0):
+                return $result[$prefix.'emailaddresses'][0]['id'];
+            endif;
+        endif;
+        return null; // Hvis ikke funnet
+    }
+
     /**
      * Oppretter en standardbruker for foretak/virksomhet
      */
-    public function addCompanyUser($companyInfo, $emailaddress) {
-        $emailId = null;
-        if ($emailaddress):
+    public function addCompanyUser($companyInfo, $emailaddress = false) {
+        $emailId = $this->findEmailaddressId($emailaddress);
+        if ($emailaddress && $emailId == null):
             $uri = '/emailaddress/';
             $body = [
                 'email' => $emailaddress,
@@ -443,35 +567,11 @@ class PureserviceController extends Controller
         $uri = '/user/?include=emailAddress,company';
         $body = [
             'firstName' => 'SvarUt',
-            'lastName' => Str::limit($companyInfo['name'], 29),
-            'role' => 10,
-            'links' => [
-                'company' => [
-                    'id' => $companyInfo['id'],
-                ],
-                'emailAddress' => [
-                    'id' => $emailId,
-                ],
-            ],
-            /*
-            'users' => [
-                [
-                    'firstName' => 'SvarUt',
-                    'lastName' => Str::limit($companyInfo['name'], 25),
-                    //'fullName' => $companyInfo['name'],
-                    'disabled' => false,
-                    'role' => 10, // Sluttbruker
-                    'links' => [
-                        'company' => [
-                            'id' => $companyInfo['id'],
-                        ],
-                        'emailAddress' => [
-                            'id' => $emailId,
-                        ],
-                    ],
-                ],
-            ]
-            */
+            'lastName' => Str::limit($companyInfo['name'], 100),
+            'role' => config('svarinn.pureservice.role_id'),
+            'emailAddressId' => $emailId,
+            'companyId' => $companyInfo['id'],
+            'notificationScheme' => 0,
         ];
 
         if ($response = $this->apiPOST($uri, $body)):
@@ -479,6 +579,67 @@ class PureserviceController extends Controller
             return $result['users'][0];
         endif;
         return false;
-}
+    }
+
+    /**
+     * Oppretter en sak i Pureservice basert på en SvarUt-melding
+     * @param Collection    $message        Metadata fra SvarUt
+     * @param array         $attachments    Stier til filer som skal legges til som vedlegg
+     *
+     * @return mixed    False dersom oppretting mislykkes, RequestNumber dersom det går bra
+     */
+    public function createTicketFromSvarUt($message, $attachments, $user) {
+        $uri = '/ticket';
+        $description = '<p><strong>Sak mottatt fra SvarUt</strong></p>'.PHP_EOL;
+        $description .= '<p>Se vedlegg for selve forsendelsen</p>'.PHP_EOL;
+        $description .= '<p>Forsendelses-ID: '.$message['id'].'</p>'.PHP_EOL;
+        if ($message['svarPaForsendelse'] != null):
+            $description .= '<p>Svar på forsendelse: '.$message['svarPaForsendelse'].'</p>'.PHP_EOL;
+        endif;
+        $description .= '<p><strong>Data fra avleverende system</strong></p>'.PHP_EOL;
+        foreach (Arr::get($message, 'metadataFraAvleverendeSystem') as $field => $value):
+            if ($field == 'ekstraMetadata') continue;
+            $description .= '<p>'.$field.': '.$value.'</p>'.PHP_EOL;
+        endforeach;
+        $body = [
+            'subject' => $message['tittel'],
+            'description' => $description,
+            'assignedDepartmentId' => $this->getZoneId(config('svarinn.pureservice.zone')),
+            'assignedTeamId' => $this->getTeamId(config('svarinn.pureservice.team')),
+            'visibility' => config('svarinn.pureservice.visibility'),
+            'sourceId' => $this->getSourceId(config('svarinn.pureservice.source')),
+            'userId' => $user['id'],
+        ];
+
+        if ($response = $this->apiPOST($uri, $body)):
+            $ticket = json_decode($response->getBody()->getContents(), true)['tickets'][0];
+            $uri = '/attachment';
+            $msgFiles = collect(Arr::get($message, 'filmetadata'));
+            /*
+            foreach ($attachments as $file):
+                $filename = basename($file);
+                $filmetadata = $msgFiles->firstWhere('filnavn', $filename);
+                $body = [
+                    'name' => Str::beforeLast($filename, '.'),
+                    'fileName' => $filename,
+                    'size' => $this->human_filesize(filesize($file)),
+                    'contentType' => $filmetadata['mimetype'],
+                    'ticketId' => $ticket['id'],
+                    'bytes' => file_get_contents($file),
+                ];
+
+            endforeach;
+            */
+            return $ticket;
+        endif;
+
+        return false;
+    }
+
+    protected function human_filesize($bytes, $decimals = 2) {
+        $sz = 'BKMGTP';
+        $factor = floor((strlen($bytes) - 1) / 3);
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
+    }
 
 }

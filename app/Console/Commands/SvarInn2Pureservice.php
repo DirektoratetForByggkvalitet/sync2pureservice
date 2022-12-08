@@ -51,7 +51,7 @@ class SvarInn2Pureservice extends Command
         $this->info($this->ts().'Kobler til SvarInn');
         $this->svarInn = new SvarInnController();
 
-        $this->ps = new PureserviceController(false);
+        $this->ps = new PureserviceController();
 
         $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
         //$msgs = $this->svarInn->sjekkForMeldinger();
@@ -88,7 +88,7 @@ class SvarInn2Pureservice extends Command
                 if ($userInfo = $this->ps->findUser($email)):
                     $this->line($this->l3.'Foretaksbruker er registrert i Pureservice');
                 else:
-                    $this->line($this->l3.'Foretaksbruker er ikke registrert i Pureservice');
+                    $this->line($this->l3.'Foretaksbruker med e-post '.$email.' er ikke registrert i Pureservice');
                     if ($userInfo = $this->ps->addCompanyUser($companyInfo, $email)):
                         $this->line($this->l3.'Foretaksbruker opprettet');
                     else:
@@ -119,19 +119,21 @@ class SvarInn2Pureservice extends Command
                 endif;
                 $this->line($this->l3.'Lastet ned og/eller pakket ut '.count($filesToInclude).' fil(er)');
 
-                /**
-                if ($result = $this->ps->createFromSvarInn($message, $filesToInclude)):
-                    $this->line($this->l3.'Opprettet i Pureservice med Sak-ID'.$result['id']);
+
+                if ($ticket = $this->ps->createTicketFromSvarUt($message, $filesToInclude, $userInfo)):
+                    $this->line($this->l3.'Opprettet i Pureservice med Sak-ID'.$ticket['id']);
+                    /*
                     if ($this->kvitterForMottak($message['id'])):
                         $this->line($this->l3.'Forsendelsen er kvittert mottatt hos KS');
                     else:
                         $this->error($this->l3.'Forsendelsen kunne ikke settes som mottatt');
                     endif;
+                    */
                 else:
                     $this->error($this->l3.'Feil under oppretting av sak i Pureservice');
-                    $this->forsendelseFeilet($message['id']);
+                    //$this->forsendelseFeilet($message['id']);
                 endif;
-                */
+                dd($ticket);
             endforeach;
         else:
             $this->line($this->l2.'Ingen meldinger å hente');

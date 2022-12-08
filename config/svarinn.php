@@ -16,4 +16,11 @@ return [
         'version' => env('DEKRYPTERVER', '1.0'),
         'jar' => env('DEKRYPTER_JAR', null),
     ],
+    'pureservice' => [
+        'source' => env('SVARINN_PS_SOURCE', 'SvarUt'),
+        'zone' => env('SVARINN_PS_ZONE', ''),
+        'team' => env('SVARINN_PS_TEAM', ''),
+        'role_id' => env('SVARINN_PS_USER_ROLE_ID', 10),
+        'visibility' => env('SVARINN_PS_VISIBILITY', 2),
+    ],
 ];
