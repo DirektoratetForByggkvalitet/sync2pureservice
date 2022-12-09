@@ -52,11 +52,16 @@ class SvarInn2Pureservice extends Command
         $this->svarInn = new SvarInnController();
 
         $this->ps = new PureserviceController();
+        $this->ps->setTicketOptions();
 
-        $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
-        //$msgs = $this->svarInn->sjekkForMeldinger();
+        if (config('svarinn.dryrun') == false || config('svarinn.dryrun') === true):
+            $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
+            $msgs = $this->svarInn->sjekkForMeldinger();
+        else:
+            $msgs = json_decode(file_get_contents(storage_path(config('svarinn.dryrun'))), true);
+        endif;
         /** Testing: Hent data fra eksempelfil */
-        $msgs = json_decode(file_get_contents(storage_path('example.json')), true);
+
         $msgCount = count($msgs);
         $i = 0;
         if ($msgCount > 0):
@@ -66,6 +71,7 @@ class SvarInn2Pureservice extends Command
 
                 $this->info($this->l2.$i.'/'.$msgCount.': '.$message['tittel']);
                 $this->line($this->l3.'ID: '.$message['id']);
+                $this->line($this->l3.'Tittel: '.$message['tittel']);
                 $this->line($this->l3.'Avsender: \''. Arr::get($message, 'svarSendesTil.navn') .'\', '.Arr::get($message, 'svarSendesTil.orgnr'));
                 // Henter e-postadresse, dersom vi har den i Excel-fila
                 $email = false;
@@ -120,20 +126,28 @@ class SvarInn2Pureservice extends Command
                 $this->line($this->l3.'Lastet ned og/eller pakket ut '.count($filesToInclude).' fil(er)');
 
 
-                if ($ticket = $this->ps->createTicketFromSvarUt($message, $filesToInclude, $userInfo)):
-                    $this->line($this->l3.'Opprettet i Pureservice med Sak-ID'.$ticket['id']);
-                    /*
-                    if ($this->kvitterForMottak($message['id'])):
-                        $this->line($this->l3.'Forsendelsen er kvittert mottatt hos KS');
+                if ($ticket = $this->ps->createTicketFromSvarUt($message, $userInfo)):
+                    $this->line($this->l3.'Opprettet i Pureservice med Sak-ID '.$ticket['requestNumber']);
+
+                    if ($result = $this->ps->uploadAttachments($filesToInclude, $ticket, $message)):
+                        $this->line($this->l3.'Lastet opp vedlegg');
                     else:
-                        $this->error($this->l3.'Forsendelsen kunne ikke settes som mottatt');
+                        $this->error($this->l3.'Vedleggene ble ikke lastet opp');
                     endif;
-                    */
+
+                    if (config('svarinn.dryrun') == false):
+                        if ($this->kvitterForMottak($message['id'])):
+                            $this->line($this->l3.'Forsendelsen er kvittert mottatt hos KS');
+                        else:
+                            $this->error($this->l3.'Forsendelsen kunne ikke settes som mottatt');
+                        endif;
+                    endif;
+
                 else:
                     $this->error($this->l3.'Feil under oppretting av sak i Pureservice');
-                    //$this->forsendelseFeilet($message['id']);
+                    if (config('svarinn.dryrun') == false) $this->forsendelseFeilet($message['id']);
                 endif;
-                dd($ticket);
+
             endforeach;
         else:
             $this->line($this->l2.'Ingen meldinger å hente');

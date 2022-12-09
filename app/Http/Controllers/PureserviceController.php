@@ -14,7 +14,7 @@ class PureserviceController extends Controller
     protected $statuses = [];
     protected $typeIds = [];
     protected $pre = '/agent/api'; // Standard prefix for API-kall
-    public $up = false;
+    protected $ticketOptions = [];
 
     /**
      * Oppgi $fetchTypeIds som true for at assetType-IDer skal lastes inn
@@ -24,7 +24,6 @@ class PureserviceController extends Controller
         $this->setOptions();
         if ($fetchTypeIds) $this->fetchTypeIds();
         //$this->fetchAssetStatuses();
-        if (count($this->statuses)) $this->up = true;
     }
 
     /**
@@ -110,7 +109,7 @@ class PureserviceController extends Controller
         $uri = $this->pre.$uri;
         $options = $this->options;
         $options['json'] = $body;
-        $options['headers']['Content-Type'] = $ct;
+        if ($ct) $options['headers']['Content-Type'] = $ct;
         return $this->api->post($uri, $options);
     }
 
@@ -200,46 +199,64 @@ class PureserviceController extends Controller
     }
 
     /**
-     * Henter inn ID for en kilde med oppgitt navn
-     * @param string    $sourceName     Navnet på kilden i Pureservice
+     * Universell funksjon for å hente ID på et objekt oppgitt med navn
+     * @param string    $entity     Objektnavnet, f.eks. 'status', '
+     * @param string    $name       Navnet på enheten som skal finnes
+     * @param bool      $useKey     Instruerer funksjonen til å lete i 'key' i stedet for 'name'
      *
-     * @return mixed    Returnerer ID-verdien til kilden dersom den finnes, eller null-verdi
+     * @return mixed      ID for enheten eller null
      */
-    protected function getSourceId($sourceName) {
-        $uri = '/source/?filter=!disabled AND name=="'.$sourceName.'"';
+    protected function getEntityId($entity, $name, $useKey = false) {
+        $entity = Str::lower($entity);
+        $uri = $useKey ? '/'.$entity.'/?filter=key == "'.$name.'"' : '/'.$entity.'/?filter=name == "'.$name.'"';
+        $entities = Str::plural($entity);
         if ($result = $this->apiGet($uri)):
-            if (count($result['sources']) > 0) return $result['sources'][0]['id'];
+            if (count($result[$entities]) > 0) return $result[$entities][0]['id'];
         endif;
-        // Hvis ikke funnet
-        return null;
+        return null; // Hvis ikke funnet
+
     }
 
     /**
-     * Henter inn ID for en navngitt Sone
-     * @param string    $name   Navnet på sonen
+     * Universell funksjon for å hente et objekt oppgitt med navn
+     * @param string    $entity     Objektnavnet, f.eks. 'status', '
+     * @param string    $name       Navnet på enheten som skal finnes
+     * @param bool      $useKey     Instruerer funksjonen til å lete i 'key' i stedet for 'name'
      *
-     * @return mixed    ID-verdien til sonen, eller null hvis den ikke finnes
+     * @return mixed    assoc_array for enheten eller null
      */
-    protected function getZoneId($name) {
-        $uri = '/department?filter=name == "'.$name.'"';
+    protected function getEntityByName($entity, $name, $useKey = false) {
+        $entity = Str::lower($entity);
+        $uri = $useKey ? '/'.$entity.'/?filter=key == "'.$name.'"' : '/'.$entity.'/?filter=name == "'.$name.'"';
+        $entities = Str::plural($entity);
         if ($result = $this->apiGet($uri)):
-            if (count($result['departments']) > 0) return $result['departments'][0]['id'];
+            if (count($result[$entities]) > 0) return $result[$entities][0];
         endif;
         return null; // Hvis ikke funnet
     }
 
     /**
-     * Henter inn ID for et navngitt Team
-     * @param string    $name   Navnet på teamet
+     * Henter ned standardinnstillinger for å opprette saker i PS
      *
-     * @return mixed    ID-verdien til teamet, eller null hvis det ikke finnes
+     * Setter variabelen $this->ticketOptions
      */
-    protected function getTeamId($name) {
-        $uri = '/team?filter=name == "'.$name.'"';
-        if ($result = $this->apiGet($uri)):
-            if (count($result['teams']) > 0) return $result['teams'][0]['id'];
-        endif;
-        return null; // Hvis ikke funnet
+    public function setTicketOptions() {
+        $this->ticketOptions = [
+            'zoneId' => $this->getEntityId('department', config('svarinn.pureservice.zone')),
+            'teamId' => $this->getEntityId('team', config('svarinn.pureservice.team')),
+            'sourceId' => $this->getEntityId('source', config('svarinn.pureservice.source')),
+            'requestTypeId' => $this->getEntityId('requesttype', config('svarinn.pureservice.requestType'), true),
+            'priorityId' => $this->getEntityId('priority', config('svarinn.pureservice.priority')),
+            'statusId' => $this->getEntityId('status', config('svarinn.pureservice.status')),
+            'ticketTypeId' => $this->getEntityId('tickettype', config('svarinn.pureservice.ticketType')),
+        ];
+
+    }
+    /**
+     * Returnerer $this->ticketOptions
+     */
+    public function getTicketOptions() {
+        return $this->ticketOptions;
     }
     /**
      * Henter relasjoner for en gitt ressurs
@@ -588,58 +605,97 @@ class PureserviceController extends Controller
      *
      * @return mixed    False dersom oppretting mislykkes, RequestNumber dersom det går bra
      */
-    public function createTicketFromSvarUt($message, $attachments, $user) {
+    public function createTicketFromSvarUt($message, $user) {
+        if ($this->ticketOptions == []) $this->setTicketOptions();
         $uri = '/ticket';
-        $description = '<p><strong>Sak mottatt fra SvarUt</strong></p>'.PHP_EOL;
-        $description .= '<p>Se vedlegg for selve forsendelsen</p>'.PHP_EOL;
-        $description .= '<p>Forsendelses-ID: '.$message['id'].'</p>'.PHP_EOL;
+        $description = '<p>SvarUt Forsendelses-ID: <strong>'.$message['id'].'</strong></p>'.PHP_EOL;
+        if ($message['date'] > 0):
+            $description .= '<p>Dato: '.$this->dateFromEpochTime($message['date']).'</p>'.PHP_EOL;
+        endif;
         if ($message['svarPaForsendelse'] != null):
             $description .= '<p>Svar på forsendelse: '.$message['svarPaForsendelse'].'</p>'.PHP_EOL;
         endif;
         $description .= '<p><strong>Data fra avleverende system</strong></p>'.PHP_EOL;
+        $description .= '<ul>'.PHP_EOL;
         foreach (Arr::get($message, 'metadataFraAvleverendeSystem') as $field => $value):
             if ($field == 'ekstraMetadata') continue;
-            $description .= '<p>'.$field.': '.$value.'</p>'.PHP_EOL;
+            if (in_array($field, ['journaldato', 'dokumentetsDato']) && $value > 0):
+                $value = $this->dateFromEpochTime($value);
+            endif;
+            $description .= '  <li>'.$field.': '.$value.'</li>'.PHP_EOL;
         endforeach;
+        $description .= '</ul>'.PHP_EOL;
+        $description .= '<p> </p>'.PHP_EOL;
+        $description .= '<p>Se vedlegg for selve forsendelsen</p>'.PHP_EOL;
         $body = [
             'subject' => $message['tittel'],
             'description' => $description,
-            'assignedDepartmentId' => $this->getZoneId(config('svarinn.pureservice.zone')),
-            'assignedTeamId' => $this->getTeamId(config('svarinn.pureservice.team')),
-            'visibility' => config('svarinn.pureservice.visibility'),
-            'sourceId' => $this->getSourceId(config('svarinn.pureservice.source')),
             'userId' => $user['id'],
+            'visibility' => config('svarinn.pureservice.visibility'),
+            'assignedDepartmentId' => $this->ticketOptions['zoneId'],
+            'assignedTeamId' => $this->ticketOptions['teamId'],
+            'sourceId' => $this->ticketOptions['sourceId'],
+            'ticketTypeId' => $this->ticketOptions['ticketTypeId'],
+            'priorityId' => $this->ticketOptions['priorityId'],
+            'statusId' => $this->ticketOptions['statusId'],
+            'requestTypeId' => $this->ticketOptions['requestTypeId'],
         ];
 
         if ($response = $this->apiPOST($uri, $body)):
-            $ticket = json_decode($response->getBody()->getContents(), true)['tickets'][0];
-            $uri = '/attachment';
-            $msgFiles = collect(Arr::get($message, 'filmetadata'));
-            /*
-            foreach ($attachments as $file):
-                $filename = basename($file);
-                $filmetadata = $msgFiles->firstWhere('filnavn', $filename);
-                $body = [
-                    'name' => Str::beforeLast($filename, '.'),
-                    'fileName' => $filename,
-                    'size' => $this->human_filesize(filesize($file)),
-                    'contentType' => $filmetadata['mimetype'],
-                    'ticketId' => $ticket['id'],
-                    'bytes' => file_get_contents($file),
-                ];
-
-            endforeach;
-            */
-            return $ticket;
+            return json_decode($response->getBody()->getContents(), true)['tickets'][0];
         endif;
 
         return false;
+    }
+
+    /**
+     * Laster opp vedlegg til en sak i Pureservice
+     * @param array         $attachments    Array over filstier som skal lastes opp
+     * @param assoc_array   $ticket         Saken som assoc_array
+     * @param assoc_array   $message        SvarUt-meldingen som assoc_array
+     *
+     * @return assoc_array  Rapport på status og antall filer/opplastinger
+     */
+    public function uploadAttachments($attachments, $ticket, $message) {
+        $uri = '/attachment';
+        $msgFiles = collect(Arr::get($message, 'filmetadata'));
+        $attachmentCount = count($attachments);
+        $uploadCount = 0;
+        $status = 'OK';
+        foreach ($attachments as $file):
+            $filename = basename($file);
+            $filmetadata = $msgFiles->firstWhere('filnavn', $filename);
+            $body = [
+                'name' => Str::beforeLast($filename, '.'),
+                'fileName' => $filename,
+                'size' => $this->human_filesize(filesize($file)),
+                'contentType' => $filmetadata['mimetype'],
+                'ticketId' => $ticket['id'],
+                'bytes' => base64_encode(file_get_contents($file)),
+            ];
+            if ($result = $this->apiPOST($uri, $body, 'application/vnd.api+json')):
+                $uploadCount++;
+            else:
+                $status = 'Error';
+            endif;
+        endforeach;
+        return [
+            'status' => $status,
+            'fileCount' => $attachmentCount,
+            'uploadCount' => $uploadCount,
+        ];
     }
 
     protected function human_filesize($bytes, $decimals = 2) {
         $sz = 'BKMGTP';
         $factor = floor((strlen($bytes) - 1) / 3);
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
+    }
+
+    protected function dateFromEpochTime($ts) {
+        return Carbon::createFromTimestampMs($ts, config('app.timezone'))
+            ->locale(config('app.locale'))
+            ->toDateTimeString();
     }
 
 }

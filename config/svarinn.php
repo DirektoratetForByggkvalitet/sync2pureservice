@@ -1,6 +1,7 @@
 <?php
 // Config for SvarInnController
 return [
+    'dryrun' => env('SVARINN_DRYRUN', false),
     'base_uri' => 'https://svarut.ks.no',
     'urlHentForsendelser' => '/tjenester/svarinn/mottaker/hentNyeForsendelser',
     'urlSettMottatt' => '/tjenester/svarinn/kvitterMottatt/forsendelse',
@@ -22,5 +23,9 @@ return [
         'team' => env('SVARINN_PS_TEAM', ''),
         'role_id' => env('SVARINN_PS_USER_ROLE_ID', 10),
         'visibility' => env('SVARINN_PS_VISIBILITY', 2),
+        'ticketType' => env('SVARINN_PS_TICKET_TYPE', 'Henvendelse'),
+        'priority' => env('SVARINN_PS_PRIORITY', 'Normal'),
+        'status' => env('SVARINN_PS_STATUS', 'Ny'),
+        'requestType' => env('SVARINN_PS_REQUEST_TYPE','Ticket'),
     ],
 ];

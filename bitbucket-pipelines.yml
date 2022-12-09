@@ -31,12 +31,16 @@ pipelines:
             enabled: false
           artifacts:
             - "keys/privatekey.pem"
+            - "*.xslx"
           script:
             - mkdir -p keys && cd keys
             - LOGIN=$(az login --service-principal -u ${AZURE_SP_ID} -p=${AZURE_SP_SECRET} --tenant ${AZURE_SP_TENANT})
             - az keyvault secret download --file privatekey.tmp --name ${AZURE_KV_KEY_NAME} --vault-name ${AZURE_KV_NAME}
-            - az logout
             - echo -e "-----BEGIN PRIVATE KEY-----\n$(cat privatekey.tmp)\n-----END PRIVATE KEY-----" > privatekey.pem
+            - cd ${BITBUCKET_CLONE_DIR}
+            - echo "Laster ned kommunefil fra Azure Blob Storage"
+            - az storage blob download --file ${BITBUCKET_CLONE_DIR}/${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
+            - az logout
 
       - step:
           name: Ser etter innkommende forsendelser i SvarInn
