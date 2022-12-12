@@ -15,6 +15,7 @@ class PureserviceController extends Controller
     protected $typeIds = [];
     protected $pre = '/agent/api'; // Standard prefix for API-kall
     protected $ticketOptions = [];
+    public $up = false;
 
     /**
      * Oppgi $fetchTypeIds som true for at assetType-IDer skal lastes inn
@@ -196,6 +197,7 @@ class PureserviceController extends Controller
                 config(['pureservice.'.$type.'.relationship_type_id' => $relationshipType['id']]);
             endif;
         endforeach;
+        $this->up = true;
     }
 
     /**
