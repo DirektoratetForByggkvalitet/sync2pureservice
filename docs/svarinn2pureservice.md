@@ -55,5 +55,5 @@ Saken vil bli fordelt til samhandlingssone og team oppgitt i miljøvariablene. D
 | SVARINN_PS_REQUEST_TYPE | Ticket | RequestType for forespørselen. Dette er normalt ikke noe man trenger å endre fra standard |
 | SVARINN_EXCEL_LOOKUP_FILE | kommuner.xslx | Excel-fil lastet ned fra kommuneregisteret.no (inneholder kommunenavn i kolonne B og e-postadresse i kolonne F) |
 | DEKRYPTER_JAR | | Sti til dekrypter.jar |
-| DEKRYPTERVER | 1.0 | Versjonsnummer for dekrypter |
+| DEKRYPTER_VER | 1.0 | Versjonsnummer for dekrypter |
 
