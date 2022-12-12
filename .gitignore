@@ -6,7 +6,7 @@
 /storage/svarinn*
 /storage/kommuner.xlsx
 /storage/example.json
-/storage/keys
+/storage/*.pem
 .env
 .env.backup
 .phpunit.result.cache

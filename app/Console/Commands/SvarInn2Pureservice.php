@@ -46,31 +46,29 @@ class SvarInn2Pureservice extends Command {
 
         $this->info($this->ts().'Setter opp miljøet...');
         $this->setConfig();
+        if ($this->checkList() == false) return Command::INVALID;
         $this->line('');
+
 
         $this->info($this->ts().'Kobler til SvarInn');
         $this->svarInn = new SvarInnController();
-
         $this->ps = new PureserviceController();
         $this->ps->setTicketOptions();
 
-        if (config('svarinn.dryrun') == false || config('svarinn.dryrun') === true):
+        if (is_bool(config('svarinn.dryrun'))):
             $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
             $msgs = $this->svarInn->sjekkForMeldinger();
         else:
-            if (file_exists(config('svarinn.dryrun'))):
-                $this->info($this->l2.'Laster inn eksempelmeldinger fra JSON');
-                $msgs = json_decode(file_get_contents(storage_path(config('svarinn.dryrun'))), true);
-            else:
-                $this->error('Finner ingen JSON-fil på angitt lokasjon: \''.config('svarinn.dryrun').'\'');
-                return Command::INVALID;
-            endif;
+            $this->info($this->l2.'Laster inn eksempelmeldinger fra JSON');
+            $msgs = json_decode(file_get_contents(storage_path(config('svarinn.dryrun'))), true);
         endif;
 
         $msgCount = count($msgs);
         $i = 0;
         if ($msgCount > 0):
-            $this->line($this->l3.'Fant '.$msgCount.' melding(er)');
+            $messageString = 'melding';
+            if ($msgCount > 1) $messageString = Str::plural($messageString);
+            $this->line($this->l3.'Fant '.$msgCount.' '.$messageString);
             foreach ($msgs as $message):
                 $i++;
 
@@ -160,6 +158,41 @@ class SvarInn2Pureservice extends Command {
 
         $this->info('Fullført på '. round(microtime(true) - $this->start, 2).' sekunder');
         return Command::SUCCESS;
+    }
+
+    /**
+     * Sjekkliste før kjøring av kommandoen
+     *
+     * @return bool True dersom alt er i orden, false hvis vi ikke kan kjøre.
+     */
+    protected function checkList() {
+        $rv = true;
+        $this->info($this->ts().'Sjekker oppsettet…');
+        if (config('svarinn.username') == null):
+            $this->error('Brukernavn for SvarUt Mottakservice er ikke satt');
+            $rv = false;
+        endif;
+        if (config('svarinn.secret') == null):
+            $this->error('Passord for SvarUt Mottakservice er ikke satt');
+            $rv = false;
+        endif;
+        if (!is_readable(config('svarinn.privatekey_path'))):
+            $this->error('Privatnøkkelen for dekryptering er ikke tilgjengelig. Kan ikke lese \''.config('svarinn.privatekey_path').'\'');
+            $rv = false;
+        endif;
+        if (is_string(config('svarinn.dryrun')) && !is_readable(storage_path(config('svarinn.dryrun')))):
+            $this->error('JSON-fil for innlesing av forsendelser er ikke tilgjengelig. Kan ikke lese \''.storage_path(config('svarinn.dryrun')).'\'');
+            $rv = false;
+        endif;
+        if (config('pureservice.api_url') == null):
+            $this->error('URL for Pureservice mangler');
+            $rv = false;
+        endif;
+        if (config('pureservice.apikey') == null):
+            $this->error('API-nøkkel for Pureservice mangler');
+            $rv = false;
+        endif;
+        return $rv;
     }
 
     /**

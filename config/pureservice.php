@@ -1,8 +1,8 @@
 <?php
 
 return [
-  'api_url' => env('PURESERVICE_URL'),
-  'apikey' =>  env('PURESERVICE_APIKEY'),
+  'api_url' => env('PURESERVICE_URL', null),
+  'apikey' =>  env('PURESERVICE_APIKEY', null),
   'computer' => [
     'displayName' => env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Datamaskin'),
     'lifespan' => env('PURESERVICE_COMPUTER_LIFESPAN', 4), // Forventet levetid, oppgitt som år

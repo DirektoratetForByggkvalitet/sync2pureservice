@@ -556,7 +556,7 @@ class PureserviceController extends Controller
      *
      * @return mixed    null hvis den ikke finnes, IDen dersom den finnes.
      */
-    protected function findEmailaddressId($email, $companyAddress=false): int|false {
+    protected function findEmailaddressId($email, $companyAddress=false): int|null {
         $prefix = $companyAddress ? 'company' : '';
         $uri = '/'.$prefix.'emailaddress?filter=email == "'.$email.'"';
         if ($result = $this->apiGet($uri)):
