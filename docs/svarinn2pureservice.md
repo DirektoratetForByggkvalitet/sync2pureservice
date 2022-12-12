@@ -47,11 +47,18 @@ Av disse bruker vi B og F i løsningen per nå. Første linje i fila blir ignore
 
 ## Miljøvariabler
 
+Variabler i **fet skrift** har ingen standardverdi og må settes før kjøring. SVARINN_PS-verdiene som er *uthevet* må samkjøres med Pureservice-instansen.
+
 | Variabel | Standardverdi | Beskrivelse |
 | ----------- | ----------- | ----------- |
 | **PURESERVICE_URL** | https://customer.pureservice.com | Base-adressen til Pureservice-instansen |
 | **PURESERVICE_APIKEY** | ey... | API-nøkkel til Pureservice |
-| SVARINN_DRYRUN | false | Hvis satt til true vil svarinn2pureservice laste ned forsendelser og opprette saker i Pureservice, men vil ikke merke forsendelser som mottatt eller feilet hos SvarUt. Du kan også oppgi et filnavn til en json-fil med [eksempeldata](https://developers.fiks.ks.no/svarut/integrasjon/mottaksservice-rest/) her, men den må i tilfelle inneholde 'downloadUrl' som peker til nedlastbare filer. JSON-fila skal ligge under storage i filstrukturen (storage/{SVARINN_DRYRUN}). Dette er ment å gjøre det enklere og teste funksjonaliteten før driftsetting. |
+| *SVARINN_PS_SOURCE* | SvarUt | Navnet til kilden i Pureservice som skal brukes for SvarUt-forsendelser |
+| *SVARINN_PS_TICKET_TYPE* | Henvendelse | Navn på sakstypen som skal brukes i Pureservice |
+| *SVARINN_PS_ZONE* | Dispatchers | Samhandlingssone-navn som skal brukes for SvarUt-forsendelser |
+| *SVARINN_PS_TEAM* | Dispatcher | Team-navn som skal brukes for SvarUt-forsendelser |
+| *SVARINN_PS_PRIORITY* | Normal | Navn på prioriteten som skal settes på saken i Pureservice. Må finnes i Pureservice fra før av |
+| *SVARINN_PS_STATUS* | Ny | Navn på statusen som skal settes på saken i Pureservice. Må finnes i Pureservice fra før av. |
 | **SVARINN_USER** | | Brukernavn for innlogging til SvarUt MottakService |
 | **SVARINN_SECRET** | | Passord for innlogging til SvarUt MottakService |
 | SVARINN_PRIVATEKEY_PATH | keys/privatekey.pem | Sti til privat nøkkel for dekryptering av forsendelsesfil |
@@ -59,16 +66,11 @@ Av disse bruker vi B og F i løsningen per nå. Første linje i fila blir ignore
 | SVARINN_TEMP_PATH | storage/svarinn_tmp | Mappe for utpakking av zip-filer |
 | SVARINN_DOWNLOAD_PATH | storage/svarinn_download | Mappe for nedlasting av forsendelsesfil |
 | SVARINN_DEKRYPT_PATH | storage/svarinn_dekryptert | Mappe der dekryptert fil havner |
-| SVARINN_PS_SOURCE | SvarUt | Navnet til kilden i Pureservice som skal brukes for SvarUt-forsendelser |
-| SVARINN_PS_TICKET_TYPE | Henvendelse | Navn på sakstypen som skal brukes i Pureservice |
-| SVARINN_PS_ZONE | Dispatchers | Samhandlingssone-navn som skal brukes for SvarUt-forsendelser |
-| SVARINN_PS_TEAM | Dispatcher | Team-navn som skal brukes for SvarUt-forsendelser |
-| SVARINN_PS_VISIBILITY | 2 | Setter synlighet for sluttbruker på saken som blir opprettet. Standard er setter saken "Usynlig" |
-| SVARINN_PS_PRIORITY | Normal | Navn på prioriteten som skal settes på saken i Pureservice. Må finnes i Pureservice fra før av |
-| SVARINN_PS_STATUS | Ny | Navn på statusen som skal settes på saken i Pureservice. Må finnes i Pureservice fra før av. |
+| SVARINN_PS_VISIBILITY | 2 | Setter synlighet for sluttbruker på saken som blir opprettet. Standard (2) er å sette saken "Ikke synlig" |
 | SVARINN_PS_USER_ROLE_ID | 10 | Rolle-ID for brukeren som blir opprettet fra forsendelsen. Standard er sluttbruker-rollen |
 | SVARINN_PS_REQUEST_TYPE | Ticket | RequestType for forespørselen. Dette er normalt ikke noe man trenger å endre fra standard |
 | SVARINN_EXCEL_LOOKUP_FILE | false | Excel-fil lastet ned fra kommuneregisteret.no (inneholder kommunenavn i kolonne B og e-postadresse i kolonne F), lagret under storage (storage/{SVARINN_EXCEL_LOOKUP_FILE}). Sett til false for å slå av funksjonaliteten. |
 | DEKRYPTER_VER | 1.0 | Versjonsnummer for dekrypter |
 | DEKRYPTER_JAR | dekrypter-{DEKRYPTER_VER}/dekrypter-{DEKRYPTER_VER}.jar | Sti til dekrypter.jar. |
+| SVARINN_DRYRUN | false | Hvis satt til true vil svarinn2pureservice laste ned forsendelser og opprette saker i Pureservice, men vil ikke merke forsendelser som mottatt eller feilet hos SvarUt. Du kan også oppgi et filnavn til en json-fil med [eksempeldata](https://developers.fiks.ks.no/svarut/integrasjon/mottaksservice-rest/) her, men den må i tilfelle inneholde 'downloadUrl' som peker til nedlastbare filer. JSON-fila skal ligge under storage i filstrukturen (storage/{SVARINN_DRYRUN}). Dette er ment å gjøre det enklere og teste funksjonaliteten før driftsetting. |
 
