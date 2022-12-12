@@ -12,6 +12,10 @@ class ExcelLookup extends Controller
      * @return Collection   Collection-array over kommuner med e-postadresser
      */
     public static function loadData() {
+        if (!file_exists(config('excellookup.file')) || config('excellookup.file') == false):
+            // Slå av funksjonaliteten
+            return false;
+        endif;
         $spreadsheet = IOFactory::load(config('excellookup.file'));
         $data = collect($spreadsheet->getActiveSheet()->toArray(null, true, true, true));
         // Fjerner første linje
@@ -39,18 +43,21 @@ class ExcelLookup extends Controller
      * Finner kommunen som passer med navnet man søker etter
      */
     public static function findByName($search) {
-        $data = self::loadData();
-        $result = $data->filter(function ($item, $key) use ($search) {
-            if (preg_match('/'.$search.'.*/', $item[config('excellookup.field.name')])):
-                return $item;
-            endif;
-        });
-        if (count($result)) return $result->first();
+        if ($data = self::loadData()):
+            $result = $data->filter(function ($item, $key) use ($search) {
+                if (preg_match('/'.$search.'.*/', $item[config('excellookup.field.name')])):
+                    return $item;
+                endif;
+            });
+            if (count($result)) return $result->first();
+        endif;
         return false;
     }
 
     public static function findByKnr($knr) {
-        $data = self::loadData();
-        return $data->firstWhere(config('excellookup.field.email'), $knr);
+        if ($data = self::loadData()):
+            return $data->firstWhere(config('excellookup.map.A'), $knr);
+        endif;
+        return false;
     }
 }
