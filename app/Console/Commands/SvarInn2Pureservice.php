@@ -49,11 +49,12 @@ class SvarInn2Pureservice extends Command {
         if ($this->checkList() == false) return Command::INVALID;
         $this->line('');
 
+        $this->info($this->ts().'Kobler til Pureservice');
+        $this->ps = new PureserviceController();
+        $this->ps->setTicketOptions();
 
         $this->info($this->ts().'Kobler til SvarInn');
         $this->svarInn = new SvarInnController();
-        $this->ps = new PureserviceController();
-        $this->ps->setTicketOptions();
 
         if (is_bool(config('svarinn.dryrun'))):
             $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
