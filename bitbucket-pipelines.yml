@@ -20,8 +20,8 @@ pipelines:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: production
           script:
-            - composer install --no-dev
             - cp .env.example .env
+            - composer install --no-dev
             - ./artisan jamf2pureservice:run
     svarinn2pureservice:
       - step:
@@ -30,18 +30,18 @@ pipelines:
           clone:
             enabled: false
           artifacts:
-            - "keys/privatekey.pem"
+            - "*.pem"
             - "*.xslx"
+            - "*.json"
           script:
-            - mkdir -p keys && cd keys
             - LOGIN=$(az login --service-principal -u ${AZURE_SP_ID} -p=${AZURE_SP_SECRET} --tenant ${AZURE_SP_TENANT})
             - az keyvault secret download --file privatekey.tmp --name ${AZURE_KV_KEY_NAME} --vault-name ${AZURE_KV_NAME}
             - echo -e "-----BEGIN PRIVATE KEY-----\n$(cat privatekey.tmp)\n-----END PRIVATE KEY-----" > privatekey.pem
-            - cd ${BITBUCKET_CLONE_DIR}
             - echo "Laster ned kommunefil fra Azure Blob Storage"
             - az storage blob download --auth-mode login --file ${BITBUCKET_CLONE_DIR}/${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
-            - ls -lh; ls -lh keys/
+            - az storage blob download --auth-mode login --file ${BITBUCKET_CLONE_DIR}/example.json --name example.json --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
             - az logout
+            - ls -lh
 
       - step:
           name: Ser etter innkommende forsendelser i SvarInn
@@ -52,7 +52,7 @@ pipelines:
             - unzip dekrypter-${DEKRYPTER_VER}-dist.zip && rm dekrypter-${DEKRYPTER_VER}-dist.zip
             - echo 'Setter opp og legger inn avhengigheter'
             - cp .env.example .env
-            - mv ${SVARINN_EXCEL_LOOKUP_FILE} storage/ && mv keys storage/keys
+            - mv ${SVARINN_EXCEL_LOOKUP_FILE} *.pem example.json storage/
             - composer install --no-dev
             - echo 'Kjører svarinn2pureservice'
             - ./artisan svarinn2pureservice:run
