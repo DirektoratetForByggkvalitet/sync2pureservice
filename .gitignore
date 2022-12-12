@@ -4,6 +4,8 @@
 /public/storage
 /storage/*.key
 /storage/svarinn*
+/storage/kommuner.xlsx
+/storage/example.json
 /vendor
 .env
 .env.backup
@@ -17,5 +19,3 @@ yarn-error.log
 /.vscode
 /dekrypter-*
 /keys
-/kommuner.xlsx
-example.json
