@@ -1,12 +1,12 @@
 /node_modules
+/vendor
 /public/build
 /public/hot
 /public/storage
-/storage/*.key
 /storage/svarinn*
 /storage/kommuner.xlsx
 /storage/example.json
-/vendor
+/storage/keys
 .env
 .env.backup
 .phpunit.result.cache
@@ -18,4 +18,3 @@ yarn-error.log
 /.idea
 /.vscode
 /dekrypter-*
-/keys

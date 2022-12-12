@@ -8,7 +8,7 @@ return [
     'urlMottakFeilet' => '/tjenester/svarinn/mottakFeilet/forsendelse',
     'username' => env('SVARINN_USER', null),
     'secret' => env('SVARINN_SECRET', null),
-    'privatekey_path' => env('SVARINN_PRIVATEKEY_PATH', base_path('keys/privatekey.pem')),
+    'privatekey_path' => env('SVARINN_PRIVATEKEY_PATH', storage_path('keys/privatekey.pem')),
     'max_retries' => env('SVARINN_MAX_RETRIES', 3),
     'temp_path' => env('SVARINN_TEMP_PATH', storage_path('svarinn_tmp')),
     'download_path' => env('SVARINN_DOWNLOAD_PATH', storage_path('svarinn_download')),

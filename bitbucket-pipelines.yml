@@ -52,6 +52,7 @@ pipelines:
             - unzip dekrypter-${DEKRYPTER_VER}-dist.zip && rm dekrypter-${DEKRYPTER_VER}-dist.zip
             - echo 'Setter opp og legger inn avhengigheter'
             - cp .env.example .env
+            - mv ${SVARINN_EXCEL_LOOKUP_FILE} storage/ && mv keys storage/keys
             - composer install --no-dev
             - echo 'Kjører svarinn2pureservice'
             - ./artisan svarinn2pureservice:run

@@ -61,12 +61,12 @@ Variabler i **fet skrift** har ingen standardverdi og må settes før kjøring. 
 | *SVARINN_PS_STATUS* | Ny | Navn på statusen som skal settes på saken i Pureservice. Må finnes i Pureservice fra før av. |
 | **SVARINN_USER** | | Brukernavn for innlogging til SvarUt MottakService |
 | **SVARINN_SECRET** | | Passord for innlogging til SvarUt MottakService |
-| SVARINN_PRIVATEKEY_PATH | keys/privatekey.pem | Sti til privat nøkkel for dekryptering av forsendelsesfil |
+| SVARINN_PRIVATEKEY_PATH | storage/keys/privatekey.pem | Sti til privat nøkkel for dekryptering av forsendelsesfil |
 | SVARINN_MAX_RETRIES | 3 | Hvor mange ganger vi skal prøve forespørsler på nytt før vi gir opp |
 | SVARINN_TEMP_PATH | storage/svarinn_tmp | Mappe for utpakking av zip-filer |
 | SVARINN_DOWNLOAD_PATH | storage/svarinn_download | Mappe for nedlasting av forsendelsesfil |
 | SVARINN_DEKRYPT_PATH | storage/svarinn_dekryptert | Mappe der dekryptert fil havner |
-| SVARINN_PS_VISIBILITY | 2 | Setter synlighet for sluttbruker på saken som blir opprettet. Standard (2) er å sette saken "Ikke synlig" |
+| SVARINN_PS_VISIBILITY | 2 | Setter synlighet for sluttbruker på saken som blir opprettet. Standard (2) er å sette saken "Ikke synlig" |
 | SVARINN_PS_USER_ROLE_ID | 10 | Rolle-ID for brukeren som blir opprettet fra forsendelsen. Standard er sluttbruker-rollen |
 | SVARINN_PS_REQUEST_TYPE | Ticket | RequestType for forespørselen. Dette er normalt ikke noe man trenger å endre fra standard |
 | SVARINN_EXCEL_LOOKUP_FILE | false | Excel-fil lastet ned fra kommuneregisteret.no (inneholder kommunenavn i kolonne B og e-postadresse i kolonne F), lagret under storage (storage/{SVARINN_EXCEL_LOOKUP_FILE}). Sett til false for å slå av funksjonaliteten. |
