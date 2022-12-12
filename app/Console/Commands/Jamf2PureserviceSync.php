@@ -13,7 +13,7 @@ class Jamf2PureserviceSync extends Command
      *
      * @var string
      */
-    protected $signature = 'jamf2pureservice:sync';
+    protected $signature = 'jamf2pureservice:run';
 
     protected $version = '1.1.0';
 
@@ -41,7 +41,7 @@ class Jamf2PureserviceSync extends Command
      */
     public function handle() {
         $this->start = microtime(true);
-        $this->info((new \ReflectionClass($this))->getShortName().' v'.$this->version);
+        $this->info(class_basename($this).' v'.$this->version);
         $this->line($this->description);
         $this->line('');
 

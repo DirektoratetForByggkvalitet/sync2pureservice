@@ -22,7 +22,7 @@ pipelines:
           script:
             - composer install --no-dev
             - cp .env.example .env
-            - ./artisan jamf2pureservice:sync
+            - ./artisan jamf2pureservice:run
     svarinn2pureservice:
       - step:
           name: Henter privatnøkkel for SvarInn fra Azure Key Vault
