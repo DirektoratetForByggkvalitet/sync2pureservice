@@ -46,8 +46,8 @@ Saken vil bli fordelt til samhandlingssone og team oppgitt i miljøvariablene. D
 | SVARINN_DEKRYPT_PATH | storage/svarinn_dekryptert | Mappe der dekryptert fil havner |
 | SVARINN_PS_SOURCE | SvarUt | Navnet til kilden i Pureservice som skal brukes for SvarUt-forsendelser |
 | SVARINN_PS_TICKET_TYPE | Henvendelse | Navn på sakstypen som skal brukes i Pureservice |
-| SVARINN_PS_ZONE | | Samhandlingssone-navn som skal brukes for SvarUt-forsendelser |
-| SVARINN_PS_TEAM | | Team-navn som skal brukes for SvarUt-forsendelser |
+| SVARINN_PS_ZONE | Dispatchers | Samhandlingssone-navn som skal brukes for SvarUt-forsendelser. **Påkrevd** |
+| SVARINN_PS_TEAM | Dispatcher | Team-navn som skal brukes for SvarUt-forsendelser. **Påkrevd** |
 | SVARINN_PS_VISIBILITY | 2 | Setter synlighet for sluttbruker på saken som blir opprettet. Standard er setter saken "Usynlig" |
 | SVARINN_PS_PRIORITY | Normal | Navn på prioriteten som skal settes på saken i Pureservice. Må finnes i Pureservice fra før av. |
 | SVARINN_PS_STATUS | Ny | Navn på statusen som skal settes på saken i Pureservice. Må være definert i Pureservice fra før av. |
