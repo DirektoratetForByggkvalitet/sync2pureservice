@@ -40,6 +40,7 @@ pipelines:
             - cd ${BITBUCKET_CLONE_DIR}
             - echo "Laster ned kommunefil fra Azure Blob Storage"
             - az storage blob download --file ${BITBUCKET_CLONE_DIR}/${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
+            - ls -lh; ls -lh keys/
             - az logout
 
       - step:
@@ -47,9 +48,8 @@ pipelines:
           script:
             - echo 'Installerer OpenJDK 11 og CMS dekrypter'
             - apk add openjdk11 unzip
-            - DVER="1.0"
-            - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/${DVER}/dekrypter-${DVER}-dist.zip
-            - unzip dekrypter-${DVER}-dist.zip && rm dekrypter-${DVER}-dist.zip
+            - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/${DEKRYPTER_VERSION}/dekrypter-${DEKRYPTER_VERSION}-dist.zip
+            - unzip dekrypter-${DEKRYPTER_VERSION}-dist.zip && rm dekrypter-${DEKRYPTER_VERSION}-dist.zip
             - echo 'Setter opp og legger inn avhengigheter'
             - cp .env.example .env
             - composer install --no-dev

@@ -538,7 +538,7 @@ class PureserviceController extends Controller
         return false;
     }
 
-    public function findUser($email) {
+    public function findUser($email): array|false {
         $uri = '/user/?limit=1&include=emailAddress&filter=emailaddress.email == "'.$email.'"';
         if ($result = $this->apiGet($uri)):
             if (count($result['users']) == 1) return $result['users'][0];
@@ -553,7 +553,7 @@ class PureserviceController extends Controller
      *
      * @return mixed    null hvis den ikke finnes, IDen dersom den finnes.
      */
-    protected function findEmailaddressId($email, $companyAddress=false) {
+    protected function findEmailaddressId($email, $companyAddress=false): int|false {
         $prefix = $companyAddress ? 'company' : '';
         $uri = '/'.$prefix.'emailaddress?filter=email == "'.$email.'"';
         if ($result = $this->apiGet($uri)):
@@ -568,7 +568,7 @@ class PureserviceController extends Controller
     /**
      * Oppretter en standardbruker for foretak/virksomhet
      */
-    public function addCompanyUser($companyInfo, $emailaddress = false) {
+    public function addCompanyUser($companyInfo, $emailaddress = false): array|false {
         $emailId = $this->findEmailaddressId($emailaddress);
         if ($emailaddress && $emailId == null):
             $uri = '/emailaddress/';
@@ -605,7 +605,7 @@ class PureserviceController extends Controller
      *
      * @return mixed    False dersom oppretting mislykkes, RequestNumber dersom det går bra
      */
-    public function createTicketFromSvarUt($message, $user) {
+    public function createTicketFromSvarUt($message, $user): array|false {
         if ($this->ticketOptions == []) $this->setTicketOptions();
         $uri = '/ticket';
         $description = '<p>SvarUt Forsendelses-ID: <strong>'.$message['id'].'</strong></p>'.PHP_EOL;
@@ -656,7 +656,7 @@ class PureserviceController extends Controller
      *
      * @return assoc_array  Rapport på status og antall filer/opplastinger
      */
-    public function uploadAttachments($attachments, $ticket, $message) {
+    public function uploadAttachments($attachments, $ticket, $message): array {
         $uri = '/attachment';
         $msgFiles = collect(Arr::get($message, 'filmetadata'));
         $attachmentCount = count($attachments);
@@ -686,13 +686,13 @@ class PureserviceController extends Controller
         ];
     }
 
-    protected function human_filesize($bytes, $decimals = 2) {
+    protected function human_filesize($bytes, $decimals = 2): string {
         $sz = 'BKMGTP';
         $factor = floor((strlen($bytes) - 1) / 3);
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
     }
 
-    protected function dateFromEpochTime($ts) {
+    protected function dateFromEpochTime($ts): string {
         return Carbon::createFromTimestampMs($ts, config('app.timezone'))
             ->locale(config('app.locale'))
             ->toDateTimeString();

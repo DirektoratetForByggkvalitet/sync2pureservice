@@ -41,7 +41,7 @@ class SvarInn2Pureservice extends Command
      */
     public function handle() {
         $this->start = microtime(true);
-        $this->info((new \ReflectionClass($this))->getShortName().' v'.$this->version);
+        $this->info(class_basename($this).' v'.$this->version);
         $this->line($this->description);
 
         $this->info($this->ts().'Setter opp miljøet...');
@@ -58,9 +58,13 @@ class SvarInn2Pureservice extends Command
             $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
             $msgs = $this->svarInn->sjekkForMeldinger();
         else:
-            $msgs = json_decode(file_get_contents(storage_path(config('svarinn.dryrun'))), true);
+            if (file_exists(config('svarinn.dryrun'))):
+                $this->info($this->l2.'Laster inn eksempelmeldinger fra JSON');
+                $msgs = json_decode(file_get_contents(storage_path(config('svarinn.dryrun'))), true);
+            else:
+                $this->error('Finner ingen JSON-fil på angitt lokasjon: \''.config('svarinn.dryrun').'\'');
+                return Command::INVALID;
         endif;
-        /** Testing: Hent data fra eksempelfil */
 
         $msgCount = count($msgs);
         $i = 0;
@@ -153,12 +157,13 @@ class SvarInn2Pureservice extends Command
             $this->line($this->l2.'Ingen meldinger å hente');
         endif;
 
+        $this->info('Fullført på '. round(microtime(true) - $start, 2).' sekunder');
         return Command::SUCCESS;
     }
     /**
      * Returnerer formatert tidspunkt til logging
      */
-    protected function ts() {
+    protected function ts(): string {
         return '['.Carbon::now(config('app.timezone'))->toDateTimeLocalString().'] ';
     }
 
@@ -178,7 +183,7 @@ class SvarInn2Pureservice extends Command
         is_dir(config('svarinn.download_path')) ? true : mkdir(config('svarinn.download_path'), 0770, true);
     }
 
-    protected function getOptions() {
+    protected function getOptions(): array {
         return [
             'headers' => [
                 'Accept-Encoding' => 'gzip, deflate, br',
@@ -195,7 +200,7 @@ class SvarInn2Pureservice extends Command
     /**
      * Returnerer en GuzzleHttp-klient
      */
-    protected function getClient() {
+    protected function getClient(): GuzzleClient {
         return new GuzzleClient([
             'allow_redirects' => true,
         ]);
@@ -203,7 +208,7 @@ class SvarInn2Pureservice extends Command
     /**
      * Henter ned forsendelsesfilen som er oppgitt i meldingen
      */
-    protected function hentForsendelsefil($uri) {
+    protected function hentForsendelsefil($uri): string {
         $fileResponse = $this->getClient()->get($uri, $this->getOptions());
 
         $contentType = $fileResponse->getHeader('content-type');
@@ -217,7 +222,7 @@ class SvarInn2Pureservice extends Command
      * Kvitterer for at meldingen er mottatt
      * @param string    $id     Meldingens ID i SvarUt
      */
-    protected function kvitterForMottak($id) {
+    protected function kvitterForMottak($id): bool {
         $uri = config('svarinn.base_uri').config('svarinn.urlSettMottatt').'/'.$id;
 
         $result = $this->getClient()->post($uri, $this->getOptions());
@@ -230,7 +235,7 @@ class SvarInn2Pureservice extends Command
     /**
      * Merker en forsendelse som feilet
      */
-    protected function forsendelseFeilet($id, $permanent = false, $melding = null) {
+    protected function forsendelseFeilet($id, $permanent = false, $melding = null): bool {
         $uri = config('svarinn.base_uri').config('svarinn.urlMottakFeilet').'/'.$id;
 
         $melding = $melding == null ? 'En feil oppsto under innhenting.': $melding;
@@ -254,7 +259,7 @@ class SvarInn2Pureservice extends Command
      * @param  string   $fileName    Filnavnet til den krypterte fila
      * @return int      $returnValue Verdi som angir resultatkoden fra dekrypteringen
      */
-    protected function decryptFile($fileName) {
+    protected function decryptFile($fileName): int {
         if (file_exists(config('svarinn.download_path').'/'.$fileName)):
             $dekrypt = system(
                 'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . config('svarinn.privatekey_path').
