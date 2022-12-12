@@ -252,6 +252,7 @@ class PureserviceController extends Controller
             'statusId' => $this->getEntityId('status', config('svarinn.pureservice.status')),
             'ticketTypeId' => $this->getEntityId('tickettype', config('svarinn.pureservice.ticketType')),
         ];
+        $this->up = true;
 
     }
     /**

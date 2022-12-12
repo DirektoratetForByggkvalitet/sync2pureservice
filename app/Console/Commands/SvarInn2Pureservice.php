@@ -9,8 +9,7 @@ use GuzzleHttp\Client as GuzzleClient;
 use ZipArchive;
 use Illuminate\Support\{Arr, Str};
 
-class SvarInn2Pureservice extends Command
-{
+class SvarInn2Pureservice extends Command {
     protected $l1 = '';
     protected $l2 = '> ';
     protected $l3 = '  ';
@@ -39,7 +38,8 @@ class SvarInn2Pureservice extends Command
      *
      * @return int
      */
-    public function handle() {
+    public function handle()
+    {
         $this->start = microtime(true);
         $this->info(class_basename($this).' v'.$this->version);
         $this->line($this->description);
@@ -64,6 +64,7 @@ class SvarInn2Pureservice extends Command
             else:
                 $this->error('Finner ingen JSON-fil på angitt lokasjon: \''.config('svarinn.dryrun').'\'');
                 return Command::INVALID;
+            endif;
         endif;
 
         $msgCount = count($msgs);
@@ -160,6 +161,7 @@ class SvarInn2Pureservice extends Command
         $this->info('Fullført på '. round(microtime(true) - $start, 2).' sekunder');
         return Command::SUCCESS;
     }
+
     /**
      * Returnerer formatert tidspunkt til logging
      */

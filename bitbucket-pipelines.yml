@@ -39,7 +39,7 @@ pipelines:
             - echo -e "-----BEGIN PRIVATE KEY-----\n$(cat privatekey.tmp)\n-----END PRIVATE KEY-----" > privatekey.pem
             - cd ${BITBUCKET_CLONE_DIR}
             - echo "Laster ned kommunefil fra Azure Blob Storage"
-            - az storage blob download --file ${BITBUCKET_CLONE_DIR}/${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
+            - az storage blob download --auth-mode login --file ${BITBUCKET_CLONE_DIR}/${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
             - ls -lh; ls -lh keys/
             - az logout
 
