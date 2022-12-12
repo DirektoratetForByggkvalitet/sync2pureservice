@@ -158,7 +158,7 @@ class SvarInn2Pureservice extends Command {
             $this->line($this->l2.'Ingen meldinger å hente');
         endif;
 
-        $this->info('Fullført på '. round(microtime(true) - $start, 2).' sekunder');
+        $this->info('Fullført på '. round(microtime(true) - $this->start, 2).' sekunder');
         return Command::SUCCESS;
     }
 
