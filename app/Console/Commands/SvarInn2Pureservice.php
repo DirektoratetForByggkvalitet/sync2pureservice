@@ -14,7 +14,7 @@ class SvarInn2Pureservice extends Command {
     protected $l2 = '> ';
     protected $l3 = '  ';
     protected $start;
-    protected $pureservice;
+    protected $ps;
     protected $svarInn;
 
     /**
@@ -53,7 +53,7 @@ class SvarInn2Pureservice extends Command {
         $this->ps = new PureserviceController();
         $this->ps->setTicketOptions();
 
-        $this->info($this->ts().'Kobler til SvarInn');
+        $this->info($this->ts().'Kobler til SvarUt Mottakstjeneste');
         $this->svarInn = new SvarInnController();
 
         if (is_bool(config('svarinn.dryrun'))):
