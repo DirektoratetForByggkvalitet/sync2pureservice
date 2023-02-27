@@ -25,8 +25,8 @@ pipelines:
             - ./artisan jamf2pureservice:run
     svarinn2pureservice:
       - step:
-          name: Henter privatnøkkel for SvarInn fra Azure Key Vault
-          image: mcr.microsoft.com/azure-cli
+          name: Forbereder kjøring
+          image: atlassian/default-image:3
           clone:
             enabled: false
           artifacts:
@@ -34,17 +34,24 @@ pipelines:
             - "*.xlsx"
             - "*.json"
           script:
-            - LOGIN=$(az login --service-principal -u ${AZURE_SP_ID} -p=${AZURE_SP_SECRET} --tenant ${AZURE_SP_TENANT})
-            - az keyvault secret download --file privatekey.tmp --name ${AZURE_KV_KEY_NAME} --vault-name ${AZURE_KV_NAME}
+            - echo "Laster ned privatnøkkel til dekryptering fra Key Vault"
+            - pipe: microsoft/azure-cli-run:1.1.0
+              variables:
+                AZURE_APP_ID: $AZURE_SP_ID
+                AZURE_PASSWORD: $AZURE_SP_SECRET
+                AZURE_TENANT_ID: $AZURE_SP_TENANT
+                CLI_COMMAND: az keyvault secret download --file privatekey.tmp --name ${AZURE_KV_KEY_NAME} --vault-name ${AZURE_KV_NAME}
             - echo -e "-----BEGIN PRIVATE KEY-----\n$(cat privatekey.tmp)\n-----END PRIVATE KEY-----" > privatekey.pem
             - echo "Laster ned kommunefil fra Azure Blob Storage"
-            - az storage blob download --auth-mode login --file ${BITBUCKET_CLONE_DIR}/${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
-            - az storage blob download --auth-mode login --file ${BITBUCKET_CLONE_DIR}/example.json --name example.json --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
-            - az logout
-            - ls -lh
+            - pipe: microsoft/azure-cli-run:1.1.0
+              variables:
+                AZURE_APP_ID: $AZURE_SP_ID
+                AZURE_PASSWORD: $AZURE_SP_SECRET
+                AZURE_TENANT_ID: $AZURE_SP_TENANT
+                CLI_COMMAND: az storage blob download --auth-mode login --file ${BITBUCKET_CLONE_DIR}/${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
 
       - step:
-          name: Ser etter innkommende forsendelser i SvarInn
+          name: Sjekker innkommende forsendelser i Svarinn
           script:
             - echo 'Installerer OpenJDK 11 og CMS dekrypter'
             - apk add openjdk11 unzip
@@ -52,9 +59,9 @@ pipelines:
             - unzip dekrypter-${DEKRYPTER_VER}-dist.zip && rm dekrypter-${DEKRYPTER_VER}-dist.zip
             - echo 'Setter opp og legger inn avhengigheter'
             - cp .env.example .env
-            - mv ${SVARINN_EXCEL_LOOKUP_FILE} *.pem example.json storage/
-            - composer install --no-dev
+            - mv ${SVARINN_EXCEL_LOOKUP_FILE} *.pem storage/
             - echo 'Kjører svarinn2pureservice'
+            - composer install --no-dev
             - ./artisan svarinn2pureservice:run
 
     tool-build-dekrypter:
