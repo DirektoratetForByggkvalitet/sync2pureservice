@@ -31,7 +31,7 @@ pipelines:
             enabled: false
           artifacts:
             - "*.pem"
-            - "*.xslx"
+            - "*.xlsx"
             - "*.json"
           script:
             - LOGIN=$(az login --service-principal -u ${AZURE_SP_ID} -p=${AZURE_SP_SECRET} --tenant ${AZURE_SP_TENANT})
