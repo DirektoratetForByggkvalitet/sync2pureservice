@@ -106,7 +106,7 @@ class PureserviceController extends Controller
      *
      * @return  Psr\Http\Message\ResponseInterface  Resultatobjekt for forespørselen
      */
-    public function apiPOST($uri, $body, $ct='application/json; charset=utf-8') {
+    public function apiPOST($uri, $body, $ct='application/vnd.api+json; charset=utf-8') {
         $uri = $this->pre.$uri;
         $options = $this->options;
         $options['json'] = $body;
