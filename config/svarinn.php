@@ -4,7 +4,7 @@ return [
     'dryrun' => env('SVARINN_DRYRUN', false),
     'base_uri' => 'https://svarut.ks.no',
     'urlHentForsendelser' => '/tjenester/svarinn/mottaker/hentNyeForsendelser',
-    'urlSettMottatt' => '/tjenester/svarinn/kvitterMottatt/forsendelse',
+    'urlSettMottatt' => '/tjenester/svarinn/kvitterMottak/forsendelse',
     'urlMottakFeilet' => '/tjenester/svarinn/mottakFeilet/forsendelse',
     'username' => env('SVARINN_USER', null),
     'secret' => env('SVARINN_SECRET', null),
