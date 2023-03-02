@@ -24,10 +24,10 @@ Det er en rekke variabler som er nødvendige for at skriptet skal få gjort alt 
 | JAMFPRO_URL | https://customer.jamfcloud.com | Angir base-adressen til Jamf Pro-instansen. Det er ikke nødvendig å bruke /api el.l. |
 | JAMFPRO_USER | let-me | Brukernavn for en bruker i Jamf Pro som har global lesetilgang |
 | JAMFPRO_PASSWORD | pass | Passord til Jamf Pro-brukeren |
-| PURESERVICE_URL | https://customer.pureservice.com | Base-adressen til Pureservice-instansen |
+| PURESERVICE_URL | https://customer.pureservice.com | Base-adressen til Pureservice-instansen |
 | PURESERVICE_APIKEY | ey... | API-nøkkel til Pureservice |
 | PURESERVICE_COMPUTER_ASSETTYPE_NAME | Computer | Navnet til ressurstypen som brukes til datamaskiner i Pureservice |
-| PURESERVICE_MOBILE_ASSETTYPE_NAME | Mobile | Navnet til ressurstypen som brukes til mobilenheter i Pureservice |
+| PURESERVICE_MOBILE_ASSETTYPE_NAME | Mobile | Navnet til ressurstypen som brukes til mobilenheter i Pureservice |
 
 ## Nødvendig oppsett i Pureservice
 
@@ -41,14 +41,14 @@ Feltene er stort sett felles for de to ressurstypene, men feltnavnene kan også 
 | ----------- | ----------- | ----------- | ----------- |
 | PURESERVICE_[TYPE]_FIELD_NAME | Navn | Navnefelt | Feltet som brukes som enhetens navn (påkrevd) |
 | PURESERVICE_[TYPE]_FIELD_SERIAL | Serienr | Unik verdi | Enhetens serienummer (unikt og påkrevd) |
-| PURESERVICE_[TYPE]_FIELD_MODEL | Modell | Tekst | Enhetens modellnavn fra Jamf Pro |
+| PURESERVICE_[TYPE]_FIELD_MODEL | Modell | Tekst | Enhetens modellnavn fra Jamf Pro |
 | PURESERVICE_[TYPE]_FIELD_MODELID | ModelID | Tekst | Enhetens modell-ID, f.eks. 'MacMini11,1' |
 | PURESERVICE_[TYPE]_FIELD_OS | OS-versjon | Tekst | Enhetens OS-versjon |
-| PURESERVICE_COMPUTER_FIELD_PROCESSOR | Prosessor | Tekst | Enhetens prosessortype - brukes ikke av mobilenheter |
+| PURESERVICE_COMPUTER_FIELD_PROCESSOR | Prosessor | Tekst | Enhetens prosessortype - brukes ikke av mobilenheter |
 | PURESERVICE_[TYPE]_FIELD_JAMFURL | Jamf-URL | Tekst med knapphandling URL: %@ | Lenke til enheten i Jamf Pro |
-| PURESERVICE_[TYPE]_FIELD_LASTSEEN | Sist sett | Dato | Tidsangivelse for når enheten ble sist sett av Jamf Pro |
-| PURESERVICE_[TYPE]_FIELD_MEMBERSINCE | Innmeldt | Dato | Tidsangivelse for når enheten første gang ble innrullert i Jamf Pro |
-| PURESERVICE_[TYPE]_FIELD_EOL | EOL | Dato | Dato for når enheten forventes å skiftes ut. Regnes ut av jamf2pureservice |
+| PURESERVICE_[TYPE]_FIELD_LASTSEEN | Sist sett | Dato | Tidsangivelse for når enheten ble sist sett av Jamf Pro |
+| PURESERVICE_[TYPE]_FIELD_MEMBERSINCE | Innmeldt | Dato | Tidsangivelse for når enheten første gang ble innrullert i Jamf Pro |
+| PURESERVICE_[TYPE]_FIELD_EOL | EOL | Dato | Dato for når enheten forventes å skiftes ut. Regnes ut av jamf2pureservice |
 | Ikke i bruk | Kommentarer | Tekst | Tekstfelt for å skrive inn kommentarer for selve enheten. Brukes ikke av jamf2pureservice |
 
 Vi har lagt opp til at jamf2pureservice henter inn riktige property-navn fra Pureseservice, basert på feltnavnene som oppgis i miljøvariablene. På den måten kan man fritt bruke spesialtegn i feltnavnene.
@@ -64,12 +64,12 @@ Følgende statuser er forventet inne i Pureservice, der de tre første regnes so
 | PURESERVICE_[TYPE]_STATUS_DEPLOYED | Tildelt bruker | Aktiv | Vanlig status for enhet som er utlevert til bruker |
 | PURESERVICE_[TYPE]_STATUS_IN_STORAGE | På lager | Aktiv | Status for en utleverbar enhet som står på lager |
 | PURESERVICE_[TYPE]_STATUS_PHASEOUT | Under utfasing | Aktiv | Enheten nærmer seg eller har passert EOL, men er fremdeles utlevert |
-| PURESERVICE_[TYPE]_STATUS_REUSED | Sendt til ombruk | Inaktiv | Enheten er ikke lenger i bruk, og har blitt overlevert til ombruk |
-| PURESERVICE_[TYPE]_STATUS_RECYCLED | Sendt til gjenvinning | Inaktiv | Enheten er ikke i bruk, og har blitt sendt til gjenbruk |
-| PURESERVICE_[TYPE]_STATUS_STOLEN | Stjålet | Inaktiv | Enheten er meldt stjålet |
-| PURESERVICE_[TYPE]_STATUS_LOST | Mistet | Inaktiv | Enheten har kommet bort |
-| PURESERVICE_[TYPE]_STATUS_SERVICE | Sendt til service | Inaktiv | Enheten har blitt sendt til reparasjon |
-| PURESERVICE_[TYPE]_STATUS_PHASEDOUT | Utfasing - innlevert | Inaktiv | Enheten er levert inn av bruker, klar for ombruk eller gjenvinning |
+| PURESERVICE_[TYPE]_STATUS_REUSED | Sendt til ombruk | Inaktiv | Enheten er ikke lenger i bruk, og har blitt overlevert til ombruk |
+| PURESERVICE_[TYPE]_STATUS_RECYCLED | Sendt til gjenvinning | Inaktiv | Enheten er ikke i bruk, og har blitt sendt til gjenbruk |
+| PURESERVICE_[TYPE]_STATUS_STOLEN | Stjålet | Inaktiv | Enheten er meldt stjålet |
+| PURESERVICE_[TYPE]_STATUS_LOST | Mistet | Inaktiv | Enheten har kommet bort |
+| PURESERVICE_[TYPE]_STATUS_SERVICE | Sendt til service | Inaktiv | Enheten har blitt sendt til reparasjon |
+| PURESERVICE_[TYPE]_STATUS_PHASEDOUT | Utfasing - innlevert | Inaktiv | Enheten er levert inn av bruker, klar for ombruk eller gjenvinning |
 
 ### Relasjoner
 
