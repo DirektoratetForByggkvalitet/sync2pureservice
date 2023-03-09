@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Services;
 
 use Psr\Http\Message\{RequestInterface, ResponseInterface};
 use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware};
 
-class JamfController extends Controller
+class JamfPro
 {
     //
     protected $token;
@@ -34,7 +34,7 @@ class JamfController extends Controller
         // Funksjon for å finne ut hvor lenge man skal vente
         $delay = function(int $retries, ResponseInterface $response) : int {
             if (!$response->hasHeader('Retry-After')) {
-                return RetryMiddleware::exponentialDelay($this->retries);
+                return RetryMiddleware::exponentialDelay($retries);
             }
 
             $retryAfter = $response->getHeaderLine('Retry-After');

@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Http\Controllers\{JamfController, PureserviceController};
+use App\Services\{JamfPro, Pureservice};
 use Carbon\Carbon;
 
 class Jamf2PureserviceSync extends Command
@@ -17,8 +17,8 @@ class Jamf2PureserviceSync extends Command
 
     protected $version = '1.1.0';
 
-    protected JamfController $jpsApi;
-    protected PureserviceController $psApi;
+    protected JamfPro $jpsApi;
+    protected Pureservice $psApi;
     protected $jamfDevices;
     protected $psDevices;
     protected $l1 = '';
@@ -46,7 +46,7 @@ class Jamf2PureserviceSync extends Command
         $this->line('');
 
         $this->line($this->l2.'Logger inn på Pureservice');
-        $this->psApi = new PureserviceController(true);
+        $this->psApi = new Pureservice(true);
         if ($this->psApi->up):
             $this->line($this->l3.'Pureservice er tilkoblet og svarer normalt');
         else:
@@ -55,7 +55,7 @@ class Jamf2PureserviceSync extends Command
         endif;
 
         $this->line($this->l2.'Logger inn på Jamf Pro');
-        $this->jpsApi = new JamfController();
+        $this->jpsApi = new JamfPro();
         if ($this->jpsApi->up):
             $this->line($this->l3.'Jamf Pro er tilkoblet og svarer normalt');
         else:

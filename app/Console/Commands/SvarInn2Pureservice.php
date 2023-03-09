@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Http\Controllers\{PureserviceController, SvarInnController, ExcelLookup};
+use App\Services\{Pureservice, SvarInn, ExcelLookup};
 use Carbon\Carbon;
 use GuzzleHttp\Client as GuzzleClient;
 use ZipArchive;
@@ -14,8 +14,8 @@ class SvarInn2Pureservice extends Command {
     protected $l2 = '> ';
     protected $l3 = '  ';
     protected $start;
-    protected $ps;
-    protected $svarInn;
+    protected Pureservice $ps;
+    protected SvarInn $svarInn;
 
     /**
      * The name and signature of the console command.
@@ -50,11 +50,11 @@ class SvarInn2Pureservice extends Command {
         $this->line('');
 
         $this->info($this->ts().'Kobler til Pureservice');
-        $this->ps = new PureserviceController();
+        $this->ps = new Pureservice();
         $this->ps->setTicketOptions();
 
         $this->info($this->ts().'Kobler til SvarUt Mottakstjeneste');
-        $this->svarInn = new SvarInnController();
+        $this->svarInn = new SvarInn();
 
         if (is_bool(config('svarinn.dryrun'))):
             $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
@@ -166,7 +166,7 @@ class SvarInn2Pureservice extends Command {
      *
      * @return bool True dersom alt er i orden, false hvis vi ikke kan kjøre.
      */
-    protected function checkList() {
+    protected function checkList(): bool {
         $rv = true;
         $this->info($this->ts().'Sjekker oppsettet…');
         if (config('svarinn.username') == null):
@@ -206,7 +206,7 @@ class SvarInn2Pureservice extends Command {
     /**
      * Utvider config til å inkludere svarut-dekrypter sitt oppsett
      */
-    protected function setConfig() {
+    protected function setConfig(): void {
         if (config('svarinn.dekrypter.jar') == null):
             config([
                 'svarinn.dekrypter.jar' => base_path('dekrypter-'.config('svarinn.dekrypter.version').'/dekrypter-'.config('svarinn.dekrypter.version').'.jar')

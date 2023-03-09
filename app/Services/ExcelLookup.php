@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Services;
 
 use PhpOffice\PhpSpreadsheet\{Spreadsheet, IOFactory};
 use Illuminate\Support\Str;
 
-class ExcelLookup extends Controller
-{
+class ExcelLookup {
     /**
      * Laster inn Excel-fila som er kilde for e-postadressene til kommunene
      * @return Collection   Collection-array over kommuner med e-postadresser

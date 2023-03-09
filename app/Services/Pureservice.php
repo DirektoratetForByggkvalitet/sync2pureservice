@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Services;
 
 use Psr\Http\Message\{RequestInterface, ResponseInterface};
 use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware, RequestOptions};
 use Carbon\Carbon;
 use Illuminate\Support\{Str, Arr};
 
-class PureserviceController extends Controller
+class Pureservice
 {
     protected $api;
     protected $options;
