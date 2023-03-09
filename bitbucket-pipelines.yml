@@ -52,6 +52,7 @@ pipelines:
 
       - step:
           name: Sjekker innkommende forsendelser i Svarinn
+          deployment: production
           script:
             - echo 'Installerer OpenJDK 11 og CMS dekrypter'
             - apk add openjdk11 unzip
