@@ -18,7 +18,15 @@ pipelines:
     jamf2pureservice:
       - step:
           name: Synkroniser mellom Jamf Pro og Pureservice
-          deployment: production
+          deployment: Production
+          script:
+            - cp .env.example .env
+            - composer install --no-dev
+            - ./artisan jamf2pureservice:run
+    jamf2ps-test:
+      - step:
+          name: Synkroniser mellom Jamf Pro og Pureservice
+          deployment: Test
           script:
             - cp .env.example .env
             - composer install --no-dev
@@ -52,7 +60,7 @@ pipelines:
 
       - step:
           name: Sjekker innkommende forsendelser i Svarinn
-          deployment: production
+          deployment: Production
           script:
             - echo 'Installerer OpenJDK 11 og CMS dekrypter'
             - apk add openjdk11 unzip
