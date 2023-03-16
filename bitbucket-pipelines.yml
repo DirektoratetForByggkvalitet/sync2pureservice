@@ -96,3 +96,12 @@ pipelines:
             - composer install --no-dev
             - ./artisan utsendelse:run
 
+    splittInnsynskrav:
+      - step:
+          deployment: Test
+          name: Splitter et innsynskrav gitt med SakID
+          script:
+            - composer install --no-dev
+            - ./artisan innsynskrav:splitt ${SakID}
+
+

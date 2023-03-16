@@ -38,7 +38,7 @@ class MakeService extends GeneratorCommand {
      *
      * @return string
      */
-    protected function getStub()
+    protected function getStub(): string
     {
         return app_path('Console/Stubs/service.stub');
     }
@@ -51,7 +51,7 @@ class MakeService extends GeneratorCommand {
      *
      * @return string
      */
-    protected function getDefaultNamespace($rootNamespace)
+    protected function getDefaultNamespace($rootNamespace): string
     {
         return $rootNamespace . '\Services';
     }
