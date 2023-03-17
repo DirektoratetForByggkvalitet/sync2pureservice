@@ -242,15 +242,15 @@ class Pureservice
      *
      * Setter variabelen $this->ticketOptions
      */
-    public function setTicketOptions() {
+    public function setTicketOptions($prefix = 'svarinn.pureservice') {
         $this->ticketOptions = [
-            'zoneId' => $this->getEntityId('department', config('svarinn.pureservice.zone')),
-            'teamId' => $this->getEntityId('team', config('svarinn.pureservice.team')),
-            'sourceId' => $this->getEntityId('source', config('svarinn.pureservice.source')),
-            'requestTypeId' => $this->getEntityId('requesttype', config('svarinn.pureservice.requestType'), true),
-            'priorityId' => $this->getEntityId('priority', config('svarinn.pureservice.priority')),
-            'statusId' => $this->getEntityId('status', config('svarinn.pureservice.status')),
-            'ticketTypeId' => $this->getEntityId('tickettype', config('svarinn.pureservice.ticketType')),
+            'zoneId' => $this->getEntityId('department', config($prefix.'.zone')),
+            'teamId' => $this->getEntityId('team', config($prefix.'.team')),
+            'sourceId' => $this->getEntityId('source', config($prefix.'.source')),
+            'requestTypeId' => $this->getEntityId('requesttype', config($prefix.'.requestType'), true),
+            'priorityId' => $this->getEntityId('priority', config($prefix.'.priority')),
+            'statusId' => $this->getEntityId('status', config($prefix.'.status')),
+            'ticketTypeId' => $this->getEntityId('tickettype', config($prefix.'.ticketType')),
         ];
         $this->up = true;
 
@@ -463,7 +463,7 @@ class Pureservice
         endif;
     }
 
-    public function findCompany($orgNo=null, $companyName=null) {
+    public function findCompany($orgNo=null, $companyName=null): array|false {
         $include = '&include=phonenumber,emailAddress';
         if ($orgNo != null):
             $uri = '/company/?filter=(!disabled AND organizationNumber=="'.$orgNo.'")'.$include;
@@ -497,7 +497,7 @@ class Pureservice
      *
      * @return mixed    array med det opprettede foretaket eller false hvis oppretting feilet
      */
-    public function addCompany($companyName, $orgNo=null, $email=false, $phone=false) {
+    public function addCompany($companyName, $orgNo=null, $email=false, $phone=false) : array|false {
         $phoneId = null;
         $emailId = $email ? $this->findEmailaddressId($email, true): null;
         if ($email != null):
@@ -571,7 +571,7 @@ class Pureservice
     /**
      * Oppretter en standardbruker for foretak/virksomhet
      */
-    public function addCompanyUser($companyInfo, $emailaddress = false): array|false {
+    public function addCompanyUser($companyInfo, $emailaddress = false, $userName = false): array|false {
         $emailId = $this->findEmailaddressId($emailaddress);
         if ($emailaddress && $emailId == null):
             $uri = '/emailaddress/';
@@ -586,12 +586,12 @@ class Pureservice
 
         $uri = '/user/?include=emailAddress,company';
         $body = [
-            'firstName' => 'SvarUt',
-            'lastName' => Str::limit($companyInfo['name'], 100),
-            'role' => config('svarinn.pureservice.role_id'),
+            'firstName' => $userName ? Str::beforeLast($userName, ' ') : 'SvarUt',
+            'lastName' => $companyInfo ? Str::limit($companyInfo['name'], 100) : Str::afterLast($userName, ' '),
+            'role' => config('pureservice.user.role_id'),
             'emailAddressId' => $emailId,
-            'companyId' => $companyInfo['id'],
-            'notificationScheme' => 0,
+            'companyId' => $companyInfo ? $companyInfo['id'] : null,
+            'notificationScheme' => 1,
         ];
 
         if ($response = $this->apiPOST($uri, $body)):
@@ -648,6 +648,37 @@ class Pureservice
             return json_decode($response->getBody()->getContents(), true)['tickets'][0];
         endif;
 
+        return false;
+    }
+
+    /**
+     * Oppretter sak med gitt emne og beskrivelse for brukeren oppgitt
+     * @param   string  $subject        Sakens emne
+     * @param   string  $description    Beskrivelse av saken
+     * @param   array   $userId         Sluttbrukers ID
+     * @param   mixed   $visibility     Synlighetskode
+    */
+    public function createTicket($subject, $description, $userId, $visibility=false): array|false {
+        if ($this->ticketOptions == []) $this->setTicketOptions();
+
+        $uri = '/ticket';
+        $body = ['tickets' => [
+            'subject' => $subject,
+            'description' => $description,
+            'userId' => $userId,
+            'visibility' => $visibility ? $visibility : config('pureservice.visibility.visible'),
+            'assignedDepartmentId' => $this->ticketOptions['zoneId'],
+            'assignedTeamId' => $this->ticketOptions['teamId'],
+            'sourceId' => $this->ticketOptions['sourceId'],
+            'ticketTypeId' => $this->ticketOptions['ticketTypeId'],
+            'priorityId' => $this->ticketOptions['priorityId'],
+            'statusId' => $this->ticketOptions['statusId'],
+            'requestTypeId' => $this->ticketOptions['requestTypeId'],
+        ]];
+
+        if ($response = $this->apiPOST($uri, $body)):
+            return json_decode($response->getBody()->getContents(), true)['tickets'][0];
+        endif;
         return false;
     }
 

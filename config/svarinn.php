@@ -21,7 +21,6 @@ return [
         'source' => env('SVARINN_PS_SOURCE', 'SvarUt'),
         'zone' => env('SVARINN_PS_ZONE', 'Dispatchers'),
         'team' => env('SVARINN_PS_TEAM', 'Dispatcher'),
-        'role_id' => env('SVARINN_PS_USER_ROLE_ID', 10),
         'visibility' => env('SVARINN_PS_VISIBILITY', 2),
         'ticketType' => env('SVARINN_PS_TICKET_TYPE', 'Henvendelse'),
         'priority' => env('SVARINN_PS_PRIORITY', 'Normal'),
