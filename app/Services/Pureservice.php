@@ -91,7 +91,7 @@ class Pureservice
      *
      * @return  Psr\Http\Message\ResponseInterface/assoc_array  Resultat som array eller objekt
      */
-    public function apiGet($uri, $returnResponse=false) {
+    public function apiGet($uri, $returnResponse=false): array|ResponseInterface {
         $uri = $this->pre.$uri;
         $response = $this->api->get($uri, $this->options);
         if ($returnResponse) return $response;
@@ -106,7 +106,7 @@ class Pureservice
      *
      * @return  Psr\Http\Message\ResponseInterface  Resultatobjekt for forespørselen
      */
-    public function apiPOST($uri, $body, $ct='application/vnd.api+json; charset=utf-8') {
+    public function apiPOST($uri, $body, $ct='application/vnd.api+json; charset=utf-8'): ResponseInterface {
         $uri = $this->pre.$uri;
         $options = $this->options;
         $options['json'] = $body;
@@ -121,11 +121,43 @@ class Pureservice
      *
      * @return  Psr\Http\Message\ResponseInterface  Resultatobjekt for forespørselen
      */
-    public function apiPATCH($uri, $body) {
+    public function apiPATCH($uri, $body, $returnBool = false): ResponseInterface|bool {
         $uri = $this->pre.$uri;
         $options = $this->options;
         $options['json'] = $body;
-        return $this->api->patch($uri, $options);
+        $result = $this->api->patch($uri, $options);
+        if ($returnBool):
+            if ($result->getStatusCode() < 210):
+                return true;
+            else:
+                return false;
+            endif;
+        else:
+            return $result;
+        endif;
+    }
+
+     /**
+     * Brukes til å kjøre en PUT-forespørsel (oppdatering) mot Pureservice
+     * @param   string      $uri    Relativ URI for forespørselen
+     * @param   assoc_array $body   JSON-innholdet til forespørselen, som assoc_array
+     *
+     * @return  Psr\Http\Message\ResponseInterface|bool  Resultatobjekt for forespørselen
+     */
+    public function apiPut($uri, $body, $returnBool = false) : ResponseInterface|bool {
+        $uri = $this->pre.$uri;
+        $options = $this->options;
+        $options['json'] = $body;
+        $result = $this->api->put($uri, $options);
+        if ($returnBool):
+            if ($result->getStatusCode() < 210):
+                return true;
+            else:
+                return false;
+            endif;
+        else:
+            return $result;
+        endif;
     }
 
     /**
@@ -662,7 +694,7 @@ class Pureservice
         if ($this->ticketOptions == []) $this->setTicketOptions();
 
         $uri = '/ticket';
-        $body = ['tickets' => [
+        $body = ['tickets' => [[
             'subject' => $subject,
             'description' => $description,
             'userId' => $userId,
@@ -674,12 +706,20 @@ class Pureservice
             'priorityId' => $this->ticketOptions['priorityId'],
             'statusId' => $this->ticketOptions['statusId'],
             'requestTypeId' => $this->ticketOptions['requestTypeId'],
-        ]];
+        ]]];
 
         if ($response = $this->apiPOST($uri, $body)):
             return json_decode($response->getBody()->getContents(), true)['tickets'][0];
         endif;
         return false;
+    }
+
+    /**
+     * Rydder opp en ticket ved å fjerne unødvendige felter
+     */
+    public function cleanTicket(&$ticket): void {
+       unset($ticket['id'], $ticket['modified'], $ticket['created'], $ticket['modifiedById'], $ticket['coordinates'], $ticket['createdById']);
+       unset($ticket['links']);
     }
 
     /**

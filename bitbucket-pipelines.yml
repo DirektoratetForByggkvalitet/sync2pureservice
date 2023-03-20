@@ -22,7 +22,7 @@ pipelines:
           script:
             - cp .env.example .env
             - composer install --no-dev
-            - ./artisan jamf2pureservice:run
+            - ./artisan pureservice:jamf2ps
     jamf2ps-test:
       - step:
           name: Synkroniser mellom Jamf Pro og Pureservice
@@ -30,7 +30,7 @@ pipelines:
           script:
             - cp .env.example .env
             - composer install --no-dev
-            - ./artisan jamf2pureservice:run
+            - ./artisan pureservice:jamf2ps
     svarinn2pureservice:
       - step:
           name: Forbereder kjøring
@@ -71,7 +71,7 @@ pipelines:
             - mv ${SVARINN_EXCEL_LOOKUP_FILE} *.pem storage/
             - echo 'Kjører svarinn2pureservice'
             - composer install --no-dev
-            - ./artisan svarinn2pureservice:run
+            - ./artisan pureservice:svarinn2ps
 
     tool-build-dekrypter:
       - step:
@@ -94,7 +94,7 @@ pipelines:
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
           script:
             - composer install --no-dev
-            - ./artisan utsendelse:run
+            - ./artisan pureservice:utsendelse
 
     splittInnsynskrav:
       - step:
@@ -102,6 +102,6 @@ pipelines:
           name: Splitter et innsynskrav gitt med SakID
           script:
             - composer install --no-dev
-            - ./artisan innsynskrav:splitt ${SakID}
+            - ./artisan pureservice:splittInnsynskrav ${SakID}
 
 

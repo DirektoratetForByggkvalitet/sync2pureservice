@@ -13,7 +13,7 @@ class Jamf2PureserviceSync extends Command
      *
      * @var string
      */
-    protected $signature = 'jamf2pureservice:run';
+    protected $signature = 'pureservice:jamf2ps';
 
     protected $version = '1.1.0';
 

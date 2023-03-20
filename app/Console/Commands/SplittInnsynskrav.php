@@ -14,7 +14,7 @@ class SplittInnsynskrav extends Command
      *
      * @var string
      */
-    protected $signature = 'innsynskrav:splitt {requestNumber}';
+    protected $signature = 'pureservice:splittInnsynskrav {requestNumber}';
 
     /**
      * The console command description.
@@ -28,6 +28,8 @@ class SplittInnsynskrav extends Command
     protected $reqNo;
     protected $orderId;
     protected $orderDate;
+    protected $msg;
+    protected $head;
 
     protected Pureservice $ps;
     /**
@@ -47,7 +49,7 @@ class SplittInnsynskrav extends Command
         $this->line(Tools::l1().'Henter vedlegg til sak '.$this->reqNo);
         $result = $this->ps->apiGet('/attachment/?include=ticket&filter=ticket.requestNumber == '.$this->reqNo);
         $attachments = $result['attachments'];
-        $this->description = $result['linked']['tickets'][0]['description'];
+        $this->msg = $result['linked']['tickets'][0]['description'];
         unset($result);
         if (count($attachments) > 0):
             foreach ($attachments as $a):
@@ -82,9 +84,8 @@ class SplittInnsynskrav extends Command
         $this->line('');
 
         $this->line(Tools::l1().'Leser inn dokumentlisten');
-        $requests = json_decode(json_encode($bestilling->dokumenter->dokument), true);
+        $requests = json_decode(json_encode($bestilling->dokumenter), true)['dokument'];
         unset($bestilling);
-        $this->line(Tools::l2().'Det kreves innsyn i '.count($requests).' dokumenter');
 
         $this->line('');
         $this->line(Tools::l1().'Henter eller registrerer sluttbruker i Pureservice');
@@ -98,6 +99,7 @@ class SplittInnsynskrav extends Command
             endif;
         endif;
         if ($user = $this->ps->findUser($kontaktinfo['e-post'])):
+            $this->line(Tools::l2().'Fant brukeren '.$user['fullName']);
         else:
             $user = $this->ps->addCompanyUser($company, $kontaktinfo['e-post'], $kontaktinfo['navn']);
         endif;
@@ -107,20 +109,50 @@ class SplittInnsynskrav extends Command
         endif;
 
         $this->line('');
-        $this->line(Tools::ts().'Oppretter innsynskrav for hvert dokument');
+        $this->line(Tools::ts().'Oppretter ett innsynskrav for hver unike sak');
         $lineno = 0;
+        $this->head = Str::before($this->msg, 'Dokumenter:');
+        $docs = Str::between($this->msg, 'Dokumenter:<br>', '<br>--------------------------------------');
+        $aDocs = explode('<br>--------------------------------------<br>', $docs);
+
+        // Sorterer etter saksnr
+        $requests = Arr::sort($requests, function (array $value) {
+            return $value['saksnr'];
+        });
+        $saksnr = '';
         foreach($requests as $request):
-            $uri = '/ticket/';
-            $lineno++;
-            $description = Str::before($this->description, 'Dokumenter:');
-            $description .= 'Saksnr: '.$request['saksnr'].Str::between($this->description, 'Saksnr: '.$request['saksnr'], '----');
-            $ticket = [
-                'subject' => 'Innsynskrav for journalpost '.$request['saksnr'].'-'.$request['dokumentnr'],
-                'description' => $description,
-            ];
-            $body = ['tickets' => [$ticket]];
+            if ($saksnr !== $request['saksnr']):
+                $saksnr = $request['saksnr'];
+                $uri = '/ticket/';
+                $lineno++;
+                $subject = 'Innsynskrav for sak '.$request['saksnr'];
+                $this->line(Tools::l2().'Emne: "'.$subject.'".');
+                $description = $this->head;
+                $description .= '<p>'.implode('</p><p>', Arr::where($aDocs, function (string $value, int $key) use ($request) : bool {
+                    return Str::startsWith($value, 'Saksnr: '.$request['saksnr']);
+                }));
+                $description .= '</p>';
+
+                if ($ticket = $this->ps->createTicket($subject, $description, $user['id'], config('pureservice.visibility.invisible'))):
+                    $this->line(Tools::l2().'Opprettet saken "'.$ticket['subject'].'" med saksnr '.$ticket['requestNumber']);
+                endif;
+                // Endrer sakens synlighet til synlig
+                $ticketOptions = $this->ps->getTicketOptions();
+                $body = [
+                    'visibility' => config('pureservice.visibility.visible'),
+                    'statusId' => $ticketOptions['statusId'],
+                ];
+                if ($updated = $this->ps->apiPATCH($uri.$ticket['id'], $body, true)):
+                    $this->line(Tools::l2().'Sak '.$ticket['requestNumber'].' satt til Synlig');
+                    $this->line('');
+                endif;
+            else:
+                continue;
+            endif;
+
         endforeach;
 
         return Command::SUCCESS;
     }
+
 }
