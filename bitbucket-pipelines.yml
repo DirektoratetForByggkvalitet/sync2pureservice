@@ -98,7 +98,7 @@ pipelines:
 
     splittInnsynskrav:
       - step:
-          deployment: Test
+          deployment: Production
           name: Splitter et innsynskrav gitt med SakID
           script:
             - composer install --no-dev
