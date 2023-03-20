@@ -78,6 +78,7 @@ class SplittInnsynskrav extends Command
         endforeach;
         $this->line(Tools::l2().'Forsendelsesmåte: '.$kontaktinfo['forsendelsesmåte']);
         $this->line(Tools::l2().'E-postadresse: '.$kontaktinfo['e-post']);
+        if (strlen($kontaktinfo['navn']) < 3) $kontaktinfo['navn'] = $kontaktinfo['e-post'];
         $this->line(Tools::l2().'Innsenders navn: '.$kontaktinfo['navn']);
         $this->line(Tools::l2().'Organisasjon: '.$kontaktinfo['organisasjon']);
         $this->line(Tools::l2().'Land: '.$kontaktinfo['land']);
@@ -101,7 +102,6 @@ class SplittInnsynskrav extends Command
         if ($user = $this->ps->findUser($kontaktinfo['e-post'])):
             $this->line(Tools::l2().'Fant brukeren '.$user['fullName']);
         else:
-            if (strlen($kontaktinfo['navn']) < 3) $kontaktinfo['navn'] = $kontaktinfo['e-post'];
             $user = $this->ps->addCompanyUser($company, $kontaktinfo['e-post'], $kontaktinfo['navn']);
         endif;
         if (!$user):
@@ -133,6 +133,7 @@ class SplittInnsynskrav extends Command
                     return Str::startsWith($value, 'Saksnr: '.$request['saksnr']);
                 }));
                 $description .= '</p>';
+                $description .= '<p>eInnsyn-ID: <a href="'.$this->orderId.'">'.$this->orderId.'</a></p>';
 
                 if ($ticket = $this->ps->createTicket($subject, $description, $user['id'], config('pureservice.visibility.invisible'))):
                     $this->line(Tools::l2().'Opprettet saken "'.$ticket['subject'].'" med saksnr '.$ticket['requestNumber']);
