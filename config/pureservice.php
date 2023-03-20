@@ -69,6 +69,11 @@ return [
         'out' => 2,
         'internal' => 1,
         'standard' => 2,
+        'direction' => [
+            'in' => 1,
+            'out' => 2,
+            'internal' => 3,
+        ],
     ],
     'visibility' => [
         'visible' => 0,

@@ -26,6 +26,7 @@ class SplittInnsynskrav extends Command
 
     protected $start;
     protected $reqNo;
+    protected $ticketId;
     protected $orderId;
     protected $orderDate;
     protected $msg;
@@ -111,7 +112,6 @@ class SplittInnsynskrav extends Command
 
         $this->line('');
         $this->line(Tools::ts().'Oppretter ett innsynskrav for hver unike sak');
-        $lineno = 0;
         $this->head = Str::before($this->msg, 'Dokumenter:');
         $docs = Str::between($this->msg, 'Dokumenter:<br>', '<br>--------------------------------------');
         $aDocs = explode('<br>--------------------------------------<br>', $docs);
@@ -125,7 +125,6 @@ class SplittInnsynskrav extends Command
             if ($saksnr !== $request['saksnr']):
                 $saksnr = $request['saksnr'];
                 $uri = '/ticket/';
-                $lineno++;
                 $subject = 'Innsynskrav for sak '.$request['saksnr'];
                 $this->line(Tools::l2().'Emne: "'.$subject.'".');
                 $description = $this->head;
@@ -152,8 +151,28 @@ class SplittInnsynskrav extends Command
                 continue;
             endif;
         endforeach;
+
         // Endre på det originale innsynskravet, slik at det ikke er i veien for senere
-        
+
+        // 1. Opprett et internt notat
+        $message = 'Splittet opp i enkeltsaker av Bitbucket Pipelines';
+        if ($internalNote = $this->ps->createInternalNote($message, $this->ticketId)):
+            $this->line(Tools::ts().'Internt notat opprettet på det opprinnelige Innsynskravet');
+        endif;
+
+        // 2. Sett status på saken
+        $statusId = $this->ps->getEntityId('status', config('innsyn.parked_status'));
+        $uri = '/ticket/';
+        $body = [
+            'statusId' => $statusId,
+        ];
+        if ($updated = $this->ps->apiPATCH($uri.$this->ticketId, $body, true)):
+            $this->line(Tools::ts().'Det opprinnelige innsynskravet har blitt stengt.');
+        endif;
+
+        $this->line('');
+        $time = round(microtime(true) - $this->start, 2);
+        $this->info('Ferdig, prosessen tok til sammen '.$time.' sekunder');
 
         return Command::SUCCESS;
     }

@@ -714,12 +714,19 @@ class Pureservice
         return false;
     }
 
-    /**
-     * Rydder opp en ticket ved å fjerne unødvendige felter
-     */
-    public function cleanTicket(&$ticket): void {
-       unset($ticket['id'], $ticket['modified'], $ticket['created'], $ticket['modifiedById'], $ticket['coordinates'], $ticket['createdById']);
-       unset($ticket['links']);
+    public function createInternalNote($message, $ticketId) {
+        $uri = '/communication/';
+        $body = ['communications' => [
+            [
+                'text' => $message,
+                'type' => config('pureservice.comms.internal'),
+                'direction' => config('pureservice.comms.direction.internal'),
+                'ticketId' => $ticketId,
+             ]
+        ]];
+        if ($res = $this->apiPOST($uri, $body)) return true;
+
+        return false;
     }
 
     /**

@@ -16,4 +16,5 @@ return [
         'user' => env('DPE_IP_USER', null),
         'password' => env('DPE_IP_PASSWORD', null),
     ],
+    'parked_status' => env('DPE_PARKED_STATUS', 'Venter - levering'),
 ];
