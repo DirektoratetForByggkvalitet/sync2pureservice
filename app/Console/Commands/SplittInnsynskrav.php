@@ -151,8 +151,9 @@ class SplittInnsynskrav extends Command
             else:
                 continue;
             endif;
-
         endforeach;
+        // Endre på det originale innsynskravet, slik at det ikke er i veien for senere
+        
 
         return Command::SUCCESS;
     }

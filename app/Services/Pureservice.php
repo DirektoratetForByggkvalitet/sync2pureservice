@@ -240,7 +240,7 @@ class Pureservice
      *
      * @return mixed      ID for enheten eller null
      */
-    protected function getEntityId($entity, $name, $useKey = false) {
+    public function getEntityId($entity, $name, $useKey = false) {
         $entity = Str::lower($entity);
         $uri = $useKey ? '/'.$entity.'/?filter=key == "'.$name.'"' : '/'.$entity.'/?filter=name == "'.$name.'"';
         $entities = Str::plural($entity);
@@ -259,7 +259,7 @@ class Pureservice
      *
      * @return mixed    assoc_array for enheten eller null
      */
-    protected function getEntityByName($entity, $name, $useKey = false) {
+    public function getEntityByName($entity, $name, $useKey = false) {
         $entity = Str::lower($entity);
         $uri = $useKey ? '/'.$entity.'/?filter=key == "'.$name.'"' : '/'.$entity.'/?filter=name == "'.$name.'"';
         $entities = Str::plural($entity);
