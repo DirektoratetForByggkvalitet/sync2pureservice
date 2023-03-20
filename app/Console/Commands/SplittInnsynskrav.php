@@ -101,6 +101,7 @@ class SplittInnsynskrav extends Command
         if ($user = $this->ps->findUser($kontaktinfo['e-post'])):
             $this->line(Tools::l2().'Fant brukeren '.$user['fullName']);
         else:
+            if (strlen($kontaktinfo['navn']) < 2) $kontaktinfo['navn'] = $kontaktinfo['e-post'];
             $user = $this->ps->addCompanyUser($company, $kontaktinfo['e-post'], $kontaktinfo['navn']);
         endif;
         if (!$user):
