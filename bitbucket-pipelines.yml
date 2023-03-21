@@ -56,8 +56,7 @@ pipelines:
                 AZURE_APP_ID: $AZURE_SP_ID
                 AZURE_PASSWORD: $AZURE_SP_SECRET
                 AZURE_TENANT_ID: $AZURE_SP_TENANT
-                CLI_COMMAND: az storage blob download --auth-mode login --file ${BITBUCKET_CLONE_DIR}/${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
-
+                CLI_COMMAND: az storage blob download --auth-mode login --file ${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
       - step:
           name: Sjekker innkommende forsendelser i Svarinn
           deployment: Production
@@ -71,7 +70,7 @@ pipelines:
             - mv ${SVARINN_EXCEL_LOOKUP_FILE} *.pem storage/
             - echo 'Kjører svarinn2pureservice'
             - composer install --no-dev
-            - ./artisan pureservice:svarinn2ps
+            - ./artisan pureservice:svarinnMottak
 
     tool-build-dekrypter:
       - step:

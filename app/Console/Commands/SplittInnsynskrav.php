@@ -51,6 +51,7 @@ class SplittInnsynskrav extends Command
         $result = $this->ps->apiGet('/attachment/?include=ticket&filter=ticket.requestNumber == '.$this->reqNo);
         $attachments = $result['attachments'];
         $this->msg = $result['linked']['tickets'][0]['description'];
+        $this->ticketId = $result['linked']['tickets'][0]['id'];
         unset($result);
         if (count($attachments) > 0):
             foreach ($attachments as $a):
@@ -162,11 +163,12 @@ class SplittInnsynskrav extends Command
 
         // 2. Sett status på saken
         $statusId = $this->ps->getEntityId('status', config('innsyn.parked_status'));
-        $uri = '/ticket/';
+        $uri = '/ticket/'.$this->ticketId;
         $body = [
             'statusId' => $statusId,
+            'subject' => 'Innsynskrav - ekspedert',
         ];
-        if ($updated = $this->ps->apiPATCH($uri.$this->ticketId, $body, true)):
+        if ($updated = $this->ps->apiPATCH($uri, $body, true)):
             $this->line(Tools::ts().'Det opprinnelige innsynskravet har blitt stengt.');
         endif;
 
