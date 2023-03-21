@@ -26,6 +26,7 @@ class SplittInnsynskrav extends Command
 
     protected $start;
     protected $reqNo;
+    protected $reqNos_created = [];
     protected $ticketId;
     protected $orderId;
     protected $orderDate;
@@ -137,6 +138,7 @@ class SplittInnsynskrav extends Command
 
                 if ($ticket = $this->ps->createTicket($subject, $description, $user['id'], config('pureservice.visibility.invisible'))):
                     $this->line(Tools::l2().'Opprettet saken "'.$ticket['subject'].'" med saksnr '.$ticket['requestNumber']);
+                    $this->reqNos_created[] = $ticket['requestNumber'];
                 endif;
                 // Endrer sakens synlighet til synlig
                 $ticketOptions = $this->ps->getTicketOptions();
@@ -156,20 +158,27 @@ class SplittInnsynskrav extends Command
         // Endre på det originale innsynskravet, slik at det ikke er i veien for senere
 
         // 1. Opprett et internt notat
+        /*
         $message = 'Splittet opp i enkeltsaker av Bitbucket Pipelines';
         if ($internalNote = $this->ps->createInternalNote($message, $this->ticketId)):
             $this->line(Tools::ts().'Internt notat opprettet på det opprinnelige Innsynskravet');
         endif;
-
-        // 2. Sett status på saken
-        $statusId = $this->ps->getEntityId('status', config('innsyn.parked_status'));
+        */
+        // 2. Løs saken
+        $statusId = $this->ps->getEntityId('status', config('pureservice.ticket.status_solved'));
+        $ticketTypeId = $this->ps->getEntityId('tickettype', config('innsyn.ticketType_finished'));
         $uri = '/ticket/'.$this->ticketId;
+        $solution = '<p>Innsynskravet ble splittet opp av Bitbucket</p><p>Følgende sak(er) ble opprettet:</p>';
+        foreach ($this->reqNos_created as $rn):
+            $solution .= '<p><a href="/agent/app#/ticket/'.$rn.'">'.$rn.'</a></p>';
+        endforeach;
         $body = [
             'statusId' => $statusId,
-            'subject' => 'Innsynskrav - ekspedert',
+            'solution' => $solution,
+            'ticketTypeId' => $ticketTypeId,
         ];
         if ($updated = $this->ps->apiPATCH($uri, $body, true)):
-            $this->line(Tools::ts().'Det opprinnelige innsynskravet har blitt stengt.');
+            $this->line(Tools::ts().'Det opprinnelige innsynskravet har blitt satt til løst.');
         endif;
 
         $this->line('');

@@ -617,21 +617,19 @@ class Pureservice
         endif;
 
         $uri = '/user/?include=emailAddress,company';
-        if ($userName):
-            $firstName = Str::beforeLast($userName, ' ');
-            $lastName = Str::afterLast($userName, ' ');
-        else:
-            $firstName = 'SvarUt';
-            $lastName = Str::limit($companyInfo['name'], 100);
-        endif;
         $body = [
-            'firstName' => $firstName,
-            'lastName' => $lastName,
             'role' => config('pureservice.user.role_id'),
             'emailAddressId' => $emailId,
             'companyId' => $companyInfo ? $companyInfo['id'] : null,
-            'notificationScheme' => 1,
         ];
+        if ($userName):
+            $body['firstName'] = Str::beforeLast($userName, ' ');
+            $body['lastName'] = Str::afterLast($userName, ' ');
+        else:
+            $body['firstName'] = 'SvarUt';
+            $bofy['lastName'] = Str::limit($companyInfo['name'], 100);
+            if (config('pureservice.user.no_email_field')) $body[config('pureservice.user.no_email_field')] = 1;
+        endif;
 
         if ($response = $this->apiPOST($uri, $body)):
             $result = json_decode($response->getBody()->getContents(), true);
