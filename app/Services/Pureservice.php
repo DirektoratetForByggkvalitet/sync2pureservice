@@ -617,9 +617,16 @@ class Pureservice
         endif;
 
         $uri = '/user/?include=emailAddress,company';
+        if ($userName):
+            $firstName = Str::beforeLast($userName, ' ');
+            $lastName = Str::afterLast($userName, ' ');
+        else:
+            $firstName = 'SvarUt';
+            $lastName = Str::limit($companyInfo['name'], 100);
+        endif;
         $body = [
-            'firstName' => $userName ? Str::beforeLast($userName, ' ') : 'SvarUt',
-            'lastName' => $companyInfo ? Str::limit($companyInfo['name'], 100) : Str::afterLast($userName, ' '),
+            'firstName' => $firstName,
+            'lastName' => $lastName,
             'role' => config('pureservice.user.role_id'),
             'emailAddressId' => $emailId,
             'companyId' => $companyInfo ? $companyInfo['id'] : null,

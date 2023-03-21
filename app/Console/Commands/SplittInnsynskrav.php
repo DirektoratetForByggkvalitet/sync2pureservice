@@ -94,7 +94,7 @@ class SplittInnsynskrav extends Command
         $this->line(Tools::l1().'Henter eller registrerer sluttbruker i Pureservice');
         $company = false;
         if ($kontaktinfo['organisasjon'] != null):
-            if ($company = $this->ps->findCompany($kontaktinfo['organisasjon'])):
+            if ($company = $this->ps->findCompany(null, $kontaktinfo['organisasjon'])):
                 $this->line(Tools::l2().'Organisasjon finnes i Pureservice');
             else:
                 $this->line(Tools::l2().'Legger til organisasjon');
