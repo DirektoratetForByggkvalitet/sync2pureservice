@@ -97,7 +97,6 @@ pipelines:
 
     splittInnsynskrav:
       - step:
-          deployment: Production
           name: Splitter et innsynskrav gitt med requestNumber
           script:
             - composer install --no-dev
