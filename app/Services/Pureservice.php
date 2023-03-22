@@ -627,7 +627,7 @@ class Pureservice
             $body['lastName'] = Str::afterLast($userName, ' ');
         else:
             $body['firstName'] = 'SvarUt';
-            $bofy['lastName'] = Str::limit($companyInfo['name'], 100);
+            $body['lastName'] = Str::limit($companyInfo['name'], 100);
             if (config('pureservice.user.no_email_field')) $body[config('pureservice.user.no_email_field')] = 1;
         endif;
 

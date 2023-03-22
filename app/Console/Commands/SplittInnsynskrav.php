@@ -114,6 +114,8 @@ class SplittInnsynskrav extends Command
 
         $this->line('');
         $this->line(Tools::ts().'Oppretter ett innsynskrav for hver unike sak');
+        // Rydder i meldingsteksten. Tar bort linjeskift.
+        $this->msg = preg_replace('/\\n/', '', $this->msg);
         // Setter introteksten
         $this->introText = preg_replace('/:/', ': ', preg_replace('/<br>/', '<br />'.PHP_EOL, Str::before($this->msg, 'Dokumenter:')));
         $this->introText = preg_replace('/bestilt av: /', 'bestilt av:<br />'.PHP_EOL, $this->introText);
@@ -142,9 +144,9 @@ class SplittInnsynskrav extends Command
             endforeach;
             if (!isset($aDocs[$aBody['Saksnr']])) $aDocs[$aBody['Saksnr']] = [];
             $aDocs[$aBody['Saksnr']][$aBody['Dok nr.']] = $aBody;
-            //dd($meta);
+            // dd($meta);
         endforeach;
-        //dd($aDocs);
+        // dd($aDocs);
         $saksnr = '';
         foreach($requests as $request):
             if ($saksnr !== $request['saksnr']):
