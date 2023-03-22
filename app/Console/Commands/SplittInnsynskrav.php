@@ -31,7 +31,7 @@ class SplittInnsynskrav extends Command
     protected $orderId;
     protected $orderDate;
     protected $msg;
-    protected $head;
+    protected $introText;
 
     protected Pureservice $ps;
     /**
@@ -114,14 +114,37 @@ class SplittInnsynskrav extends Command
 
         $this->line('');
         $this->line(Tools::ts().'Oppretter ett innsynskrav for hver unike sak');
-        $this->head = Str::before($this->msg, 'Dokumenter:');
-        $docs = Str::between($this->msg, 'Dokumenter:<br>', '<br>--------------------------------------');
-        $aDocs = explode('<br>--------------------------------------<br>', $docs);
-
+        // Setter introteksten
+        $this->introText = preg_replace('/:/', ': ', preg_replace('/<br>/', '<br />'.PHP_EOL, Str::before($this->msg, 'Dokumenter:')));
+        $this->introText = preg_replace('/bestilt av: /', 'bestilt av:<br />'.PHP_EOL, $this->introText);
+        $docs = Str::between($this->msg, 'Dokumenter:<br>', '--------------------------------------');
+        $aOrderLines = explode('--------------------------------------<br>', $docs);
+        $aDocs = [];
         // Sorterer etter saksnr
         $requests = Arr::sort($requests, function (array $value) {
             return $value['saksnr'];
         });
+        foreach ($aOrderLines as $orderLine):
+            $head = explode(' | ', Str::before($orderLine, '<br>'));
+            $body = Str::after($orderLine, '<br>');
+            $aBody = [];
+            foreach ($head as $l):
+                $aBody[trim(preg_replace('/(.*): (.*)/', '\1', $l))] = preg_replace('/(.*): (.*)/', '\2', $l);
+            endforeach;
+            foreach (explode('<br>', Str::after($orderLine, '<br>')) as $l):
+                if ($l != ''):
+                    $key = trim(preg_replace('/(.*): (.*)/', '\1', $l));
+                    $key = preg_replace('/:/', '', $key);
+                    $value = preg_replace('/(.*): (.*)/', '\2', $l);
+                    $value = preg_replace('/:/', '', $value);
+                    $aBody[$key] = $value != $key ? $value : '';
+                endif;
+            endforeach;
+            if (!isset($aDocs[$aBody['Saksnr']])) $aDocs[$aBody['Saksnr']] = [];
+            $aDocs[$aBody['Saksnr']][$aBody['Dok nr.']] = $aBody;
+            //dd($meta);
+        endforeach;
+        //dd($aDocs);
         $saksnr = '';
         foreach($requests as $request):
             if ($saksnr !== $request['saksnr']):
@@ -129,13 +152,38 @@ class SplittInnsynskrav extends Command
                 $uri = '/ticket/';
                 $subject = 'Innsynskrav for sak '.$request['saksnr'];
                 $this->line(Tools::l2().'Emne: "'.$subject.'".');
-                $description = $this->head;
+                $aRequestOrders = $aDocs[$request['saksnr']];
+
+                $description = $this->introText . PHP_EOL;
+                $firstline = true;
+                $orderCount = count($aRequestOrders);
+                foreach ($aRequestOrders as $doc):
+                    if ($firstline):
+                        $firstline = false;
+                        $description .= '<p>Innsynskrav for '.$orderCount.' ';
+                        $description .= $orderCount > 1 ? 'dokumenter': 'dokument';
+                        $description .= ' i sak '.$doc['Saksnr'].'<br/>'.PHP_EOL.'<strong>'.$doc['Sak'].'</strong></p>'.PHP_EOL;
+                        $description .= '</strong></p>';
+                        $description .= PHP_EOL;
+                    endif;
+                    $description .= '<p>'.PHP_EOL;
+                    $description .= 'Dokumentnr: '.$doc['Dok nr.'].'<br />'.PHP_EOL;
+                    $description .= 'Navn: '.$doc['Dokument'].'<br />'.PHP_EOL;
+                    $description .= 'Sekvensnr: '.$doc['Sekvensnr.'].'<br />'.PHP_EOL;
+                    $description .= 'Dokumentdato: '.$doc['Dok.dato'].'<br />'.PHP_EOL;
+                    $description .= 'Journaldato: '.$doc['Journaldato'].'<br />'.PHP_EOL;
+                    $description .= 'Saksbehandler: '.$doc['Saksbehandler'].'<br />'.PHP_EOL;
+                    $description .= 'Enhet: '.$doc['Enhet'].'<br />'.PHP_EOL;
+                    $description .= '</p>'.PHP_EOL;
+                endforeach;
+
+                /*
                 $description .= '<p>'.implode('</p><p>', Arr::where($aDocs, function (string $value, int $key) use ($request) : bool {
                     return Str::startsWith($value, 'Saksnr: '.$request['saksnr']);
                 }));
-                $description .= '</p>';
-                $description .= '<p>eInnsyn-ID: <a href="'.$this->orderId.'">'.$this->orderId.'</a></p>';
-
+                */
+                $description .= '<p>eInnsyn-ID: '.$this->orderId.'</p>';
+                //dd($description);
                 if ($ticket = $this->ps->createTicket($subject, $description, $user['id'], config('pureservice.visibility.invisible'))):
                     $this->line(Tools::l2().'Opprettet saken "'.$ticket['subject'].'" med saksnr '.$ticket['requestNumber']);
                     $this->reqNos_created[] = $ticket['requestNumber'];
@@ -154,7 +202,6 @@ class SplittInnsynskrav extends Command
                 continue;
             endif;
         endforeach;
-
         // Endre på det originale innsynskravet, slik at det ikke er i veien for senere
 
         // 1. Opprett et internt notat
