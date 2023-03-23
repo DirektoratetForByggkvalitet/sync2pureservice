@@ -22,7 +22,7 @@ class SplittInnsynskrav extends Command
      * @var string
      */
     protected $description = 'Splitter et innsynskrav i Pureservice gitt med requestNumber';
-    protected $version = '0.1';
+    protected $version = '1.0';
 
     protected $start;
     protected $reqNo;

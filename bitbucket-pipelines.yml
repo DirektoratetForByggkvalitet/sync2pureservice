@@ -31,7 +31,7 @@ pipelines:
             - cp .env.example .env
             - composer install --no-dev
             - ./artisan pureservice:jamf2ps
-    svarinn2pureservice:
+    svarinnOgInnsynskrav:
       - step:
           name: Forbereder kjøring
           image: atlassian/default-image:3
@@ -58,7 +58,7 @@ pipelines:
                 AZURE_TENANT_ID: $AZURE_SP_TENANT
                 CLI_COMMAND: az storage blob download --auth-mode login --file ${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
       - step:
-          name: Sjekker innkommende forsendelser i Svarinn
+          name: Sjekker SvarUtMottak og innsynskrav
           deployment: Production
           script:
             - echo 'Installerer OpenJDK 11 og CMS dekrypter'
@@ -68,9 +68,11 @@ pipelines:
             - echo 'Setter opp og legger inn avhengigheter'
             - cp .env.example .env
             - mv ${SVARINN_EXCEL_LOOKUP_FILE} *.pem storage/
-            - echo 'Kjører svarinn2pureservice'
             - composer install --no-dev
+            - echo 'Kjører svarinn2pureservice'
             - ./artisan pureservice:svarinnMottak
+            - echo 'Kjører sjekkInnsynskrav'
+            - ./artisan pureservice:sjekkInnsynskrav
 
     tool-build-dekrypter:
       - step:
