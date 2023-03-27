@@ -149,10 +149,12 @@ class Innsynskrav2Pureservice extends Command
             $aOrderLines = explode('--------------------------------------<br>', $docs);
             $aDocs = []; // Array som samler ordrelinjene per saksnr og dokumentnr
 
-            // Sorterer kravene fra order.xml etter saksnr for å kunne samel forespørsler per sak
+            /*
+            // Sorterer kravene fra order.xml etter saksnr for å kunne samle forespørsler per sak
             $xml_documents = Arr::sort($xml_documents, function (array $value) {
                 return $value['saksnr'];
             });
+            */
             // Behandler ordrelinjene (i e-posten), slik at de blir klare til bruk
             foreach ($aOrderLines as $orderLine):
                 $head = explode(' | ', Str::before($orderLine, '<br>'));
