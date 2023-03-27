@@ -114,8 +114,15 @@ class Innsynskrav2Pureservice extends Command
             $this->line('');
 
             $this->line(Tools::l1().'Leser inn dokumentlisten');
-            $xml_documents = json_decode(json_encode($bestilling->dokumenter), true)['dokument'];
-            unset($bestilling);
+            $xml_documents = [];
+            $xml_documents_tmp = json_decode(json_encode($bestilling->dokumenter), true)['dokument'];
+            if (isset($xml_documents_tmp['saksnr'])):
+                $xml_documents[] = $xml_documents_tmp;
+            else:
+                $xml_documents = $xml_documents_tmp;
+            endif;
+            //dd($xml_documents);
+            unset($bestilling, $xml_documents_tmp);
 
             $this->line('');
             $this->line(Tools::l1().'Henter eller registrerer sluttbruker i Pureservice');
@@ -166,11 +173,11 @@ class Innsynskrav2Pureservice extends Command
                 // Splitter teksten opp i array der "Feltnavn: verdi" blir til ['feltnavn' => 'verdi']
                 foreach (explode('<br>', Str::after($orderLine, '<br>')) as $l):
                     if ($l != ''):
-                        $key = trim(preg_replace('/(.*): (.*)/', '\1', $l));
-                        $key = preg_replace('/:/', '', $key);
-                        $value = preg_replace('/(.*): (.*)/', '\2', $l);
-                        $value = preg_replace('/:/', '', $value);
-                        $aBody[$key] = $value != $key ? $value : '';
+                        $key = trim(Str::before($l, ':'));
+                        $value = Str::after($l, ': ');
+                        if ($key != ''):
+                            $aBody[$key] = $value != $key ? $value : '';
+                        endif;
                     endif;
                 endforeach;
                 if (!isset($aDocs[$aBody['Saksnr']])) $aDocs[$aBody['Saksnr']] = [];
@@ -178,14 +185,13 @@ class Innsynskrav2Pureservice extends Command
                 // dd($meta);
             endforeach;
             unset($aBody);
-            // dd($aDocs);
+            //dd($aDocs);
             // Går gjennom xml_documents og lager array over saksnumre
             $aCases = [];
             foreach($xml_documents as $request):
                 $saknr = &$request['saksnr'];
                 $doknr = &$request['dokumentnr'];
                 if (!isset($aCases[$saknr])) $aCases[$saknr] = [];
-
                 // Legger til saksinfo fra emailtext
                 $request['dokumentnavn'] = $aDocs[$saknr][$doknr]['Dokument'];
                 $request['dokumentdato'] = $aDocs[$saknr][$doknr]['Dok.dato'];
