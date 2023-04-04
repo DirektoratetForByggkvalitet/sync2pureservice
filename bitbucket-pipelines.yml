@@ -1,17 +1,10 @@
 
 
-definitions:
-  images:
-    - image: &dibkphp
-        name: dibknoe.azurecr.io/php:latest
-        username: $REGISTRY_USERNAME
-        password: $REGISTRY_PASSWORD
-
 # Setter maksimum kjøretid for et steg
 options:
   max-time: 60
 
-image: *dibkphp
+image: php:fpm-alpine
 
 pipelines:
   custom:
@@ -20,6 +13,7 @@ pipelines:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: Production
           script:
+            - scripts/php-install-alpine.sh
             - cp .env.example .env
             - composer install --no-dev
             - ./artisan pureservice:jamf2ps
@@ -28,6 +22,7 @@ pipelines:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: Test
           script:
+            - scripts/php-install-alpine.sh
             - cp .env.example .env
             - composer install --no-dev
             - ./artisan pureservice:jamf2ps
@@ -61,6 +56,7 @@ pipelines:
           name: Sjekker SvarUtMottak og innsynskrav
           deployment: Production
           script:
+            - scripts/php-install-alpine.sh
             - echo 'Installerer OpenJDK 11 og CMS dekrypter'
             - apk add openjdk11 unzip
             - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/${DEKRYPTER_VER}/dekrypter-${DEKRYPTER_VER}-dist.zip
@@ -94,6 +90,7 @@ pipelines:
           deployment: Test
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
           script:
+            - scripts/php-install-alpine.sh
             - composer install --no-dev
             - ./artisan pureservice:utsendelse
 
@@ -101,6 +98,7 @@ pipelines:
       - step:
           name: Splitter et innsynskrav gitt med requestNumber
           script:
+            - scripts/php-install-alpine.sh
             - composer install --no-dev
             - ./artisan pureservice:splittInnsynskrav ${requestNumber}
 
