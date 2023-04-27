@@ -588,7 +588,7 @@ class Pureservice
      *
      * @return mixed    null hvis den ikke finnes, IDen dersom den finnes.
      */
-    protected function findEmailaddressId($email, $companyAddress=false): int|null {
+    public function findEmailaddressId($email, $companyAddress=false): int|null {
         $prefix = $companyAddress ? 'company' : '';
         $uri = '/'.$prefix.'emailaddress?filter=email == "'.$email.'"';
         if ($result = $this->apiGet($uri)):
@@ -599,6 +599,26 @@ class Pureservice
         endif;
         return null; // Hvis ikke funnet
     }
+
+    /**
+     * Henter ID for telefonnummer registrert i Pureservice
+     * @param string    $phonenumber          E-postadressen
+     * @param bool      $companyAddress Angir om man skal se etter en firma-adresse
+     *
+     * @return mixed    null hvis den ikke finnes, IDen dersom den finnes.
+     */
+    public function findPhonenumberId($phonennumber): int|null {
+        //$prefix = $companyAddress ? 'company' : '';
+        $uri = '/phonennumber?filter=email == "'.$phonennumber.'"';
+        if ($result = $this->apiGet($uri)):
+            $found = count($result['phonenumbers']);
+            if ($found > 0):
+                return $result['phonenumbers'][0]['id'];
+            endif;
+        endif;
+        return null; // Hvis ikke funnet
+    }
+
 
     /**
      * Oppretter en standardbruker for foretak/virksomhet

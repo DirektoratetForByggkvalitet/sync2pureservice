@@ -32,6 +32,7 @@ class Kommune2Pureservice extends Command
         $this->start = microtime(true);
         $this->importFromEnhetsregisteret(config('enhetsregisteret.search'), true);
 
+        $this->sync2Pureservice();
         return Command::SUCCESS;
     }
 
@@ -103,6 +104,54 @@ class Kommune2Pureservice extends Command
                     'email' => $newCompany->email,
                 ]);
                 $postmottak->save();
+            endif;
+        endforeach;
+    }
+
+    /**
+     * Oppretter eller endrer på virksomhet og bruker i Pureservice
+     */
+    private function sync2pureservice(): void {
+        $ps = new Pureservice();
+
+        foreach (Company::all() as $company):
+            // Sjekker om virksomheten finnes i Pureservice
+            if ($psCompany = $ps->findCompany($company->organizationalNumber, $company->name)):
+
+            else: // Virksomheten må opprettes i Pureservice
+                // Sjekker e-postadresse
+                if ($company->email):
+                    $emailId = $ps->findEmailaddressId($company->email);
+                    if (!$emailId):
+                        $uri = '/emailaddress/';
+                        $body = [
+                            'email' => $company->email,
+                        ];
+                        if ($response = $this->apiPOST($uri, $body)):
+                            $result = json_decode($response->getBody()->getContents(), true);
+                            $emailId = $result['emailaddresses'][0]['id'];
+                        endif;
+                    endif;
+                endif; // $company->email
+                // Sjekker/oppretter telefonnummer
+                if ($company->phone):
+                    $phoneId = $ps->findPhonenumberId($company->phone);
+                    if (!$phoneId):
+                        $uri = '/phonenumber/';
+                        $body = [
+                            'number' => $company->phone,
+                            'type' => 3,
+                        ];
+                        if ($response = $this->apiPOST($uri, $body)):
+                            $result = json_decode($response->getBody()->getContents(), true);
+                            $emailId = $result['emailaddresses'][0]['id'];
+                        endif;
+                    endif;
+                endif; // $company->email
+                // Oppretter virksomheten
+                $body = [
+
+                ];
             endif;
         endforeach;
     }
