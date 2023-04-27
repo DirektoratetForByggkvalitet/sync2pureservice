@@ -22,11 +22,8 @@ class CompanyFactory extends Factory
             'companyNumber' => null,
             'website' => 'https://'.fake()->safeEmailDomain(),
             'email' => fake()->safeEmail(),
-            'emailId' => null,
             'phone' => fake()->phoneNumber(),
-            'phoneId' => null,
-            'externalId' => null,
-            'notes' => '',
+            'notes' => null,
         ];
     }
 }

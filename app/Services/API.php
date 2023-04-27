@@ -10,15 +10,17 @@ use Illuminate\Support\{Str, Arr};
  */
 class API {
     protected $cKey;
-    protected $worker;
+    public $base_url;
+    public $worker;
     protected $prefix = ''; // Prefiks til uri
     protected $options = [
         'headers' => [
             'Accept' => 'application/json',
             'Content-Type' => 'application/json; charset=utf-8',
             'Connection' => 'keep-alive',
-            'Accept-Encoding' => 'gzip, deflate',
-        ]
+            'Accept-Encoding' => 'gzip, deflate, br',
+            'User-Agent' => 'sync2pureservice/PHP'
+        ],
     ];
 
     public function __construct() {
@@ -58,6 +60,7 @@ class API {
         $stack = HandlerStack::create();
         $stack->push(Middleware::retry($decider, $delay));
 
+        $this->base_url = config($this->cKey.'.api_url');
         $this->worker = new Client([
             'base_uri' => config($this->cKey.'.api_url'),
             'timeout'         => 30,
@@ -69,15 +72,22 @@ class API {
     /**
      * Setter standardvalg for GuzzleHttp-klienten
      */
-    private function setOptions(array $options): void {
+    public function setOptions(array $options): void {
         $this->options = $options;
         //$this->options['http_errors'] = false;
     }
 
     /**
+     * Henter ut standardvalgene for GuzzleHttp-klienten
+     */
+    public function getOptions(): array {
+        return $this->options;
+    }
+
+    /**
      * Setter prefiks for alle API-kall (det som kommer etter 'https://server.no' i alle kall)
      */
-    private function setPrefix(string $prefix): void {
+    public function setPrefix(string $prefix): void {
         $this->prefix = $prefix;
     }
 
