@@ -100,7 +100,7 @@ class JamfPro
         return $results;
     }
 
-    public function getJamfMobileDevices() {
+    public function getJamfMobileDevices($detailed = true) {
         $page=0;
         $page_size=100;
         $gotAll = false;
@@ -113,14 +113,18 @@ class JamfPro
             $gotAll = $data['totalCount'] <= $page_size * ($page + 1);
             $page++;
         endwhile;
-        $detailedResults = [];
-        foreach ($results as $dev):
-            $uri = '/api/v2/mobile-devices/'.$dev['id'].'/detail';
-            $response = $this->api->request('GET', $uri, $this->options);
-            $data = json_decode($response->getBody()->getContents(), true);
-            $detailedResults[] = $data;
-        endforeach;
+        if ($detailed):
+            $detailedResults = [];
+            foreach ($results as $dev):
+                $uri = '/api/v2/mobile-devices/'.$dev['id'].'/detail';
+                $response = $this->api->request('GET', $uri, $this->options);
+                $data = json_decode($response->getBody()->getContents(), true);
+                $detailedResults[] = $data;
+            endforeach;
 
-        return $detailedResults;
+            return $detailedResults;
+        else:
+            return $results;
+        endif;
     }
 }
