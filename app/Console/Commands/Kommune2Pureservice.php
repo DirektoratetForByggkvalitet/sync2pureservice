@@ -32,7 +32,7 @@ class Kommune2Pureservice extends Command
         $this->start = microtime(true);
         $this->importFromEnhetsregisteret(config('enhetsregisteret.search'), true);
 
-        $this->sync2Pureservice();
+        //$this->sync2Pureservice();
         return Command::SUCCESS;
     }
 
@@ -81,6 +81,7 @@ class Kommune2Pureservice extends Command
             elseif (Arr::get($company, 'organisasjonsform.kode') == 'FYLK'):
                 $newCompany->companyNumber = substr(Arr::get($company, 'forretningsadresse.kommunenummer'), 0, 2).'00';
             endif;
+            if ($newCompany->companyNumber) $this->line(Tools::l2().'Kommunenr: '.$company->companyNumber);
             if ($newCompany->companyNumber && $excelData = $eLookup->findKnr($newCompany->companyNumber)):
                 $newCompany->email = $excelData['e-post'];
             endif;
@@ -99,7 +100,7 @@ class Kommune2Pureservice extends Command
             if ($newCompany->email != null):
                 $this->line(Tools::l2().'Oppretter postmottak: '.$newCompany->email);
                 $postmottak = $newCompany->users()->create([
-                    'firstName' => 'SvarUt',
+                    'firstName' => 'Postmottak',
                     'lastName' => $newCompany->name,
                     'email' => $newCompany->email,
                 ]);
@@ -113,46 +114,27 @@ class Kommune2Pureservice extends Command
      */
     private function sync2pureservice(): void {
         $ps = new Pureservice();
+        $categoryField = config('pureservice.company.categoryfield', 'cf_1');
 
         foreach (Company::all() as $company):
             // Sjekker om virksomheten finnes i Pureservice
-            if ($psCompany = $ps->findCompany($company->organizationalNumber, $company->name)):
-
-            else: // Virksomheten må opprettes i Pureservice
-                // Sjekker e-postadresse
-                if ($company->email):
-                    $emailId = $ps->findEmailaddressId($company->email);
-                    if (!$emailId):
-                        $uri = '/emailaddress/';
-                        $body = [
-                            'email' => $company->email,
-                        ];
-                        if ($response = $this->apiPOST($uri, $body)):
-                            $result = json_decode($response->getBody()->getContents(), true);
-                            $emailId = $result['emailaddresses'][0]['id'];
-                        endif;
-                    endif;
-                endif; // $company->email
-                // Sjekker/oppretter telefonnummer
-                if ($company->phone):
-                    $phoneId = $ps->findPhonenumberId($company->phone);
-                    if (!$phoneId):
-                        $uri = '/phonenumber/';
-                        $body = [
-                            'number' => $company->phone,
-                            'type' => 3,
-                        ];
-                        if ($response = $this->apiPOST($uri, $body)):
-                            $result = json_decode($response->getBody()->getContents(), true);
-                            $emailId = $result['emailaddresses'][0]['id'];
-                        endif;
-                    endif;
-                endif; // $company->email
-                // Oppretter virksomheten
-                $body = [
-
-                ];
+            $psCompany = $ps->findCompany($company->organizationalNumber, $company->name);
+            if (!$psCompany): // Virksomheten må opprettes i Pureservice
+                $psCompany = $ps->addCompany($company->name, $company->organizationalNumber, $company->email, $company->phone);
+            else:
+                // Sjekker om det er behov for å endre i Pureservice
+                if (
+                    $company->organizationalNumber != $psCompany['organizationNumber'] ||
+                    $company->email != data_get($psCompany, 'linked.companyemailaddresses.0.email') ||
+                    $company->companyNumber != $psCompany['companyNumber'] ||
+                    $company->website != $psCompany['website'] ||
+                    $company->notes != $psCompany['notes'] ||
+                    $company->category != $psCompany[$categoryField]
+                ):
+                endif;
             endif;
+            $company->externalId = $psCompany['id'];
+            $company->save();
         endforeach;
     }
 }

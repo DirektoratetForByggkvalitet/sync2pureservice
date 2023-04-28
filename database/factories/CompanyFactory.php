@@ -18,7 +18,7 @@ class CompanyFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'organizationalNumber' => '000000000',
+            'organizationNumber' => '000000000',
             'companyNumber' => null,
             'website' => 'https://'.fake()->safeEmailDomain(),
             'email' => fake()->safeEmail(),

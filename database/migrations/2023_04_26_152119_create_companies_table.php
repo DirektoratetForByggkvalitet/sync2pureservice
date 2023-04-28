@@ -15,13 +15,15 @@ return new class extends Migration
     {
         Schema::create('companies', function (Blueprint $table) {
             $table->id();
+            $table->int('externalId')->nullable();
             $table->string('name');
-            $table->string('organizationalNumber')->unique();
+            $table->string('organizationNumber')->unique();
             $table->string('companyNumber')->nullable();
             $table->string('website')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->text('notes')->nullable();
+            $table->string('category')->nullable();
             $table->timestamps();
         });
     }
