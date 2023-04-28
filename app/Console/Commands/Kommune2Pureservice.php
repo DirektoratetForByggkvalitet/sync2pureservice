@@ -115,26 +115,9 @@ class Kommune2Pureservice extends Command
     private function sync2pureservice(): void {
         $ps = new Pureservice();
         $categoryField = config('pureservice.company.categoryfield', 'cf_1');
-
+        $needUpdate = false; // Om vi trenger å oppdatere virksomheten i Pureservice
         foreach (Company::all() as $company):
-            // Sjekker om virksomheten finnes i Pureservice
-            $psCompany = $ps->findCompany($company->organizationalNumber, $company->name);
-            if (!$psCompany): // Virksomheten må opprettes i Pureservice
-                $psCompany = $ps->addCompany($company->name, $company->organizationalNumber, $company->email, $company->phone);
-            else:
-                // Sjekker om det er behov for å endre i Pureservice
-                if (
-                    $company->organizationalNumber != $psCompany['organizationNumber'] ||
-                    $company->email != data_get($psCompany, 'linked.companyemailaddresses.0.email') ||
-                    $company->companyNumber != $psCompany['companyNumber'] ||
-                    $company->website != $psCompany['website'] ||
-                    $company->notes != $psCompany['notes'] ||
-                    $company->category != $psCompany[$categoryField]
-                ):
-                endif;
-            endif;
-            $company->externalId = $psCompany['id'];
-            $company->save();
+            $company->addToOrUpdatePS();
         endforeach;
     }
 }
