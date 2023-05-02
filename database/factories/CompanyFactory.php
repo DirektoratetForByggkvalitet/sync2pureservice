@@ -24,6 +24,7 @@ class CompanyFactory extends Factory
             'email' => fake()->safeEmail(),
             'phone' => fake()->phoneNumber(),
             'notes' => null,
+            'category' => null,
         ];
     }
 }

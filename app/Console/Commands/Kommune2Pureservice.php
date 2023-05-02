@@ -75,10 +75,13 @@ class Kommune2Pureservice extends Command
                 'organizationalNumber' => $company['organisasjonsnummer'],
                 'website' => isset($company['hjemmeside']) ? $company['hjemmeside'] : null,
                 'companyNumber' => null,
+                'category' => config('pureservice.company.categoryMap'.Arr::get($company, 'organisasjonsform.kode'), ''),
             ]);
-            if (Arr::get($company, 'organisasjonsform.kode') == 'KOMM'):
+            if ($newCompany->category == config('pureservice.company.categoryMap.KOMM')):
+                // Setter kommunenr for kommune
                 $newCompany->companyNumber = Arr::get($company, 'forretningsadresse.kommunenummer');
-            elseif (Arr::get($company, 'organisasjonsform.kode') == 'FYLK'):
+            elseif ($newCompany->category == config('pureservice.company.categoryMap.FYLK')):
+                // Setter kommunenr for fylkeskommune
                 $newCompany->companyNumber = substr(Arr::get($company, 'forretningsadresse.kommunenummer'), 0, 2).'00';
             endif;
             if ($newCompany->companyNumber) $this->line(Tools::l2().'Kommunenr: '.$company->companyNumber);
@@ -113,11 +116,9 @@ class Kommune2Pureservice extends Command
      * Oppretter eller endrer på virksomhet og bruker i Pureservice
      */
     private function sync2pureservice(): void {
-        $ps = new Pureservice();
-        $categoryField = config('pureservice.company.categoryfield', 'cf_1');
-        $needUpdate = false; // Om vi trenger å oppdatere virksomheten i Pureservice
         foreach (Company::all() as $company):
             $company->addToOrUpdatePS();
+            $company->addToOrUpdateUsersPS();
         endforeach;
     }
 }

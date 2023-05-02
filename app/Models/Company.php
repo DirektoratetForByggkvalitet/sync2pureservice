@@ -90,13 +90,19 @@ class Company extends Model
 
         if (!$psCompany):
             // Oppretter virksomheten i Pureservice
-            $uri = '/company?include=phonenumber,emailAddress';
-            if ($response = $ps->apiPOST($uri, $body)):
+            $uri = '/company';
+            $postBody = ['companies' => [$body]];
+            unset($body);
+            if ($response = $ps->apiPOST($uri, $postBody)):
                 $result = json_decode($response->getBody()->getContents(), true);
                 if (count($result['companies']) > 0) return true;
             endif;
         endif;
 
+        return false;
+    }
+
+    public function addToOrUpdateUsersPS(): bool {
         return false;
     }
 }

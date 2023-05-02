@@ -97,5 +97,11 @@ return [
     ],
     'company' => [
         'categoryfield' => env('PURESERVICE_COMPANY_CATEGORY_FIELD', 'cf_1'),
+        'categoryMap' => [
+            'KOMM' => 'Kommune',
+            'STAT' => 'Statlig virksomhet',
+            'FYLK' => 'Fylkeskommune',
+            'ORGL' => 'Statlig virksomhet',
+        ],
     ],
 ];

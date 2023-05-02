@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('website')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
-            $table->text('notes')->nullable();
+            $table->mediumtext('notes')->nullable();
             $table->string('category')->nullable();
             $table->timestamps();
         });
