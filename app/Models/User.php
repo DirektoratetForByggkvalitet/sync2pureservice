@@ -23,6 +23,18 @@ class User extends Model
         'type' => 0,
         'password' => '90873ojkjkksajk23å0909jujcsdoij',
     ];
+
+    protected $hidden = [
+        'email_verified_at',
+        'remember_token',
+        'password',
+        'created_at',
+        'updated_at',
+        'id',
+        'company_id',
+        'email',
+    ];
+
     public function company(): BelongsTo {
         return $this->belongsTo(Company::class);
     }

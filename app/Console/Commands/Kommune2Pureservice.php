@@ -25,14 +25,27 @@ class Kommune2Pureservice extends Command
 
     protected $start;
 
+    protected $foundCompanies = 0;
+
     /**
      * Execute the console command.
      */
     public function handle(): int {
         $this->start = microtime(true);
+        $this->info('####################################');
+        $this->info(' DEL 1: Hent virksomheter fra BRREG');
+        $this->info('####################################');
         $this->importFromEnhetsregisteret(config('enhetsregisteret.search'), true);
+        $this->info('Hentet '.$this->foundCompanies.' virksomheter fra BRREG');
 
+        $this->line('');
+        $this->info('######################################');
+        $this->info(' DEL 2: Synkronisering med Pureservice');
+        $this->info('######################################');
+        $this->line('');
         //$this->sync2Pureservice();
+
+        $this->info('Operasjonen tok '.round(microtime(true) - $this->start, 0).' sekunder');
         return Command::SUCCESS;
     }
 
@@ -46,7 +59,8 @@ class Kommune2Pureservice extends Command
         foreach ($aUri as $name => $uri):
             //$this->line(Tools::l1().'Behandler '.$name);
             $result = $brApi->apiGet($uri);
-            if (Arr::get($result, 'page.totalElements') > 0):
+            $this->foundCompanies += Arr::get($result, 'page.totalElements');
+            if ($this->foundCompanies > 0):
                 $this->storeCompanies(Arr::get($result, '_embedded.enheter'));
                 if ($resolveUnderlaying && Str::contains($uri, 'STAT')):
                     $underlings = [];
@@ -54,6 +68,7 @@ class Kommune2Pureservice extends Command
                         //$this->line(Tools::l1().'Finner underliggende virksomheter for '.$main['navn'].' - '.$main['organisasjonsnummer']);
                         $addr = Str::replace('[ORGNR]', $main['organisasjonsnummer'], config('enhetsregisteret.underliggende'));
                         $res = $brApi->apiGet($addr);
+                        $this->foundCompanies += Arr::get($res, 'page.totalElements');
                         if (Arr::get($res, 'page.totalElements') > 0) $this->storeCompanies(Arr::get($res, '_embedded.enheter'));
                         unset($res);
                     endforeach;
@@ -65,18 +80,25 @@ class Kommune2Pureservice extends Command
     }
 
     protected function storeCompanies(array $companies) {
-        $eLookup = new ExcelLookup();
+        $eData = ExcelLookup::loadData();
         foreach ($companies as $company):
             if (Str::contains($company['navn'], "under forhåndsregistrering", true)) continue;
 
-            $this->line(Tools::l1().'Lagrer virksomheten '.$company['navn'].' - '.$company['organisasjonsnummer']);
-            $newCompany = Company::create([
-                'name' => Str::title($company['navn']),
-                'organizationalNumber' => $company['organisasjonsnummer'],
-                'website' => isset($company['hjemmeside']) ? $company['hjemmeside'] : null,
-                'companyNumber' => null,
-                'category' => config('pureservice.company.categoryMap'.Arr::get($company, 'organisasjonsform.kode'), ''),
-            ]);
+            if ($newCompany = Company::firstWhere('organizationNumber', $company['organisasjonsnummer'])):
+                $this->line(Tools::l1().'Fant virksomheten '.$company['navn'].' - '.$company['organisasjonsnummer']);
+            else:
+                $this->line(Tools::l1().'Lagrer virksomheten '.$company['navn'].' - '.$company['organisasjonsnummer']);
+                $fields = [
+                    'name' => Str::title($company['navn']),
+                    'organizationNumber' => $company['organisasjonsnummer'],
+                    'website' => isset($company['hjemmeside']) ? $company['hjemmeside'] : null,
+                    'category' => config('pureservice.company.categoryMap.'.Arr::get($company, 'organisasjonsform.kode'), ''),
+                    'email' => null,
+                    'phone' => null,
+                ];
+                $newCompany = Company::factory()->make($fields);
+            endif;
+
             if ($newCompany->category == config('pureservice.company.categoryMap.KOMM')):
                 // Setter kommunenr for kommune
                 $newCompany->companyNumber = Arr::get($company, 'forretningsadresse.kommunenummer');
@@ -84,30 +106,40 @@ class Kommune2Pureservice extends Command
                 // Setter kommunenr for fylkeskommune
                 $newCompany->companyNumber = substr(Arr::get($company, 'forretningsadresse.kommunenummer'), 0, 2).'00';
             endif;
-            if ($newCompany->companyNumber) $this->line(Tools::l2().'Kommunenr: '.$company->companyNumber);
-            if ($newCompany->companyNumber && $excelData = $eLookup->findKnr($newCompany->companyNumber)):
-                $newCompany->email = $excelData['e-post'];
+            if ($newCompany->companyNumber):
+                $this->line(Tools::l2().'Kommunenr: '.$newCompany->companyNumber);
+                if ($found = $eData->firstWhere('knr', $newCompany->companyNumber)):
+                    $newCompany->email = $found['e-post'];
+                endif;
             endif;
             $newCompany->save();
 
             // Oppretter SvarUt-bruker for virksomheten
-            $this->line(Tools::l2().'Oppretter SvarUt-bruker');
-
-            $svarUtUser = $newCompany->users()->create([
-                'firstName' => 'SvarUt',
-                'lastName' => $newCompany->name,
-                'email' => $newCompany->organizationalNumber.'.no_email@pureservice.local',
-            ]);
-            $svarUtUser->save();
+            $svarutEmail = $newCompany->organizationNumber.'.no_email@pureservice.local';
+            if ($svarUtUser = $newCompany->users()->firstWhere('email', $svarutEmail)):
+                $this->line(Tools::l2().'Fant SvarUt-bruker '.$svarutEmail);
+            else:
+                $this->line(Tools::l2().'Oppretter SvarUt-bruker '.$svarutEmail);
+                $svarUtUser = $newCompany->users()->create([
+                    'firstName' => 'SvarUt',
+                    'lastName' => $newCompany->name,
+                    'email' => $svarutEmail,
+                ]);
+                $svarUtUser->save();
+            endif;
             // Oppretter postmottak-bruker dersom denne finnes
             if ($newCompany->email != null):
-                $this->line(Tools::l2().'Oppretter postmottak: '.$newCompany->email);
-                $postmottak = $newCompany->users()->create([
-                    'firstName' => 'Postmottak',
-                    'lastName' => $newCompany->name,
-                    'email' => $newCompany->email,
-                ]);
-                $postmottak->save();
+                if ($postmottak = $newCompany->users()->firstWhere('email', $newCompany->email)):
+                    $this->line(Tools::l2().'Fant postmottak: '.$newCompany->email);
+                else:
+                    $this->line(Tools::l2().'Oppretter postmottak: '.$newCompany->email);
+                    $postmottak = $newCompany->users()->create([
+                        'firstName' => 'Postmottak',
+                        'lastName' => $newCompany->name,
+                        'email' => $newCompany->email,
+                    ]);
+                    $postmottak->save();
+                endif;
             endif;
         endforeach;
     }

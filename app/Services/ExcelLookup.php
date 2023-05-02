@@ -22,6 +22,9 @@ class ExcelLookup {
         return $this->data->firstWhere(config('excellookup.map.A'), $knr);
     }
 
+    public function getData() {
+        return $this->data;
+    }
     /**
      * Laster inn Excel-fila som er kilde for e-postadressene til kommunene
      * @return Collection   Collection-array over kommuner med e-postadresser
