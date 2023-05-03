@@ -43,7 +43,7 @@ class Kommune2Pureservice extends Command
         $this->info(' DEL 2: Synkronisering med Pureservice');
         $this->info('######################################');
         $this->line('');
-        //$this->sync2Pureservice();
+        $this->sync2Pureservice();
 
         $this->info('Operasjonen tok '.round(microtime(true) - $this->start, 0).' sekunder');
         return Command::SUCCESS;
@@ -108,14 +108,14 @@ class Kommune2Pureservice extends Command
             endif;
             if ($newCompany->companyNumber):
                 $this->line(Tools::l2().'Kommunenr: '.$newCompany->companyNumber);
-                if ($found = $eData->firstWhere('knr', $newCompany->companyNumber)):
+                if ($eData && $found = $eData->firstWhere('knr', $newCompany->companyNumber)):
                     $newCompany->email = $found['e-post'];
                 endif;
             endif;
             $newCompany->save();
 
             // Oppretter SvarUt-bruker for virksomheten
-            $svarutEmail = $newCompany->organizationNumber.'.no_email@pureservice.local';
+            $svarutEmail = $newCompany->organizationNumber.'.@svarut.pureservice.local';
             if ($svarUtUser = $newCompany->users()->firstWhere('email', $svarutEmail)):
                 $this->line(Tools::l2().'Fant SvarUt-bruker '.$svarutEmail);
             else:
@@ -149,7 +149,9 @@ class Kommune2Pureservice extends Command
      */
     private function sync2pureservice(): void {
         foreach (Company::all() as $company):
+            $this->line(Tools::l1().'Synkroniserer '.$company->name);
             $company->addToOrUpdatePS();
+            $this->line(Tools::l2().'Synkroniserer brukere');
             $company->addToOrUpdateUsersPS();
         endforeach;
     }

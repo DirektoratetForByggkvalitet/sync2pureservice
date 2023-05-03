@@ -39,7 +39,7 @@ class Company extends Model
     /**
      * Legger til virksomheten i Pureservice
      */
-    public function addToOrUpdatePS() : array|false {
+    public function addToOrUpdatePS() : bool {
         $ps = new Pureservice();
         $update = false;
 
@@ -59,9 +59,10 @@ class Company extends Model
         endif;
         $phoneId = $this->phone ? $ps->findPhonenumberId($this->phone): null;
         $emailId = $this->email ? $ps->findEmailaddressId($this->email, true): null;
-        if ($this->phone && $emailId == null):
+        if ($this->email && $emailId == null):
             $uri = '/companyemailaddress/';
-            $body = [
+            $body = [];
+            $body['companyemailaddresses'][] = [
                 'email' => $this->email,
             ];
             if ($response = $ps->apiPOST($uri, $body)):
@@ -122,6 +123,19 @@ class Company extends Model
     public function addToOrUpdateUsersPS(): bool {
         $ps = new Pureservice();
         foreach ($this->users as $user):
+            $emailId = $user->email ? $ps->findEmailaddressId($this->email): null;
+            if ($user->email && $emailId == null):
+                $uri = '/emailaddress/';
+                $body = ['emailaddresses' => []];
+                $body['emailaddresses'][] = [
+                    'email' => $this->email,
+                ];
+                if ($response = $ps->apiPOST($uri, $body)):
+                    $result = json_decode($response->getBody()->getContents(), true);
+                    $emailId = $result['emailaddresses'][0]['id'];
+                endif;
+            endif;
+
             $update = false;
             if ($psUser = $ps->findUser($user->email)):
                 // Brukeren finnes i Pureservice
@@ -136,21 +150,24 @@ class Company extends Model
                     $update = true;
                 endif;
             endif;
+
             $body = $user->toArray();
             $body[config('pureservice.user.no_email_field')] = 1;
             $body['companyId'] = $this->externalId;
+            $body['emailAddressId'] = $emailId;
 
             if ($update):
-                // Oppdaterer virksomheten i Pureservice
+                // Oppdaterer brukeren i Pureservice
                 $uri = '/user/'.$psUser['id'];
                 $body['id'] = $psUser['id'];
                 return $ps->apiPut($uri, $body, true);
             endif;
 
             if (!$psUser):
-                // Oppretter virksomheten i Pureservice
+                // Oppretter brukeren i Pureservice
                 $uri = '/user';
-                $postBody = ['users' => [$body]];
+                $postBody = ['users' => []];
+                $postBody['users'][] = $body;
                 unset($body);
                 if ($response = $ps->apiPOST($uri, $postBody)):
                     $result = json_decode($response->getBody()->getContents(), true);
@@ -159,7 +176,6 @@ class Company extends Model
                     endif;
                 endif;
             endif;
-
         endforeach;
         return false;
     }
