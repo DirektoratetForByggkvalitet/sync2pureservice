@@ -166,16 +166,32 @@ class Offentlige2Ps extends Command
     private function sync2pureservice(): void {
         $count = 0;
         $ps = new Pureservice();
-        $lineNo = 0;
-        $lineCount = Company::count();
+
+        $this->newLine();
+        $this->info('---');
+        $this->info(' 2A: Virksomheter');
+        $this->info('---');
+        $this->newLine();
+
+        $bar = $this->output->createProgressBar(Company::count());
+        $bar->start();
         foreach (Company::lazy() as $company):
-            $lineNo++;
-            $this->info(Tools::l1().$lineNo.'/'.$lineCount.' Synkroniserer '.$company->name.' ('.$company->organizationNumber.')');
             $company->addOrUpdatePS($ps);
+            $bar->advance();
         endforeach;
+        $bar->finish();
+
+        $this->newLine();
+        $this->info('---');
+        $this->info(' 2B: Brukerkontoer');
+        $this->info('---');
+        $this->newLine();
+        $bar = $this->output->createProgressBar(User::count());
+        $bar->start();
         foreach (User::lazy() as $user):
-            if (!$user->company_id) continue;
             $user->addOrUpdatePS($ps);
+            $bar->advance();
         endforeach;
+        $bar->finish();
     }
 }
