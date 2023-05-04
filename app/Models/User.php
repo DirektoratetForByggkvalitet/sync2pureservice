@@ -43,7 +43,6 @@ class User extends Model
     public function addOrUpdatePS(Pureservice $ps): bool {
         //$psCompanyUsers = $ps->findUsersByCompanyId($this->company->externalId;);
         $update = false;
-        echo Tools::l2().$this->firstName.' '.$this->lastName."\n";
         if ($psUser = $ps->findUser($this->email)):
             // Brukeren finnes i Pureservice
             if (
@@ -82,7 +81,6 @@ class User extends Model
             // Oppdaterer brukeren i Pureservice
             $uri = '/user/'.$psUser['id'];
             $body['id'] = $psUser['id'];
-            echo Tools::l3().'Oppdatert'."\n";
             return $ps->apiPut($uri, $body, true);
         endif;
 
@@ -99,8 +97,6 @@ class User extends Model
                     return true;
                 endif;
             endif;
-        else:
-            echo Tools::l3().'Trenger ikke oppdatering'."\n";
         endif;
     return false;
 }

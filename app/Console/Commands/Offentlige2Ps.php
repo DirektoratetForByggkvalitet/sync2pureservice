@@ -90,10 +90,12 @@ class Offentlige2Ps extends Command
 
     protected function storeCompanies(array $companies) {
         $eData = ExcelLookup::loadData();
+        $bar = $this->output->createProgressBar(count($companies));
+        $bar->start();
         foreach ($companies as $company):
             if (Str::contains($company['navn'], "under forhåndsregistrering", true)) continue;
             $this->companyNo++;
-            $this->info(Tools::l1().$this->companyNo.': '.$company['navn'].' - '. $company['organisasjonsnummer']);
+            //$this->info(Tools::l1().$this->companyNo.': '.$company['navn'].' - '. $company['organisasjonsnummer']);
             if ($newCompany = Company::firstWhere('organizationNumber', $company['organisasjonsnummer'])):
                 $this->line(Tools::l2().'Fant virksomheten i DB');
             else:
@@ -132,9 +134,9 @@ class Offentlige2Ps extends Command
             $svarutEmail = $newCompany->organizationNumber.'@svarut.pureservice.local';
             $this->userNo++;
             if ($svarUtUser = $newCompany->users()->firstWhere('email', $svarutEmail)):
-                $this->line(Tools::l2().'Fant SvarUt-bruker '.$svarutEmail.' i DB');
+                //$this->line(Tools::l2().'Fant SvarUt-bruker '.$svarutEmail.' i DB');
             else:
-                $this->line(Tools::l2().'Oppretter SvarUt-bruker '.$svarutEmail.' i DB');
+                //$this->line(Tools::l2().'Oppretter SvarUt-bruker '.$svarutEmail.' i DB');
                 $svarUtUser = $newCompany->users()->create([
                     'firstName' => 'SvarUt',
                     'lastName' => $newCompany->name,
@@ -146,9 +148,9 @@ class Offentlige2Ps extends Command
             if ($newCompany->email != null):
                 $this->userNo++;
                 if ($postmottak = $newCompany->users()->firstWhere('email', $newCompany->email)):
-                    $this->line(Tools::l2().'Fant postmottak: '.$newCompany->email);
+                    //$this->line(Tools::l2().'Fant postmottak: '.$newCompany->email);
                 else:
-                    $this->line(Tools::l2().'Oppretter postmottak: '.$newCompany->email);
+                    //$this->line(Tools::l2().'Oppretter postmottak: '.$newCompany->email);
                     $postmottak = $newCompany->users()->create([
                         'firstName' => 'Postmottak',
                         'lastName' => $newCompany->name,
@@ -157,7 +159,9 @@ class Offentlige2Ps extends Command
                     $postmottak->save();
                 endif;
             endif;
+            $bar->advance();
         endforeach;
+        $bar->finish();
     }
 
     /**
@@ -168,9 +172,7 @@ class Offentlige2Ps extends Command
         $ps = new Pureservice();
 
         $this->newLine();
-        $this->info('---');
-        $this->info(' 2A: Virksomheter');
-        $this->info('---');
+        $this->info('Oppdaterer virksomheter');
         $this->newLine();
 
         $bar = $this->output->createProgressBar(Company::count());
@@ -182,9 +184,7 @@ class Offentlige2Ps extends Command
         $bar->finish();
 
         $this->newLine();
-        $this->info('---');
-        $this->info(' 2B: Brukerkontoer');
-        $this->info('---');
+        $this->info('Oppdaterer brukere');
         $this->newLine();
         $bar = $this->output->createProgressBar(User::count());
         $bar->start();
