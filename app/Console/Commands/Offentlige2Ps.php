@@ -35,20 +35,20 @@ class Offentlige2Ps extends Command
     public function handle(): int {
         $this->start = microtime(true);
         $this->info('Bruker Pureservice-adressen '.config('pureservice.api_url'));
-        $this->line('');
+        $this->newLine(2);
         $this->info('####################################');
         $this->info(' DEL 1: Hent virksomheter fra BRREG');
         $this->info('####################################');
         $this->importFraEnhetsregisteret(config('enhetsregisteret.search'), true);
 
-        $this->line('');
+        $this->newLine(2);
         $this->info('######################################');
         $this->info(' DEL 2: Synkronisering med Pureservice');
         $this->info('######################################');
-        $this->line('');
+        $this->newLine();
         $this->sync2Pureservice();
 
-        $this->line('');
+        $this->newLine(2);
         $this->info('######################################');
         $this->info('Ferdig. Operasjonen tok '.round(microtime(true) - $this->start, 0).' sekunder');
         $this->info('Behandlet totalt:');
@@ -172,7 +172,7 @@ class Offentlige2Ps extends Command
         $ps = new Pureservice();
 
         $this->newLine();
-        $this->info('Oppdaterer virksomheter');
+        $this->comment('Oppdaterer virksomheter');
         $this->newLine();
 
         $bar = $this->output->createProgressBar(Company::count());
@@ -184,7 +184,7 @@ class Offentlige2Ps extends Command
         $bar->finish();
 
         $this->newLine();
-        $this->info('Oppdaterer brukere');
+        $this->comment('Oppdaterer brukere');
         $this->newLine();
         $bar = $this->output->createProgressBar(User::count());
         $bar->start();
