@@ -45,7 +45,7 @@ class Company extends Model {
     /**
      * Synkroniserer virksomheten i Pureservice
      */
-    public function addToOrUpdatePS(Pureservice $ps) : bool {
+    public function addOrUpdatePS(Pureservice $ps) : bool {
         $update = false;
 
         if ($psCompany = $ps->findCompany($this->organizationNumber, $this->name)):
@@ -124,71 +124,4 @@ class Company extends Model {
         return false;
     }
 
-    /** Synker virksomhetens brukere med Pureservice */
-    public function addToOrUpdateUsersPS(Pureservice $ps): bool {
-        //$psCompanyUsers = $ps->findUsersByCompanyId($this->externalId);
-        foreach ($this->users as $user):
-            $update = false;
-            echo Tools::l2().$user->firstName.' '.$user->lastName."\n";
-            if ($psUser = $ps->findUser($user->email)):
-                // Brukeren finnes i Pureservice
-                if (
-                    $user->firstName != $psUser['firstName'] ||
-                    $user->lastName != $psUser['lastName'] ||
-                    $user->role != $psUser['role'] ||
-                    $user->type != $psUser['type'] ||
-                    $user->notificationScheme != $psUser['notificationScheme'] ||
-                    $psUser[config('pureservice.user.no_email_field')] != 1 ||
-                    $psUser['companyId'] != $this->externalId
-                ):
-                    $update = true;
-                endif;
-            endif;
-
-            $emailId = $user->email ? $ps->findEmailaddressId($user->email): null;
-            if ($user->email && $emailId == null):
-                $uri = '/emailaddress/';
-                $body = ['emailaddresses' => []];
-                $body['emailaddresses'][] = [
-                    'email' => $user->email,
-                ];
-                if ($response = $ps->apiPOST($uri, $body)):
-                    $result = json_decode($response->getBody()->getContents(), true);
-                    $emailId = $result['emailaddresses'][0]['id'];
-                endif;
-            endif;
-
-
-            $body = $user->toArray();
-            $body[config('pureservice.user.no_email_field')] = 1;
-            $body['companyId'] = $this->externalId;
-            $body['emailAddressId'] = $emailId;
-
-            if ($update):
-                // Oppdaterer brukeren i Pureservice
-                $uri = '/user/'.$psUser['id'];
-                $body['id'] = $psUser['id'];
-                echo Tools::l3().'Oppdatert'."\n";
-                return $ps->apiPut($uri, $body, true);
-            endif;
-
-            if (!$psUser):
-                // Oppretter brukeren i Pureservice
-                $uri = '/user';
-                $postBody = ['users' => []];
-                $postBody['users'][] = $body;
-                unset($body);
-                if ($response = $ps->apiPOST($uri, $postBody)):
-                    $result = json_decode($response->getBody()->getContents(), true);
-                    if (count($result['users']) > 0):
-                        echo Tools::l3().'Opprettet'."\n";
-                        return true;
-                    endif;
-                endif;
-            else:
-                echo Tools::l3().'Trenger ikke oppdatering'."\n";
-            endif;
-        endforeach;
-        return false;
-    }
 }

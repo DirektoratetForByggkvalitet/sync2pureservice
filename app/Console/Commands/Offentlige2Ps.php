@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Services\{ExcelLookup, Tools, Enhetsregisteret, Pureservice};
-use App\Models\{Company};
+use App\Models\{Company, User};
 use Illuminate\Support\{Str, Arr};
 
 class Offentlige2Ps extends Command
@@ -171,9 +171,11 @@ class Offentlige2Ps extends Command
         foreach (Company::lazy() as $company):
             $lineNo++;
             $this->info(Tools::l1().$lineNo.'/'.$lineCount.' Synkroniserer '.$company->name.' ('.$company->organizationNumber.')');
-            $company->addToOrUpdatePS($ps);
-            $this->line(Tools::l2().'Synkroniserer brukere');
-            $company->addToOrUpdateUsersPS($ps);
+            $company->addOrUpdatePS($ps);
+        endforeach;
+        foreach (User::lazy() as $user):
+            if (!$user->company_id) continue;
+            $user->addOrUpdatePS($ps);
         endforeach;
     }
 }
