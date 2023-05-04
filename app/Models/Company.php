@@ -5,10 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Services\Pureservice;
-
-class Company extends Model
-{
+use App\Services\{Pureservice, Tools};
+class Company extends Model {
     use HasFactory;
     protected $fillable = [
         'name',
@@ -19,7 +17,11 @@ class Company extends Model
         'phone',
         'notes',
         'category',
-        'externalId'
+        'externalId',
+        'streetAddress',
+        'city',
+        'postalCode',
+        'country',
     ];
 
     protected $hidden = [
@@ -30,6 +32,10 @@ class Company extends Model
         'email',
         'phone',
         'category',
+        'streetAddress',
+        'city',
+        'postalCode',
+        'country',
     ];
 
     public function users(): HasMany {
@@ -37,10 +43,9 @@ class Company extends Model
     }
 
     /**
-     * Legger til virksomheten i Pureservice
+     * Synkroniserer virksomheten i Pureservice
      */
-    public function addToOrUpdatePS() : bool {
-        $ps = new Pureservice();
+    public function addToOrUpdatePS(Pureservice $ps) : bool {
         $update = false;
 
         if ($psCompany = $ps->findCompany($this->organizationNumber, $this->name)):
@@ -120,23 +125,11 @@ class Company extends Model
     }
 
     /** Synker virksomhetens brukere med Pureservice */
-    public function addToOrUpdateUsersPS(): bool {
-        $ps = new Pureservice();
+    public function addToOrUpdateUsersPS(Pureservice $ps): bool {
+        //$psCompanyUsers = $ps->findUsersByCompanyId($this->externalId);
         foreach ($this->users as $user):
-            $emailId = $user->email ? $ps->findEmailaddressId($this->email): null;
-            if ($user->email && $emailId == null):
-                $uri = '/emailaddress/';
-                $body = ['emailaddresses' => []];
-                $body['emailaddresses'][] = [
-                    'email' => $this->email,
-                ];
-                if ($response = $ps->apiPOST($uri, $body)):
-                    $result = json_decode($response->getBody()->getContents(), true);
-                    $emailId = $result['emailaddresses'][0]['id'];
-                endif;
-            endif;
-
             $update = false;
+            echo Tools::l2().$user->firstName.' '.$user->lastName."\n";
             if ($psUser = $ps->findUser($user->email)):
                 // Brukeren finnes i Pureservice
                 if (
@@ -145,11 +138,26 @@ class Company extends Model
                     $user->role != $psUser['role'] ||
                     $user->type != $psUser['type'] ||
                     $user->notificationScheme != $psUser['notificationScheme'] ||
-                    $psUser[config('pureservice.user.no_email_field')] != 1
+                    $psUser[config('pureservice.user.no_email_field')] != 1 ||
+                    $psUser['companyId'] != $this->externalId
                 ):
                     $update = true;
                 endif;
             endif;
+
+            $emailId = $user->email ? $ps->findEmailaddressId($user->email): null;
+            if ($user->email && $emailId == null):
+                $uri = '/emailaddress/';
+                $body = ['emailaddresses' => []];
+                $body['emailaddresses'][] = [
+                    'email' => $user->email,
+                ];
+                if ($response = $ps->apiPOST($uri, $body)):
+                    $result = json_decode($response->getBody()->getContents(), true);
+                    $emailId = $result['emailaddresses'][0]['id'];
+                endif;
+            endif;
+
 
             $body = $user->toArray();
             $body[config('pureservice.user.no_email_field')] = 1;
@@ -160,6 +168,7 @@ class Company extends Model
                 // Oppdaterer brukeren i Pureservice
                 $uri = '/user/'.$psUser['id'];
                 $body['id'] = $psUser['id'];
+                echo Tools::l3().'Oppdatert'."\n";
                 return $ps->apiPut($uri, $body, true);
             endif;
 
@@ -172,9 +181,12 @@ class Company extends Model
                 if ($response = $ps->apiPOST($uri, $postBody)):
                     $result = json_decode($response->getBody()->getContents(), true);
                     if (count($result['users']) > 0):
-                       return true;
+                        echo Tools::l3().'Opprettet'."\n";
+                        return true;
                     endif;
                 endif;
+            else:
+                echo Tools::l3().'Trenger ikke oppdatering'."\n";
             endif;
         endforeach;
         return false;

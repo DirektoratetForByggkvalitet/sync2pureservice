@@ -588,10 +588,18 @@ class Pureservice
         return false;
     }
 
-    public function findUser($email): array|false {
-        $uri = '/user/?limit=1&include=emailAddress&filter=emailaddress.email == "'.$email.'"';
+    public function findUser($username): array|false {
+        $uri = '/user/?include=emailaddress,address&filter=credentials.username == "'.$username.'"';
         if ($result = $this->apiGet($uri)):
-            if (count($result['users']) == 1) return $result['users'][0];
+            if (count($result['users']) > 0) return $result['users'][0];
+        endif;
+        return false;
+    }
+
+    public function findUsersByCompanyId($companyId): array|false {
+        $uri = '/user/?include=emailAddress&filter=companyId == '.$companyId.'';
+        if ($result = $this->apiGet($uri)):
+            if (count($result['users']) > 0) return $result['users'];
         endif;
         return false;
     }
@@ -606,6 +614,7 @@ class Pureservice
     public function findEmailaddressId($email, $companyAddress=false): int|null {
         $prefix = $companyAddress ? 'company' : '';
         $uri = '/'.$prefix.'emailaddress?filter=email == "'.$email.'"';
+
         if ($result = $this->apiGet($uri)):
             $found = count($result[$prefix.'emailaddresses']);
             if ($found > 0):
