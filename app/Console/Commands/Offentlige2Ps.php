@@ -25,9 +25,16 @@ class Offentlige2Ps extends Command
 
     protected $start;
 
-    protected $foundCompanies = 0;
-    protected $companyNo = 0;
-    protected $userNo = 0;
+    protected $foundBrreg = 0;
+
+    protected $usersProcessed= 0;
+    protected $usersUpdated = 0;
+    protected $usersCreated = 0;
+    protected $usersInDB = 0;
+
+    protected $companiesProcessed = 0;
+    protected $companiesUpdated = 0;
+    protected $companiesCreated = 0;
 
     /**
      * Execute the console command.
@@ -50,11 +57,16 @@ class Offentlige2Ps extends Command
 
         $this->newLine(2);
         $this->info('######################################');
-        $this->info('Ferdig. Operasjonen tok '.round(microtime(true) - $this->start, 0).' sekunder');
-        $this->info('Behandlet totalt:');
-        $this->info(Tools::l2().$this->companyNo.' virksomheter');
-        $this->info(Tools::l2().$this->userNo.' brukere');
+        $this->info('Oppsummering');
         $this->info('######################################');
+        $this->table(
+            ['', 'Hentet fra BRREG', 'Prosesserte'],
+            [
+                ['Virksomheter', $this->foundBrreg, $this->companiesProcessed],
+                ['Brukerkontoer', $this->usersInDB, $this->usersProcessed],
+            ]
+        );
+        $this->info('Operasjonen kjørte i '.round(microtime(true) - $this->start, 0).' sekunder');
         return Command::SUCCESS;
     }
 
@@ -68,8 +80,8 @@ class Offentlige2Ps extends Command
         foreach ($aUri as $name => $uri):
             //$this->line(Tools::l1().'Behandler '.$name);
             $result = $brApi->apiGet($uri);
-            $this->foundCompanies += Arr::get($result, 'page.totalElements');
-            if ($this->foundCompanies > 0):
+            $this->foundBrreg += Arr::get($result, 'page.totalElements');
+            if ($this->foundBrreg > 0):
                 $this->storeCompanies(Arr::get($result, '_embedded.enheter'));
                 if ($resolveUnderlaying && Str::contains($uri, 'STAT')):
                     $underlings = [];
@@ -77,7 +89,7 @@ class Offentlige2Ps extends Command
                         //$this->line(Tools::l1().'Finner underliggende virksomheter for '.$main['navn'].' - '.$main['organisasjonsnummer']);
                         $addr = Str::replace('[ORGNR]', $main['organisasjonsnummer'], config('enhetsregisteret.underliggende'));
                         $res = $brApi->apiGet($addr);
-                        $this->foundCompanies += Arr::get($res, 'page.totalElements');
+                        $this->foundBrreg += Arr::get($res, 'page.totalElements');
                         if (Arr::get($res, 'page.totalElements') > 0) $this->storeCompanies(Arr::get($res, '_embedded.enheter'));
                         unset($res);
                     endforeach;
@@ -89,17 +101,18 @@ class Offentlige2Ps extends Command
     }
 
     protected function storeCompanies(array $companies) {
-        $eData = ExcelLookup::loadData();
+        $eData = ExcelLookup::loadData(); // Array eller null
+
         $bar = $this->output->createProgressBar(count($companies));
         $bar->start();
         foreach ($companies as $company):
             if (Str::contains($company['navn'], "under forhåndsregistrering", true)) continue;
-            $this->companyNo++;
+            $this->companiesProcessed++;
             //$this->info(Tools::l1().$this->companyNo.': '.$company['navn'].' - '. $company['organisasjonsnummer']);
             if ($newCompany = Company::firstWhere('organizationNumber', $company['organisasjonsnummer'])):
-                $this->line(Tools::l2().'Fant virksomheten i DB');
+                // $this->line(Tools::l2().'Fant virksomheten i DB');
             else:
-                $this->line(Tools::l2().'Lagrer virksomheten i DB');
+                // $this->line(Tools::l2().'Lagrer virksomheten i DB');
                 $fields = [
                     'name' => Str::title(Str::squish($company['navn'])),
                     'organizationNumber' => Str::squish($company['organisasjonsnummer']),
@@ -119,7 +132,7 @@ class Offentlige2Ps extends Command
                 $newCompany->companyNumber = substr(Arr::get($company, 'forretningsadresse.kommunenummer'), 0, 2).'00';
             endif;
             if ($newCompany->companyNumber):
-                $this->line(Tools::l2().'Kommunenr: '.$newCompany->companyNumber);
+                // $this->line(Tools::l2().'Kommunenr: '.$newCompany->companyNumber);
                 if ($eData && $found = $eData->firstWhere('knr', $newCompany->companyNumber)):
                     $newCompany->email = Str::squish($found['e-post']);
                     $newCompany->streetAddress = Str::squish($found['adresse']);
@@ -132,7 +145,7 @@ class Offentlige2Ps extends Command
 
             // Oppretter SvarUt-bruker for virksomheten
             $svarutEmail = $newCompany->organizationNumber.'@svarut.pureservice.local';
-            $this->userNo++;
+            $this->usersInDB++;
             if ($svarUtUser = $newCompany->users()->firstWhere('email', $svarutEmail)):
                 //$this->line(Tools::l2().'Fant SvarUt-bruker '.$svarutEmail.' i DB');
             else:
@@ -146,7 +159,7 @@ class Offentlige2Ps extends Command
             endif;
             // Oppretter postmottak-bruker dersom denne finnes
             if ($newCompany->email != null):
-                $this->userNo++;
+                $this->usersInDB++;
                 if ($postmottak = $newCompany->users()->firstWhere('email', $newCompany->email)):
                     //$this->line(Tools::l2().'Fant postmottak: '.$newCompany->email);
                 else:
@@ -178,6 +191,7 @@ class Offentlige2Ps extends Command
         $bar = $this->output->createProgressBar(Company::count());
         $bar->start();
         foreach (Company::lazy() as $company):
+            $this->companiesProcessed++;
             $company->addOrUpdatePS($ps);
             $bar->advance();
         endforeach;
@@ -189,6 +203,7 @@ class Offentlige2Ps extends Command
         $bar = $this->output->createProgressBar(User::count());
         $bar->start();
         foreach (User::lazy() as $user):
+            $this->usersProcessed++;
             $user->addOrUpdatePS($ps);
             $bar->advance();
         endforeach;
