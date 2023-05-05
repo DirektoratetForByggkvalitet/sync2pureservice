@@ -6,19 +6,37 @@ use PhpOffice\PhpSpreadsheet\{Spreadsheet, IOFactory};
 use Illuminate\Support\Str;
 
 class ExcelLookup {
+
+    protected $data;
+
+    public function __construct()
+    {
+        $this->data = self::loadData();
+    }
+
+    public function findName($name) {
+        return $this->data->firstWhere(config('excellookup.field.name'), $name);
+    }
+
+    public function findKnr($knr) {
+        return $this->data->firstWhere(config('excellookup.map.A'), $knr);
+    }
+
+    public function getData() {
+        return $this->data;
+    }
     /**
      * Laster inn Excel-fila som er kilde for e-postadressene til kommunene
      * @return Collection   Collection-array over kommuner med e-postadresser
      */
     public static function loadData() {
-        if (!file_exists(config('excellookup.file')) || config('excellookup.file') == false):
+        if (!file_exists(config('excellookup.file')) || config('excellookup.file', false) == false):
             // Slå av funksjonaliteten
             return false;
         endif;
-        $spreadsheet = IOFactory::load(config('excellookup.file'));
-        $data = collect($spreadsheet->getActiveSheet()->toArray(null, true, true, true));
+        $data = collect(IOFactory::load(config('excellookup.file'))->getActiveSheet()->toArray(null, true, true, true));
         // Fjerner første linje
-        $firstrow = $data->shift();
+        $data->shift();
 
         // Legger til verdier i config
         config([
@@ -43,12 +61,13 @@ class ExcelLookup {
      */
     public static function findByName($search) {
         if ($data = self::loadData()):
-            $result = $data->filter(function ($item, $key) use ($search) {
-                if (preg_match('/'.$search.'.*/', $item[config('excellookup.field.name')])):
+            return $data->firstWhere(config('excellookup.field.name'), $search);
+            /*$result = $data->filter(function ($item, $key) use ($search) {
+                if (Str::contains($item[config('excellookup.field.name')], $search, true)):
                     return $item;
                 endif;
             });
-            if (count($result)) return $result->first();
+            if (count($result)) return $result->first();*/
         endif;
         return false;
     }
