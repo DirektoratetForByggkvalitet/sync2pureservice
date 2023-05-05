@@ -93,7 +93,6 @@ class User extends Model
             if ($response = $ps->apiPOST($uri, $postBody)):
                 $result = json_decode($response->getBody()->getContents(), true);
                 if (count($result['users']) > 0):
-                    echo Tools::l3().'Opprettet'."\n";
                     return true;
                 endif;
             endif;
