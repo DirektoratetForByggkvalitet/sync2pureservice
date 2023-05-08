@@ -70,6 +70,17 @@ pipelines:
             - echo 'Kjører sjekkInnsynskrav'
             - ./artisan pureservice:sjekkInnsynskrav
 
+    offentlige2ps:
+      - step:
+          name: 'Importerer offentlige instanser fra BRREG inn i Pureservice'
+          deployment: Production
+          script:
+            - scripts/php-install-alpine.sh
+            - cp .env.example .env
+            - composer install --no-dev
+            - ./artisan pureservice:offentlige2ps
+
+
     tool-build-dekrypter:
       - step:
           image: maven:3.8-openjdk-11-slim

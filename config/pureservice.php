@@ -93,15 +93,15 @@ return [
     ],
     'user' => [
         'role_id' => env('PURESERVICE_USER_ROLE_ID', 10),
-        'no_email_field' => env('PURESERVICE_USER_NOEMAIL_FIELD', 'cf_1'),
+        'no_email_field' => env('PURESERVICE_USER_NOEMAIL_FIELD', false),
     ],
     'company' => [
-        'categoryfield' => env('PURESERVICE_COMPANY_CATEGORY_FIELD', 'cf_1'),
+        'categoryfield' => env('PURESERVICE_COMPANY_CATEGORY_FIELD', false),
         'categoryMap' => [
             'KOMM' => 'Kommune',
             'STAT' => 'Statlig virksomhet',
             'FYLK' => 'Fylkeskommune',
-            'ORGL' => 'Statlig virksomhet',
+            'ORGL' => 'Underliggende statlig virksomhet',
         ],
     ],
 ];

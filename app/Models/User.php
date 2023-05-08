@@ -51,7 +51,6 @@ class User extends Model
                 $this->role != $psUser['role'] ||
                 $this->type != $psUser['type'] ||
                 $this->notificationScheme != $psUser['notificationScheme'] ||
-                $psUser[config('pureservice.user.no_email_field')] != 1 ||
                 $psUser['companyId'] != $this->company->externalId
             ):
                 $update = true;
@@ -73,8 +72,8 @@ class User extends Model
 
 
         $body = $this->toArray();
-        $body[config('pureservice.user.no_email_field')] = 1;
-        $body['companyId'] = $this->company->externalId;;
+        if (config('pureservice.user.no_email_field')) $body[config('pureservice.user.no_email_field')] = 1;
+        $body['companyId'] = $this->company->externalId;
         $body['emailAddressId'] = $emailId;
 
         if ($update):

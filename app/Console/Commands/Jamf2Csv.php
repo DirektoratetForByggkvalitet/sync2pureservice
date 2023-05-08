@@ -37,7 +37,7 @@ class Jamf2Csv extends Command
         $this->start = microtime(true);
         $this->info(class_basename($this).' v'.$this->version);
         $this->line($this->description);
-        $this->line('');
+        $this->newLine();
 
         $this->line($this->l2.'Logger inn på Jamf Pro');
         $this->jps = new JamfPro();

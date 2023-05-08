@@ -2,7 +2,8 @@
 
 namespace App\Services;
 
-use PhpOffice\PhpSpreadsheet\{Spreadsheet, IOFactory};
+use Illuminate\Support\Collection;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Str;
 
 class ExcelLookup {
@@ -26,10 +27,10 @@ class ExcelLookup {
         return $this->data;
     }
     /**
-     * Laster inn Excel-fila som er kilde for e-postadressene til kommunene
-     * @return Collection   Collection-array over kommuner med e-postadresser
+     * Laster inn Excel-fila som er kilde for e-postadressene til virksomheter
+     * @return Collection   Collection-array over virksomheter med e-postadresser
      */
-    public static function loadData() {
+    public static function loadData(): Collection|false {
         if (!file_exists(config('excellookup.file')) || config('excellookup.file', false) == false):
             // Slå av funksjonaliteten
             return false;
@@ -40,18 +41,19 @@ class ExcelLookup {
 
         // Legger til verdier i config
         config([
-            'excellookup.field.name' => config('excellookup.map.B'),
-            'excellookup.field.email' => config('excellookup.map.F')
+            'excellookup.field.name' => config('excellookup.map.C'),
+            'excellookup.field.email' => config('excellookup.map.D')
         ]);
         // Mapper om A, B, C osv til vettige navn etter innstillinger i config
         return $data->map(function ($item, $key) {
             return [
-                config('excellookup.map.B') => Str::upper($item['B']),
-                config('excellookup.map.F') => Str::lower($item['F']),
+                config('excellookup.map.A') => Str::upper($item['A']),
+                config('excellookup.map.B') => Str::lower($item['B']),
                 config('excellookup.map.C') => $item['C'],
                 config('excellookup.map.D') => $item['D'],
                 config('excellookup.map.E') => $item['E'],
-                config('excellookup.map.A') => $item['A'],
+                config('excellookup.map.F') => $item['F'],
+                config('excellookup.map.G') => $item['G'],
             ];
         });
     }
@@ -74,7 +76,7 @@ class ExcelLookup {
 
     public static function findByKnr($knr) {
         if ($data = self::loadData()):
-            return $data->firstWhere(config('excellookup.map.A'), $knr);
+            return $data->firstWhere(config('excellookup.map.B'), $knr);
         endif;
         return false;
     }

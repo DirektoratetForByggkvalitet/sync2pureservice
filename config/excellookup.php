@@ -1,17 +1,20 @@
 <?php
 
 return [
-    'file' => env('SVARINN_EXCEL_LOOKUP_FILE', storage_path('kommuner.xlsx')),
+    'file' => env('SVARINN_EXCEL_LOOKUP_FILE', storage_path('virksomheter.xlsx')),
     'typesInFile' => [
         'KOMM',
-        'FYLK'
+        'FYLK',
+        'STAT',
+        'ORGL'
     ],
     'map' => [
-        'A' => 'knr',
-        'B' => 'navn',
-        'C' => 'adresse',
-        'D' => 'postnr',
-        'E' => 'poststed',
-        'F' => 'e-post'
+        'A' => 'regnr',
+        'B' => 'knr',
+        'C' => 'navn',
+        'D' => 'e-post',
+        'E' => 'nettside',
+        'F' => 'kategori',
+        'G' => 'notater'
     ],
 ];

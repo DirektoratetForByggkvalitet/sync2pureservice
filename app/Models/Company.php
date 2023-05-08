@@ -10,7 +10,7 @@ class Company extends Model {
     use HasFactory;
     protected $fillable = [
         'name',
-        'organizationalNumber',
+        'organizationNumber',
         'companyNumber',
         'website',
         'email',
@@ -18,10 +18,6 @@ class Company extends Model {
         'notes',
         'category',
         'externalId',
-        'streetAddress',
-        'city',
-        'postalCode',
-        'country',
     ];
 
     protected $hidden = [
@@ -32,10 +28,6 @@ class Company extends Model {
         'email',
         'phone',
         'category',
-        'streetAddress',
-        'city',
-        'postalCode',
-        'country',
     ];
 
     public function users(): HasMany {
@@ -52,12 +44,11 @@ class Company extends Model {
             $this->externalId = $psCompany['id'];
             $this->save();
             if (
-                $this->organizationalNumber != $psCompany['organizationNumber'] ||
+                $this->organizationNumber != $psCompany['organizationNumber'] ||
                 $this->email != data_get($psCompany, 'linked.companyemailaddresses.0.email') ||
                 $this->companyNumber != $psCompany['companyNumber'] ||
                 $this->website != $psCompany['website'] ||
-                $this->notes != $psCompany['notes'] ||
-                $this->category != $psCompany[config('pureservice.company.categoryfield')]
+                $this->notes != $psCompany['notes']
             ):
                 $update = true;
             endif;
@@ -94,8 +85,8 @@ class Company extends Model {
             'companyNumber' => $this->companyNumber,
             'website' => $this->website,
             'notes' => $this->notes,
-            config('pureservice.company.categoryfield') => $this->category,
         ];
+        if (config('pureservice.company.categoryfield', false)) $body[config('pureservice.company.categoryfield')] = $this->category;
         if ($emailId != null) $body['emailAddressId'] = $emailId;
         if ($phoneId != null) $body['phonenumberId'] = $phoneId;
 
