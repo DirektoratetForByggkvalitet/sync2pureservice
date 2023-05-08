@@ -14,7 +14,7 @@ class Offentlige2Ps extends Command
      *
      * @var string
      */
-    protected $signature = 'pureservice:offentlige2ps';
+    protected $signature = 'pureservice:offentlige2ps {--nops : Hopper over lagring til Pureservice}';
 
     /**
      * The console command description.
@@ -71,7 +71,11 @@ class Offentlige2Ps extends Command
         $this->info(' DEL 2: Synkronisering med Pureservice');
         $this->info('######################################');
         $this->newLine();
-        //$this->sync2Pureservice();
+        if ($this->option('nops')):
+            $this->comment('Hoppet over synkronisering fordi \'--nops\' ble oppgitt');
+        else:
+            $this->sync2Pureservice();
+        endif;
 
         $this->newLine(2);
         $this->info('######################################');
