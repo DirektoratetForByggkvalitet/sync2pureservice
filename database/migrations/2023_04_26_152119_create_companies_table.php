@@ -24,10 +24,6 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->mediumtext('notes')->nullable();
             $table->string('category')->nullable();
-            $table->mediumtext('streetAddress')->nullable();
-            $table->string('city')->nullable();
-            $table->string('postalCode')->nullable();
-            $table->string('country')->nullable();
             $table->timestamps();
         });
     }

@@ -4,6 +4,7 @@ Vi har bygd en kommandolinje-basert Laravel-applikasjon for å utvide funksjonal
 
 - [jamf2pureservice](docs/jamf2pureservice.md) - synkroniserer maskiner og mobilenheter i Jamf Pro med ressurser i Pureservice
 - [svarinn2pureservice](docs/svarinn2pureservice.md) - fungerer som SvarUt-mottak for Pureservice
+- [offentlige2ps](docs/offentlige2ps.md) - importerer kommuner og statlige instanser inn som firma og sluttbrukere i Pureservice
 - [utsendelse](docs/utsendelse.md) - kan håndtere masseutsendelser fra Pureservice
 
 ## Kjøring i Bitbucket Pipelines

@@ -71,7 +71,7 @@ class Offentlige2Ps extends Command
         $this->info(' DEL 2: Synkronisering med Pureservice');
         $this->info('######################################');
         $this->newLine();
-        $this->sync2Pureservice();
+        //$this->sync2Pureservice();
 
         $this->newLine(2);
         $this->info('######################################');
@@ -106,12 +106,14 @@ class Offentlige2Ps extends Command
                 if ($resolveUnderlaying && Str::contains($uri, 'STAT')):
                     $underlings = [];
                     foreach ($result['_embedded']['enheter'] as $main):
-                        $this->comment(Tools::l2().'Finner underliggende virksomheter for '.$main['navn'].' - '.$main['organisasjonsnummer']);
+                        $this->newLine();
+                        $this->info(Tools::l2().'Finner underliggende virksomheter for '.$main['navn'].' - '.$main['organisasjonsnummer']);
+                        $this->newLine();
                         $addr = Str::replace('[ORGNR]', $main['organisasjonsnummer'], config('enhetsregisteret.underliggende'));
                         $res = $brApi->apiGet($addr);
                         $this->foundBrreg += Arr::get($res, 'page.totalElements');
                         $this->brrCounters[$name] += Arr::get($res, 'page.totalElements');
-                        if (Arr::get($res, 'page.totalElements') > 0) $this->storeCompanies(Arr::get($res, '_embedded.enheter'));
+                        if (Arr::get($res, 'page.totalElements') > 0) $this->storeCompanies(Arr::get($res, '_embedded.enheter'), $main['navn'].' - '.$main['organisasjonsnummer']);
                         unset($res);
                     endforeach;
                 endif;
@@ -121,8 +123,8 @@ class Offentlige2Ps extends Command
         // Behandler enhetene som ble funnet og mellomlagrer dem i databasen
     }
 
-    protected function storeCompanies(array $companies) {
-        $eData = ExcelLookup::loadData(); // Array eller null
+    protected function storeCompanies(array $companies, $overliggende = null) {
+        $eData = ExcelLookup::loadData(); // Collection eller null
         foreach ($companies as $company):
             if (Str::contains($company['navn'], "under forhåndsregistrering", true)) continue;
             $this->info(Tools::l1().$company['navn'].' - '. $company['organisasjonsnummer']);
@@ -131,16 +133,21 @@ class Offentlige2Ps extends Command
             else:
                 $this->comment(Tools::l2().'Lagrer virksomheten i DB');
                 $fields = [
-                    'name' => Str::title(Str::squish($company['navn'])),
+                    'name' => Str::replace(' Og ', ' og ', Str::replace(' I ', ' i ', Str::title(Str::squish($company['navn'])))),
                     'organizationNumber' => Str::squish($company['organisasjonsnummer']),
                     'website' => isset($company['hjemmeside']) ? Str::squish($company['hjemmeside']) : null,
                     'category' => config('pureservice.company.categoryMap.'.Arr::get($company, 'organisasjonsform.kode'), null),
+                    'notes' => ($overliggende) ? 'Tilhører ' . Str::replace(' Og ', ' og ', Str::replace(' I ', ' i ', Str::title(Str::squish($overliggende)))) : '',
                     'email' => null,
                     'phone' => null,
                 ];
                 $newCompany = Company::factory()->make($fields);
             endif;
             $this->addedToDB++;
+            // Finner e-postadresse fra Excel-fil
+            if ($eData && $foundData = $eData->firstWhere('regnr', $newCompany->organizationNumber)):
+                $newCompany->email = Str::squish($foundData['e-post']);
+            endif;
 
             if ($newCompany->category == config('pureservice.company.categoryMap.KOMM')):
                 // Setter kommunenr for kommune
@@ -149,16 +156,11 @@ class Offentlige2Ps extends Command
                 // Setter kommunenr for fylkeskommune
                 $newCompany->companyNumber = substr(Arr::get($company, 'forretningsadresse.kommunenummer'), 0, 2).'00';
             endif;
-            if ($newCompany->companyNumber):
-                // $this->line(Tools::l2().'Kommunenr: '.$newCompany->companyNumber);
-                if ($eData && $found = $eData->firstWhere('knr', $newCompany->companyNumber)):
-                    $newCompany->email = Str::squish($found['e-post']);
-                    $newCompany->streetAddress = Str::squish($found['adresse']);
-                    $newCompany->postalCode = Str::squish($found['postnr']);
-                    $newCompany->city = Str::squish($found['poststed']);
-                    $newCompany->country = 'Norge';
-                endif;
+
+            if (Str::endsWith($newCompany->website, '/')):
+                $newCompany->website = Str::beforeLast($newCompany->website, '/');
             endif;
+
             $newCompany->save();
 
             // Oppretter SvarUt-bruker for virksomheten
