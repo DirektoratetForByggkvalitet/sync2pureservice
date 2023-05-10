@@ -81,6 +81,7 @@ return [
         'invisible' => 2,
     ],
     'ticket' => [
+        'codeTemplate' => env('PURESERVICE_TICKET_NUMBER_TEMPLATE', '[Sak ID# {{RequestNumber}}]'),
         'source' => env('PURESERVICE_TICKET_SOURCE', 'SvarUt'),
         'zone' => env('PURESERVICE_TICKET_ZONE', 'Dispatchers'),
         'team' => env('PURESERVICE_TICKET_TEAM', 'Dispatcher'),
@@ -103,5 +104,13 @@ return [
             'FYLK' => 'Fylkeskommune',
             'ORGL' => 'Underliggende statlig virksomhet',
         ],
+    ],
+    // Oppsett for PSUtsendelse
+    'dispatch' => [
+        '121user' => env('PURESERVICE_DISPATCH_USER_121', '121@dispatch.pureservice.local'),
+        '12muser' => env('PURESERVICE_DISPATCH_USER_12M', '12m@dispatch.pureservice.local'),
+        'commTypeName' => env('PURESERVICE_DISPATCH_COMMTYPE_NAME', 'Til utsending'),
+        'status' => env('PURESERVICE_DISPATCH_STATUS', 'Elektronisk forsendelse (ikke bruk)'),
+        'finishStatus' => env('PURESERVICE_DISPATCH_SOLVED_STATUS', 'Løst'),
     ],
 ];

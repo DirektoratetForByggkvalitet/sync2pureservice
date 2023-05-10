@@ -90,7 +90,7 @@ class Pureservice
      * @param   string  $uri                Relativ URI for forespørselen
      * @param   bool    $returnResponse     Angir om returverdien skal være et responsobjet eller et array
      *
-     * @return  Psr\Http\Message\ResponseInterface/assoc_array  Resultat som array eller objekt
+     * @return  Psr\Http\Message\ResponseInterface/array  Resultat som array eller objekt
      */
     public function apiGet($uri, $returnResponse=false): array|ResponseInterface {
         $uri = $this->pre.$uri;
@@ -102,7 +102,7 @@ class Pureservice
     /**
      * Brukes til å kjøre en POST-forespørsel mot Pureservice
      * @param   string      $uri    Relativ URI for forespørselen
-     * @param   assoc_array $body   JSON-innholdet til forespørselen, som assoc_array
+     * @param   array $body   JSON-innholdet til forespørselen, som assoc_array
      * @param   string      $ct     Content-Type for forespørselen, med standardverdi
      *
      * @return  Psr\Http\Message\ResponseInterface  Resultatobjekt for forespørselen
@@ -588,16 +588,24 @@ class Pureservice
         return false;
     }
 
-    public function findUser($username): array|false {
-        $uri = '/user/?include=emailaddress,address&filter=credentials.username == "'.$username.'"';
+    /**
+     * Finner en bruker basert på e-postadressen.
+     * Siden én bruker kan ha flere e-postadresser er det viktig at man søker etter e-postadresse-objekter,
+     * og inkluderer brukeren, fremfor å søke etter brukeren.
+     */
+    public function findUser($email): array|false {
+        $uri = '/emailaddress/?include=user&filter=email == "'.$email.'"';
         if ($result = $this->apiGet($uri)):
-            if (count($result['users']) > 0) return $result['users'][0];
+            if (count($result['emailaddresses']) > 0) return $result['linked']['users'][0];
         endif;
         return false;
     }
 
+    /**
+     * Finner brukere som er koblet til en gitt companyId
+     */
     public function findUsersByCompanyId($companyId): array|false {
-        $uri = '/user/?include=emailAddress&filter=companyId == '.$companyId.'';
+        $uri = '/user/?include=emailAddresses&filter=companyId == '.$companyId.'';
         if ($result = $this->apiGet($uri)):
             if (count($result['users']) > 0) return $result['users'];
         endif;
@@ -853,6 +861,14 @@ class Pureservice
             'fileCount' => $attachmentCount,
             'uploadCount' => $uploadCount,
         ];
+    }
+
+    /**
+     * Returnerer tekst for å identifisere saker fra e-post-emne
+     */
+    public function getTicketCode($requestNumber) : string {
+        $replaceString = config('pureservice.ticket.codeTemplate');
+        return Str::replace('{{RequestNumber}}', $requestNumber, $replaceString);
     }
 
     protected function human_filesize($bytes, $decimals = 2): string {

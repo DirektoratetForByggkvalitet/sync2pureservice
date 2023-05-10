@@ -33,6 +33,7 @@ class User extends Model
         'id',
         'company_id',
         'email',
+        'externalId'
     ];
 
     public function company(): BelongsTo {
@@ -55,6 +56,7 @@ class User extends Model
             ):
                 $update = true;
             endif;
+            $this->externalId = $psUser['id'];
         endif;
 
         $emailId = $this->email ? $ps->findEmailaddressId($this->email): null;
