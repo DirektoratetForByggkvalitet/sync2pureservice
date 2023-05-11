@@ -17,21 +17,20 @@ class Company extends Model {
         'phone',
         'notes',
         'category',
-        'externalId',
+        'id',
     ];
 
     protected $hidden = [
         'created_at',
         'updated_at',
-        'id',
-        'externalId',
+        'internal_id',
         'email',
         'phone',
         'category',
     ];
 
     public function users(): HasMany {
-        return $this->hasMany(User::class);
+        return $this->hasMany(User::class, 'id');
     }
 
     /**

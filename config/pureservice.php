@@ -112,5 +112,6 @@ return [
         'commTypeName' => env('PURESERVICE_DISPATCH_COMMTYPE_NAME', 'Til utsending'),
         'status' => env('PURESERVICE_DISPATCH_STATUS', 'Elektronisk forsendelse (ikke bruk)'),
         'finishStatus' => env('PURESERVICE_DISPATCH_SOLVED_STATUS', 'Løst'),
+        'listAssetName' => env('PURESERVICE_DISPATCH_LIST_ASSETNAME', 'Mottakerliste'),
     ],
 ];

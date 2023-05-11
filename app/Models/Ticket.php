@@ -33,7 +33,6 @@ class Ticket extends Model
         'created_at',
         'updated_at',
         'internal_id',
-        'internal_user_id',
     ];
 
     public function user() {
@@ -41,6 +40,6 @@ class Ticket extends Model
     }
 
     public function communications() {
-        return $this->hasMany(Communication::class, 'ticketId', 'id');
+        return $this->hasMany(TicketCommunication::class, 'ticketId', 'id');
     }
 }

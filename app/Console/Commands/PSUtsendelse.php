@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Services\{Tools, Pureservice};
 use Illuminate\Support\{Arr, Str, Collection};
-use App\Models\{Company, Ticket, TicketCommunication};
+use App\Models\{Company, User, Ticket, TicketCommunication};
 
 class PSUtsendelse extends Command {
     protected $start;
@@ -53,22 +53,38 @@ class PSUtsendelse extends Command {
 
         $result = $this->ps->apiGet($uri);
 
+        $this->line(Tools::l1().'Mellomlagrer virksomhet(er) og bruker(e)');
+
         if (count($result['communications']) == 0):
             $this->info('Ingen saker til behandling. Avslutter.');
             return Command::SUCCESS;
         endif;
 
-        $this->psTickets = collect($result['linked']['tickets']);
-        $this->ticketCount = $this->psTickets->count();
+        $psUsers = collect($result['linked']['users'])
+            ->mapInto(User::class)
+            ->each(function (User $item, int $key){
+                $item->save();
+            });
+        $psCompanies = collect($result['linked']['companies'])
+            ->mapInto(Company::class)
+            ->each(function(Company $item, int $key){
+                $item->save();
+            });
+        $psTickets = collect($result['linked']['tickets'])
+            ->mapInto(Ticket::class)
+            ->each(function (Ticket $ticket, int $key) {
+                $ticket->save();
+            });
+        $this->psCommunications = collect($result['communications'])
+            ->mapInto(TicketCommunication::class)
+            ->each(function (TicketCommunication $item, int $key){
+                $item->save();
+            });
+        unset($result);
+        $this->ticketCount = $psTickets->count();
         $this->line(Tools::l1().'Fant '.$this->ticketCount.' sak'.($this->ticketCount > 1 ? 'er': ''). ' som skal behandles');
         $this->newLine();
 
-        $this->line(Tools::l1().'Mellomlagrer virksomhet(er) og bruker(e)');
-        $this->psUsers = collect($result['linked']['users']);
-        $this->psCompanies = collect($result['linked']['companies'])->mapInto(Company::class);
-        $this->psCompanies->each(function (Company $company, int $key) {
-            $company->save();
-        });
         /*
         $this->psCompanies->each(function (array $psCompany, int $key) {
             $company = Company::factory()->create([

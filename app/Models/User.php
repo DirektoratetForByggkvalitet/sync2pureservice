@@ -15,6 +15,8 @@ class User extends Model
         'firstName',
         'lastName',
         'email',
+        'id',
+        'companyId'
     ];
 
     protected $attributes = [
@@ -30,14 +32,12 @@ class User extends Model
         'password',
         'created_at',
         'updated_at',
-        'id',
-        'company_id',
-        'email',
-        'externalId'
+        'internal_id',
+        'email'
     ];
 
     public function company(): BelongsTo {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'companyId', 'id');
     }
 
     /** Synker bruker med Pureservice */
