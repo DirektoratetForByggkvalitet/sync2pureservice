@@ -14,7 +14,9 @@ class Offentlige2Ps extends Command
      *
      * @var string
      */
-    protected $signature = 'pureservice:offentlige2ps {--nops : Hopper over lagring til Pureservice}';
+    protected $signature = 'pureservice:offentlige2ps
+        {--no-sync : Hopper over lagring til Pureservice}
+        {--reset-db : Nullstiller databasen før oppstart (anbefalt)}';
 
     /**
      * The console command description.
@@ -43,7 +45,11 @@ class Offentlige2Ps extends Command
      */
     public function handle(): int {
         $this->start = microtime(true);
-        $this->info('Bruker Pureservice-adressen '.config('pureservice.api_url'));
+        if ($this->option('reset-db')):
+            $this->info('### NULLSTILLER DATABASEN ###');
+            $this->call('migrate:fresh');
+            $this->newLine(2);
+        endif;
         $this->newLine(2);
         $this->info('####################################');
         $this->info(' DEL 1: Hent virksomheter fra BRREG');
@@ -57,9 +63,8 @@ class Offentlige2Ps extends Command
         endforeach;
         $resultTable[] = ['Totalt fra BRREG', $this->foundBrreg];
         $resultTable[] = ['---', '---'];
-        $resultTable[] = ['Hoppet over (*)', $this->foundBrreg - $this->addedToDB];
-        $resultTable[] = ['Virksomheter i DB', Company::count()];
-        $resultTable[] = ['Brukerkontoer i DB', User::count()];
+        $resultTable[] = ['Ikke importerte (*)', $this->foundBrreg - $this->addedToDB];
+        $resultTable[] = ['Importert til DB', Company::count()];
         $this->table(
             ['', 'Antall'],
             $resultTable,
@@ -71,7 +76,7 @@ class Offentlige2Ps extends Command
         $this->info(' DEL 2: Synkronisering med Pureservice');
         $this->info('######################################');
         $this->newLine();
-        if ($this->option('nops')):
+        if ($this->option('no-sync')):
             $this->comment('Hoppet over synkronisering fordi \'--nops\' ble oppgitt');
         else:
             $this->sync2Pureservice();
@@ -84,8 +89,8 @@ class Offentlige2Ps extends Command
         $this->table(
             ['', 'I databasen', 'Prosesserte'],
             [
-                ['Virksomheter', $this->addedToDB, $this->companiesProcessed],
-                ['Brukerkontoer', $this->usersInDB, $this->usersProcessed],
+                ['Virksomheter', Company::count(), $this->companiesProcessed],
+                ['Brukerkontoer', User::count(), $this->usersProcessed],
             ]
         );
         $this->info('Operasjonen kjørte i '.round(microtime(true) - $this->start, 0).' sekunder');
@@ -167,35 +172,6 @@ class Offentlige2Ps extends Command
 
             $newCompany->save();
 
-            // Oppretter SvarUt-bruker for virksomheten
-            $svarutEmail = $newCompany->organizationNumber.'@svarut.pureservice.local';
-            $this->usersInDB++;
-            if ($svarUtUser = $newCompany->users()->firstWhere('email', $svarutEmail)):
-                $this->comment(Tools::l2().'Fant SvarUt-bruker '.$svarutEmail.' i DB');
-            else:
-                $this->comment(Tools::l2().'Oppretter SvarUt-bruker '.$svarutEmail.' i DB');
-                $svarUtUser = $newCompany->users()->create([
-                    'firstName' => 'SvarUt',
-                    'lastName' => $newCompany->name,
-                    'email' => $svarutEmail,
-                ]);
-                $svarUtUser->save();
-            endif;
-            // Oppretter postmottak-bruker dersom denne finnes
-            if ($newCompany->email != null):
-                $this->usersInDB++;
-                if ($postmottak = $newCompany->users()->firstWhere('email', $newCompany->email)):
-                    $this->comment(Tools::l2().'Fant postmottak: '.$newCompany->email);
-                else:
-                    $this->comment(Tools::l2().'Oppretter postmottak: '.$newCompany->email);
-                    $postmottak = $newCompany->users()->create([
-                        'firstName' => 'Postmottak',
-                        'lastName' => $newCompany->name,
-                        'email' => $newCompany->email,
-                    ]);
-                    $postmottak->save();
-                endif;
-            endif;
         endforeach;
     }
 
@@ -211,11 +187,12 @@ class Offentlige2Ps extends Command
         $this->newLine();
 
         $bar = $this->output->createProgressBar(Company::count());
-        $bar->start();
         $bar->setFormat('verbose');
+        $bar->start();
         foreach (Company::lazy() as $company):
             $this->companiesProcessed++;
             $company->addOrUpdatePS($ps);
+            $company->createStandardUsers();
             $bar->advance();
         endforeach;
         $bar->finish();

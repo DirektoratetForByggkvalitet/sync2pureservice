@@ -37,7 +37,7 @@ class User extends Model
     ];
 
     public function company(): BelongsTo {
-        return $this->belongsTo(Company::class, 'companyId', 'id');
+        return $this->belongsTo(Company::class, 'id', 'companyId');
     }
 
     /** Synker bruker med Pureservice */
@@ -52,11 +52,13 @@ class User extends Model
                 $this->role != $psUser['role'] ||
                 $this->type != $psUser['type'] ||
                 $this->notificationScheme != $psUser['notificationScheme'] ||
-                $psUser['companyId'] != $this->company->externalId
+                $psUser['companyId'] != $this->companyId
             ):
                 $update = true;
             endif;
-            $this->externalId = $psUser['id'];
+            $this->id = $psUser['id'];
+            $this->companyId = $psUser['companyId'];
+            $this->save();
         endif;
 
         $emailId = $this->email ? $ps->findEmailaddressId($this->email): null;
@@ -75,7 +77,7 @@ class User extends Model
 
         $body = $this->toArray();
         if (config('pureservice.user.no_email_field')) $body[config('pureservice.user.no_email_field')] = 1;
-        $body['companyId'] = $this->company->externalId;
+        $body['companyId'] = $this->companyId;
         $body['emailAddressId'] = $emailId;
 
         if ($update):
@@ -94,6 +96,8 @@ class User extends Model
             if ($response = $ps->apiPOST($uri, $postBody)):
                 $result = json_decode($response->getBody()->getContents(), true);
                 if (count($result['users']) > 0):
+                    $this->id = $result['users'][0]['id'];
+                    $this->save();
                     return true;
                 endif;
             endif;

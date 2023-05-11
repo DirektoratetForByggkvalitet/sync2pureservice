@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id('internal_id');
-            $table->integer('id');
+            $table->integer('id')->nullable();
             $table->string('firstName');
             $table->string('lastName');
             $table->integer('role');
@@ -24,8 +24,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->integer('companyId');
-            $table->integer('externalId')->nullable();
+            $table->integer('companyId')->nullable;
             $table->rememberToken();
             $table->timestamps();
         });
