@@ -130,22 +130,7 @@ class Company extends Model {
      */
     public function createStandardUsers() : void {
         if ($this->id):
-            // Oppretter SvarUt-bruker for virksomheten
-            $svarutEmail = $this->organizationNumber.'@'.config('pureservice.company.dummydomain', '@svarut.pureservice.local');
-            $this->usersInDB++;
-            if ($svarUtUser = User::firstWhere('email', $svarutEmail)):
-                // SvarUt-brukeren finnes allerede
-            else:
-                $svarUtUser = $this->users()->create([
-                    'firstName' => 'SvarUt',
-                    'lastName' => $this->name,
-                    'email' => $svarutEmail,
-                ]);
-                $svarUtUser->save();
-            endif;
-            // Oppretter postmottak-bruker dersom denne finnes
             if ($this->email):
-                $this->usersInDB++;
                 if ($postmottak = $this->users()->firstWhere('email', $this->email)):
                     // Postmottaket finnes allerede i databasen
                 else:
@@ -154,10 +139,21 @@ class Company extends Model {
                         'lastName' => $this->name,
                         'email' => $this->email,
                     ]);
-                    $postmottak->save();
                 endif;
-            endif;
+            endif; // $this->email
 
-        endif;
+            // Oppretter SvarUt-bruker for virksomheten
+            $svarutEmail = $this->organizationNumber.'@'.config('pureservice.user.dummydomain');
+            if ($svarUtUser = User::firstWhere('email', $svarutEmail)):
+                // SvarUt-brukeren finnes allerede
+            else:
+                $svarUtUser = $this->users()->create([
+                    'firstName' => 'SvarUt',
+                    'lastName' => $this->name,
+                    'email' => $svarutEmail,
+                ]);
+            endif;
+            // Oppretter postmottak-bruker dersom denne finnes
+        endif; // $this->id
     }
 }
