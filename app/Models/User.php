@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany};
 use Illuminate\Support\Str;
 use App\Services\{Pureservice, Tools};
 
@@ -38,6 +38,10 @@ class User extends Model
 
     public function company(): BelongsTo {
         return $this->belongsTo(Company::class, 'id', 'companyId');
+    }
+
+    public function tickets(): BelongsToMany {
+        return $this->belongsToMany(Ticket::class);
     }
 
     /** Synker bruker med Pureservice */

@@ -32,7 +32,9 @@ return new class extends Migration
             $table->string('subject');
             $table->longText('description');
 
-            $table->integer('internal_user_id')->nullable();
+            $table->boolean('eForsendelse')->default(false);
+            $table->string('action')->default('normalSend');
+
             $table->timestamps();
         });
     }

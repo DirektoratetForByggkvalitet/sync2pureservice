@@ -23,8 +23,8 @@ class TicketCommunication extends Model
         'internal_id',
     ];
 
-
     public function ticket() {
         return $this->belongsTo(Ticket::class, 'id', 'ticketId');
     }
+
 }
