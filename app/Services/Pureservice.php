@@ -6,7 +6,7 @@ use Psr\Http\Message\{RequestInterface, ResponseInterface};
 use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware, RequestOptions};
 use Carbon\Carbon;
 use Illuminate\Support\{Str, Arr};
-use App\Models\Company;
+use App\Models\{Company, User, Ticket, TicketCommunication};
 
 class Pureservice
 {
@@ -861,14 +861,6 @@ class Pureservice
             'fileCount' => $attachmentCount,
             'uploadCount' => $uploadCount,
         ];
-    }
-
-    /**
-     * Returnerer tekst for å identifisere saker fra e-post-emne
-     */
-    public function getTicketCode($requestNumber) : string {
-        $replaceString = config('pureservice.ticket.codeTemplate');
-        return Str::replace('{{RequestNumber}}', $requestNumber, $replaceString);
     }
 
     protected function human_filesize($bytes, $decimals = 2): string {

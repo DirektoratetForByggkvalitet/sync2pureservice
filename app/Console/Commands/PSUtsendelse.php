@@ -51,6 +51,10 @@ class PSUtsendelse extends Command {
 
         $this->newLine();
 
+        /**
+         * API-kall som henter inn kommunikasjonstype av riktig type, der saken venter på ekspedering
+         * Det smarte her er at vi får all informasjon vi trenger om utsendelsen: saken, brukeren, firmaet
+         */
         $uri = '/communication/?include=ticket,ticket.user,ticket.user.company,ticket.user.emailaddresses,ticket.user.company.emailaddresses';
         $uri .= '&sortBy=created DESC&filter=customtype.name == "' .
             config('pureservice.dispatch.commTypeName') .
@@ -59,13 +63,15 @@ class PSUtsendelse extends Command {
 
         $result = $this->ps->apiGet($uri);
 
-        //$this->line(Tools::l1().'Mellomlagrer virksomhet(er) og bruker(e)');
-
+        // Hvis ingen blir funnet, stopper vi videre behandling.
         if (count($result['communications']) == 0):
             $this->info('Ingen saker til behandling. Avslutter.');
             return Command::SUCCESS;
         endif;
 
+        /**
+         * Fortsetter med å legge relaterte brukere inn i lokal DB
+         */
         $psUsers = collect($result['linked']['users'])
             ->mapInto(User::class)
             ->each(function (User $item, int $key) use ($result) {
@@ -74,7 +80,11 @@ class PSUtsendelse extends Command {
                 endif;
                 if ($existing = User::firstWhere('id', $item->id)) $item = $existing;
                 $item->save();
-            });
+            }
+        );
+        /**
+         * Samme sak, men for firma
+         */
         $psCompanies = collect($result['linked']['companies'])
             ->mapInto(Company::class)
             ->each(function(Company $item, int $key) use ($result) {
@@ -84,7 +94,11 @@ class PSUtsendelse extends Command {
                 endif;
                 if ($existing = Company::firstWhere('id', $item->id)) $item = $existing;
                 $item->save();
-            });
+            }
+        );
+        /**
+         * Henter inn sakene til DB
+         */
         $psTickets = collect($result['linked']['tickets'])
             ->mapInto(Ticket::class)
             ->each(function (Ticket $item, int $key) use ($result) {
@@ -93,7 +107,12 @@ class PSUtsendelse extends Command {
                 endif;
                 $item->recipients()->attach(User::firstWhere('id', $item->userId));
                 $item->save();
-            });
+            }
+        );
+
+        /**
+         * Til slutt selve kommunikasjonen
+         */
         $psCommunications = collect($result['communications'])
             ->mapInto(TicketCommunication::class)
             ->each(function (TicketCommunication $item, int $key) use ($result) {
@@ -105,6 +124,9 @@ class PSUtsendelse extends Command {
         $this->line(Tools::l1().'Fant '.$this->ticketCount.' sak'.($this->ticketCount > 1 ? 'er': ''). ' som skal behandles');
         $this->newLine();
 
+        /**
+         * Går gjennom alle saker og kobler mottakerne fra relaterte mottakerlister til sakene
+         */
         $this->checkRelationships();
 
         return Command::SUCCESS;
@@ -118,6 +140,8 @@ class PSUtsendelse extends Command {
             if ($relatedLists = $this->ps->apiGet($uri)):
                 if (count($relatedLists['relationships']) > 0):
                     foreach ($relatedLists['linked']['assets'] as $list):
+                        // Henter ut mottakerlistens relaterte bruker og firma,
+                        // og kobler dem til saken som mottakere
                         $uri = '/relationship/'.$list['id'].'/fromAsset?include=toUser,toCompany,toUser.emailaddresses,toCompany.emailaddresses';
                         if ($listRelations = $this->ps->apiGet($uri)):
                             if (count($listRelations['linked']['users'])):

@@ -113,6 +113,11 @@ return [
         'commTypeName' => env('PURESERVICE_DISPATCH_COMMTYPE_NAME', 'Til utsending'),
         'status' => env('PURESERVICE_DISPATCH_STATUS', 'Elektronisk forsendelse (ikke bruk)'),
         'finishStatus' => env('PURESERVICE_DISPATCH_SOLVED_STATUS', 'Løst'),
-        'listAssetName' => env('PURESERVICE_DISPATCH_LIST_ASSETNAME', 'Mottakerliste'),
+        'assetTypeName' => env('PURESERVICE_DISPATCH_LIST_ASSETNAME', 'Mottakerliste'),
+        'listRelationName' => [
+            'toCompany' => env('PURESERVICE_DISPATCH_LINK_TO_COMPANY', 'Inneholder firma'),
+            'toUser' => env('PURESERVICE_DISPATCH_LINK_TO_USER', 'Inneholder bruker'),
+            'toTicket' => env('PURESERVICE_DISPATCH_LINK_TO_TICKET', 'Gir mottakere til'),
+        ],
     ],
 ];
