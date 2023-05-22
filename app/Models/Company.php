@@ -143,9 +143,9 @@ class Company extends Model {
             endif; // $this->email
 
             // Oppretter SvarUt-bruker for virksomheten
-            $svarutEmail = $this->organizationNumber.'@'.config('pureservice.user.dummydomain');
+            $svarutEmail = $this->getSvarUtEmail();
             if ($svarUtUser = User::firstWhere('email', $svarutEmail)):
-                // SvarUt-brukeren finnes allerede
+                // SvarUt-brukeren finnes allerede i databasen
             else:
                 $svarUtUser = $this->users()->create([
                     'firstName' => 'SvarUt',
@@ -155,5 +155,9 @@ class Company extends Model {
             endif;
             // Oppretter postmottak-bruker dersom denne finnes
         endif; // $this->id
+    }
+
+    public function getSvarUtEmail() {
+        return $this->organizationNumber.'@'.config('pureservice.user.dummydomain');
     }
 }
