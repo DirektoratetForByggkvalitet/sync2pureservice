@@ -111,7 +111,7 @@ return [
         '121user' => env('PURESERVICE_DISPATCH_USER_121', '121@dispatch.pureservice.local'),
         '12muser' => env('PURESERVICE_DISPATCH_USER_12M', '12m@dispatch.pureservice.local'),
         'commTypeName' => env('PURESERVICE_DISPATCH_COMMTYPE_NAME', 'Til utsending'),
-        'status' => env('PURESERVICE_DISPATCH_STATUS', 'Elektronisk forsendelse (ikke bruk)'),
+        'status' => env('PURESERVICE_DISPATCH_STATUS', 'Elektronisk forsendelse'),
         'finishStatus' => env('PURESERVICE_DISPATCH_SOLVED_STATUS', 'Løst'),
         'assetTypeName' => env('PURESERVICE_DISPATCH_LIST_ASSETNAME', 'Mottakerliste'),
         'listRelationName' => [
