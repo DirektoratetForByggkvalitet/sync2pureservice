@@ -12,7 +12,4 @@ class Enhetsregisteret extends API {
         $this->prefix = config($this->cKey.'.prefix');
     }
 
-    public function getCKey() {
-        return $this->cKey;
-    }
 }

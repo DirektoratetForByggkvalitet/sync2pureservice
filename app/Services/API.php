@@ -12,6 +12,7 @@ class API {
     protected $cKey;
     public $base_url;
     public $worker;
+
     protected $prefix = ''; // Prefiks til uri
     protected $options = [
         'headers' => [
@@ -28,10 +29,18 @@ class API {
         $this->getClient();
     }
 
+    public function getCKey(): string {
+        return $this->cKey;
+    }
+
+    protected function myConf($key): mixed {
+        return config($this->cKey.'.'.$key);
+    }
+
     /**
      * Oppretter en GuzzleHttp-klient til bruk mot Pureservice
     */
-    private function getClient() {
+    private function getClient(): void {
         $maxRetries = config($this->cKey.'.maxretries', 3);
 
         // Funksjon som finner ut om vi skal kjøre en retry
