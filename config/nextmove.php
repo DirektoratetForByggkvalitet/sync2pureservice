@@ -13,5 +13,6 @@ return [
     'download_path' => env('EF_DOWNLOAD_PATH', storage_path('dpe_download')),
     'out' => [
         'process' => env('EF_MESSAGE_PROCESS', 'urn:no:difi:profile:arkivmelding:administrasjon:ver1.0'),
+        'template' => env('EF_MESSAGE_TEMPLATE', storage_path('arkivmelding.json')),
     ],
 ];
