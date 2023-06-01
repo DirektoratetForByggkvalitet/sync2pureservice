@@ -1,0 +1,36 @@
+{
+    "standardBusinessDocumentHeader" : {
+      "headerVersion" : "1.0",
+      "sender" : [ {
+        "identifier" : {
+          "value" : "",
+          "authority" : "iso6523-actorid-upis"
+        }
+      } ],
+      "receiver" : [ {
+        "identifier" : {
+          "value" : "",
+          "authority" : "iso6523-actorid-upis"
+        }
+      } ],
+      "documentIdentification" : {
+        "standard" : "urn:no:difi:arkivmelding:xsd::arkivmelding",
+        "typeVersion" : "1.0",
+        "instanceIdentifier" : "",
+        "type" : "arkivmelding"
+      },
+      "businessScope" : {
+        "scope" : [ {
+          "type" : "ConversationId",
+          "instanceIdentifier" : "",
+          "identifier" : "urn:no:difi:profile:arkivmelding:administrasjon:ver1.0",
+          "scopeInformation" : [ {
+            "expectedResponseDateTime" : ""
+          } ]
+        } ]
+      }
+    },
+    "arkivmelding" : {
+      "hoveddokument" : ""
+    }
+}

@@ -108,9 +108,12 @@ class API {
      *
      * @return  Psr\Http\Message\ResponseInterface/assoc_array  Resultat som array eller objekt
     */
-    public function apiGet($uri, $returnResponse=false): array|ResponseInterface {
+    public function apiGet($uri, $returnResponse = false, $acceptHeader = false): array|ResponseInterface {
         $uri = $this->prefix.$uri;
-        $response = $this->worker->get($uri, $this->options);
+        $options = $this->options;
+        if ($acceptHeader)
+            $options['headers']['Accept'] = $acceptHeader;
+        $response = $this->worker->get($uri, $options);
         if ($returnResponse) return $response;
         return json_decode($response->getBody()->getContents(), true);
     }
