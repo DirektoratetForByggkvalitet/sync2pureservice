@@ -94,14 +94,26 @@ class NextMove extends API {
     }
 
     public function storeMessage(array $message, array $attachments): void {
-        $senderIdent = Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier');
-        if (Str::contains($senderIdent, '0192:')):
-            $sender = $this->brreg->getAndStoreCompany(Str::after($senderIdent, '0192:'));
-        endif;
-        
-        $receiverIdent = Arr::get($message, 'standardBusinessDocumentHeader.receiver.0.identifier');
-        if (Str::contains($receiverIdent, '0192:')):
-            $receiver = $this->brreg->getAndStoreCompany(Str::after($receiverIdent, '0192:'));
-        endif;
+        $messageSender = '';
+        $senderCompanies = [];
+        foreach (Arr::get($message, 'standardBusinessDocumentHeader.sender') as $id):
+            $idValue = Arr::get($id, 'identifier.value');
+            $messageSender .= $messageSender == '' ? $idValue : ', ' . $idValue;
+            if (Str::contains($idValue, '0192:')):
+                $senderCompanies[] = $this->brreg->getAndStoreCompany(Str::after($idValue, '0192:'));
+            endif;
+        endforeach;
+
+        $messageReceiver = '';
+        $receiverCompanies = [];
+        foreach(Arr::get($message, 'standardBusinessDocumentHeader.receiver') as $id):
+            $idValue = Arr::get($id, 'identifier.value');
+            $messageReceiver .= $messageReceiver == '' ? $idValue : ', ' . $idValue;
+            if (Str::contains($idValue, '0192:')):
+                $receiverCompanies[] = $this->brreg->getAndStoreCompany(Str::after($idValue, '0192:'));
+            endif;
+        endforeach;
+
+
     }
 }

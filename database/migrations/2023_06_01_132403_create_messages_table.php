@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('messages', function (Blueprint $table) {
             $table->id('internal_id');
             $table->timestamps();
-            $table->integer('senderId')->nullable();
+            $table->integer('sender_id')->nullable();
             $table->string('sender');
             $table->string('receiver');
-            $table->string('receiverId')->nullable();
+            $table->string('receiver_id')->nullable();
             $table->string('documentId');
             $table->string('documentStandard');
             $table->string('conversationId');

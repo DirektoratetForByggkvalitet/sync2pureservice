@@ -4,16 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany};
+use Illuminate\Database\Eloquent\Relations\{HasMany};
 
 class Message extends Model
 {
     use HasFactory;
 
-    public function sender() {
-        return $this->belongsTo(Company::class);
+    public function senderCompanies(): HasMany {
+        return $this->hasMany(Company::class);
     }
-    public function receivers() {
-        return $this->belongsToMany(Company::class);
+    public function receiverCompanies(): HasMany {
+        return $this->hasMany(Company::class);
     }
 }
