@@ -1,13 +1,13 @@
 <?php
 
 return [
-    'api_url' => env('EF_IP_URL', ''),
     'api' => [
+        'url' => env('EF_IP_URL', ''),
         'prefix' => env('EF_IP_PREFIX', 'api'),
         'auth' => env('EF_IP_AUTH', false),
-        'username' => env('EF_IP_USER'),
+        'user' => env('EF_IP_USER'),
         'password' => env('EF_IP_PASS'),
-        'accept' => 'application/json',
+        'accept' => null,
         'asic_accept' => 'application/vnd.etsi.asic-e+zip',
     ],
     'download_path' => env('EF_DOWNLOAD_PATH', storage_path('dpe_download')),

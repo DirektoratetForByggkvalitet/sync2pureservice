@@ -5,10 +5,12 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Services\{NextMove, Pureservice, Tools};
 
+
 class IncomingMessages extends Command
 {
-    protected $start;
-    protected $version = '0.1';
+    protected float $start;
+    protected string $version = '0.1';
+    protected NextMove $ip;
     /**
      * The name and signature of the console command.
      *
@@ -34,8 +36,12 @@ class IncomingMessages extends Command
         $this->line($this->description);
         $this->newLine(2);
 
+        $this->ip = new NextMove();
+        //dd($this->ip->getOptions());
+        $messages = $this->ip->getIncomingMessages();
+        dd($messages);
 
-        $this->info('Ferdig. Operasjonen tok '.round(microtime(true)-$this->start, 0).' sekunder');
+        $this->info('Ferdig. Operasjonen tok '.round((microtime(true) - $this->start), 0).' sekunder');
         return Command::SUCCESS;
     }
 }

@@ -3,7 +3,9 @@
 namespace App\Services;
 use Psr\Http\Message\{RequestInterface, ResponseInterface};
 use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware, RequestOptions};
+use Illuminate\Http\Client\{Response, PendingRequest};
 use Illuminate\Support\{Str, Arr};
+use Illuminate\Support\Facades\Http;
 
 /**
  * Generell klasse for å kommunisere med ulike RESTful APIer.
@@ -11,29 +13,28 @@ use Illuminate\Support\{Str, Arr};
 class API {
     protected $cKey;
     public $base_url;
-    public $worker;
 
     protected $prefix = ''; // Prefiks til uri
     protected $options = [
         'headers' => [
-            'Accept' => 'application/json',
             'Content-Type' => 'application/json; charset=utf-8',
             'Connection' => 'keep-alive',
             'Accept-Encoding' => 'gzip, deflate, br',
             'User-Agent' => 'sync2pureservice/PHP'
         ],
     ];
+    protected false|string $auth = false;
 
     public function __construct() {
         $this->cKey = Str::lower(class_basename($this));
-        $this->getClient();
+        //$this->getClient();
     }
 
     public function getCKey(): string {
         return $this->cKey;
     }
 
-    protected function myConf($key): mixed {
+    public function myConf($key): mixed {
         return config($this->cKey.'.'.$key);
     }
 
@@ -69,9 +70,9 @@ class API {
         $stack = HandlerStack::create();
         $stack->push(Middleware::retry($decider, $delay));
 
-        $this->base_url = config($this->cKey.'.api_url');
+
         $this->worker = new Client([
-            'base_uri' => config($this->cKey.'.api_url'),
+            'base_uri' => $this->base_url,
             'timeout'         => 30,
             'allow_redirects' => false,
             'handler' => $stack
@@ -100,99 +101,96 @@ class API {
         $this->prefix = $prefix;
     }
 
-
     /**
-     * Brukes til å kjøre en GET-forespørsel mot APIet
-     * @param   string  $uri                Relativ URI for forespørselen
-     * @param   bool    $returnResponse     Angir om returverdien skal være et responsobjet eller et array
-     *
-     * @return  Psr\Http\Message\ResponseInterface/assoc_array  Resultat som array eller objekt
-    */
-    public function apiGet($uri, $returnResponse = false, $acceptHeader = false): array|ResponseInterface {
-        $uri = $this->prefix.$uri;
-        $options = $this->options;
-        if ($acceptHeader)
-            $options['headers']['Accept'] = $acceptHeader;
-        $response = $this->worker->get($uri, $options);
-        if ($returnResponse) return $response;
-        return json_decode($response->getBody()->getContents(), true);
-    }
-
-    /**
-     * Brukes til å kjøre en POST-forespørsel mot Pureservice
-     * @param   string      $uri    Relativ URI for forespørselen
-     * @param   assoc_array $body   JSON-innholdet til forespørselen, som assoc_array
-     * @param   string      $ct     Content-Type for forespørselen, med standardverdi
-     *
-     * @return  Psr\Http\Message\ResponseInterface  Resultatobjekt for forespørselen
+     * Preparerer en PendingRequest med muligheter for autorisering
+     * @param   string    $contentType    Setter forespørselens Content-Type, standard 'application/json'
+     * @return  Illuminate\Http\Client\PendingRequest
      */
-    public function apiPOST($uri, $body, $ct='application/vnd.api+json; charset=utf-8'): ResponseInterface {
-        $uri = $this->prefix.$uri;
-        $options = $this->options;
-        $options['json'] = $body;
-        if ($ct) $options['headers']['Content-Type'] = $ct;
-        return $this->worker->post($uri, $options);
-    }
-
-     /**
-     * Brukes til å kjøre en PATCH-forespørsel mot Pureservice
-     * @param   string      $uri    Relativ URI for forespørselen
-     * @param   assoc_array $body   JSON-innholdet til forespørselen, som assoc_array
-     *
-     * @return  Psr\Http\Message\ResponseInterface  Resultatobjekt for forespørselen
-     */
-    public function apiPATCH($uri, $body, $returnBool = false): ResponseInterface|bool {
-        $uri = $this->prefix.$uri;
-        $options = $this->options;
-        $options['json'] = $body;
-        $result = $this->worker->patch($uri, $options);
-        if ($returnBool):
-            if ($result->getStatusCode() < 210):
-                return true;
-            else:
-                return false;
-            endif;
+    public function prepRequest(string|null $contentType = null): PendingRequest {
+        $headers = $this->options['headers'];
+        $request = Http::withHeaders($headers);
+        if ($this->auth):
+            switch ($this->auth):
+                case 'digest':
+                    $request->withDigestAuth($this->myConf('api.user'), $this->myConf('api.password'));
+                    break;
+                case 'token':
+                    $request->withToken($this->myConf('api.token'));
+                    break;
+                default: // basic auth
+                    $request->withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'));
+            endswitch;
+        endif;
+        if ($contentType):
+            $request->accept($contentType);
         else:
-            return $result;
+            $request->acceptJson();
         endif;
+        return $request;
     }
 
-     /**
-     * Brukes til å kjøre en PUT-forespørsel (oppdatering) mot Pureservice
-     * @param   string      $uri    Relativ URI for forespørselen
-     * @param   assoc_array $body   JSON-innholdet til forespørselen, som assoc_array
-     *
-     * @return  Psr\Http\Message\ResponseInterface|bool  Resultatobjekt for forespørselen
-     */
-    public function apiPut($uri, $body, $returnBool = false) : ResponseInterface|bool {
-        $uri = $this->prefix.$uri;
-        $options = $this->options;
-        $options['json'] = $body;
-        $result = $this->worker->put($uri, $options);
-        if ($returnBool):
-            if ($result->getStatusCode() < 210):
-                return true;
-            else:
-                return false;
-            endif;
+    public function resolveUri(string $path): string {
+        if (Str::startsWith($path, 'https://') || Str::startsWith($path, 'http://')):
+            return $path; // Returnerer samme verdi, siden det er en full URL
         else:
-            return $result;
+            return $this->myConf('api.url') .'/'. $this->prefix .'/'. $path;
         endif;
     }
 
     /**
-     * Brukes til å kjøre en DELETE-forespørsel mot Pureservice
-     * @param   string      $uri    Relativ URI for forespørselen
-     *
-     * @return  bool                true hvis slettingen ble gjennomført, false hvis ikke
+     * GET-forespørsel mot APIet
+     * @param   string  $uri            Full URL til forespørselen
+     * @param   bool    $returnResponse Returnerer Response-objektet, fremfor kun dataene
+     * @param   string  $contentType    Setter Content-Type for forespørselen
      */
-    public function apiDelete($uri) {
-        $uri = $this->prefix.$uri;
-        $response = $this->worker->delete($uri, $this->options);
-        if ((int) $response->getStatusCode() >= 300):
-            return false;
+    public function apiGet(string $uri, bool $returnResponse = false, string|false $contentType = null, $query = null, $statusOnError = null): Response|array|false {
+        $uri = $this->resolveUri($uri);
+        $response = $this->prepRequest($contentType)->get($uri, $query);
+        if ($response->successful()):
+            if ($returnResponse) return $response;
+            return $response->json();
         endif;
-        return true;
+        if ($statusOnError) return $response->status();
+        return false;
+    }
+
+    /**
+     * POST-forespørsel mot APIet
+     */
+    public function apiPost(string $uri, array $body, string|null $contentType = null, bool $returnBool = false): Response {
+        $uri = $this->resolveUri($uri);
+        $response = $this->prepRequest($contentType)->post($uri, $body);
+        if ($returnBool) return $response->successful();
+        return $response;
+    }
+
+    /**
+     * PATCH-forespørsel mot APIet
+     */
+    public function apiPatch(string $uri, array $body, string|null $contentType = null, bool $returnBool = false): Response|bool {
+        $uri = $this->resolveUri($uri);
+        $response = $this->prepRequest($contentType)->patch($uri, $body);
+        if ($returnBool) return $response->successful();
+        return $response;
+    }
+
+    /**
+     * PUT-forespørsel mot APIet
+     */
+    public function apiPut(string $uri, array $body, string|null $contentType = null, bool $returnBool = false) : Response|bool {
+        $uri = $this->resolveUri($uri);
+        $response = $this->prepRequest($contentType)->put($uri, $body);
+        if ($returnBool) return $response->successful();
+        return $response;
+   }
+
+    /**
+     * DELETE-forespørsel mot APIet
+     */
+    public function apiDelete($uri, array $body = [], string|null $contentType = null): bool {
+        $uri = $this->resolveUri($uri);
+        $response = $this->prepRequest($contentType)->delete($uri, $body);
+        return $response->successful();
     }
 
 

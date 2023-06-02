@@ -5,6 +5,7 @@ use App\Services\{API, Enhetsregisteret};
 use App\Models\{Message, User, Company};
 use Illuminate\Support\{Str, Arr};
 
+
 class NextMove extends API {
     protected Enhetsregisteret $brreg;
 
@@ -15,22 +16,21 @@ class NextMove extends API {
     }
 
     protected function setupClient(): void {
-        $headers = [
+        $options = [];
+        $options['headers'] = [
             'Accept' => 'application/json',
             'Connection' => 'keep-alive',
-            'Accept-Encoding' => 'gzip, deflate',
-            'User-Agent' => 'sync2pureservice 0.7',
+            'Accept-Encoding' => 'gzip, deflate, br',
+            'User-Agent' => 'sync2pureservice/PHP'
         ];
         // Legger til innlogging, hvis påkrevd
-        if ($this->myConf('api.auth')):
-            $headers['auth'] = [
+        if ($this->myConf('api.auth') == true):
+            $options['auth'] = [
                 $this->myConf('api.user'),
                 $this->myConf('api.password'),
             ];
         endif;
-        $this->setOptions([
-            'headers' => $headers,
-        ]);
+        $this->setOptions($options);
     }
     /**
      * Ser etter innkommende meldinger
@@ -48,9 +48,11 @@ class NextMove extends API {
                 $args .= $key . '=' . $value;
             endforeach;
         endif;
-        $uri = '/messages/in'.$args;
-        if ($result = $this->apiGet($uri))
-            return $result;
+        $uri = $this->resolveUri('/messages/in'.$args);
+        $response = $this->apiGet($uri);
+        dd($response);
+        //if ($result = $this->apiGet($uri, true))
+        //    return json_decode($result->getBody()->getContents(), true);
         return false;
     }
 

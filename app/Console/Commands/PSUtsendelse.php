@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Services\{Tools, Pureservice};
 use Illuminate\Support\{Arr, Str, Collection};
 use App\Models\{Company, User, Ticket, TicketCommunication};
+use Barryvdh\DomPDF\Facade as PDF;
 
 class PSUtsendelse extends Command {
     protected float $start;
@@ -150,4 +151,13 @@ class PSUtsendelse extends Command {
         return Command::SUCCESS;
     }
 
+    protected function makePDFTest () {
+        $data = [
+            'title' => 'Jada!',
+            'content' => '<H2>Gratulerer</H2>'.PHP_EOL.'<p>Du har vunnet!</p>',
+        ];
+        $pdf = PDF::loadView('message', $data);
+        file_exists(storage_path('pdf/test.pdf')) ? unlink(storage_path('pdf/test.pdf')): true;
+        $pdf->save(storage_path('pdf/test.pdf'));
+    }
 }

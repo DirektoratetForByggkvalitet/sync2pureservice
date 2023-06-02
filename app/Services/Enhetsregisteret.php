@@ -9,7 +9,7 @@ class Enhetsregisteret extends API {
 
     public function __construct() {
         parent::__construct();
-        $this->prefix = config($this->cKey.'.prefix');
+        $this->prefix = $this->myConf('api.prefix');
     }
 
     public function getAndStoreCompany(string $regno): Company|false {
