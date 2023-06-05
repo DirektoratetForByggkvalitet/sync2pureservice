@@ -9,7 +9,7 @@ use App\Services\{NextMove, Pureservice, Tools};
 class IncomingMessages extends Command
 {
     protected float $start;
-    protected string $version = '0.1';
+    protected string $version = '0.2';
     protected NextMove $ip;
     /**
      * The name and signature of the console command.
@@ -37,9 +37,20 @@ class IncomingMessages extends Command
         $this->newLine(2);
 
         $this->ip = new NextMove();
-        //dd($this->ip->getOptions());
         $messages = $this->ip->getIncomingMessages();
-        dd($messages);
+        $msgCount = count($messages);
+        if (!$msgCount):
+            $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
+            return Command::SUCCESS;
+        endif;
+
+        foreach ($messages as $msg):
+            $msgId = $this->ip->getMsgId($msg);
+            $this->line(Tools::l2().'Behandler dokumentet \''.$msgId.'\'');
+            if ($this->ip->storeMsg($msg)):
+                $this->line(Tools::l3().'Dokumentet ble lasted ned og lagret i DB');
+            endif;
+        endforeach;
 
         $this->info('Ferdig. Operasjonen tok '.round((microtime(true) - $this->start), 0).' sekunder');
         return Command::SUCCESS;

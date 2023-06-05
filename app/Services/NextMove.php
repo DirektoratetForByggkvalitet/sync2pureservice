@@ -95,7 +95,10 @@ class NextMove extends API {
         return false;
     }
 
-    public function storeMessage(array $message, array $attachments): void {
+    /**
+     * Lagrer meldingen i databasen
+     */
+    public function storeMessage(array $message): bool {
         $messageSender = '';
         $senderCompanies = [];
         foreach (Arr::get($message, 'standardBusinessDocumentHeader.sender') as $id):
@@ -116,6 +119,13 @@ class NextMove extends API {
             endif;
         endforeach;
 
+        $newMessage = new Message();
 
+        return true;
     }
+
+    public function getMsgid(array $msg): string {
+        return Arr::get($msg, 'standardBusinessDocumentHeader.documentIdentification.instanceIdentifier');
+    }
+
 }
