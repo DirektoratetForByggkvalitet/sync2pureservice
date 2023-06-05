@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\{HasMany, BelongsToMany};
 use App\Services\{Pureservice, Tools};
 class Company extends Model {
     use HasFactory;
+    protected $primaryKey = 'internal_id';
     protected $fillable = [
         'name',
         'organizationNumber',
@@ -31,6 +32,18 @@ class Company extends Model {
 
     public function users(): HasMany {
         return $this->hasMany(User::class, 'companyId', 'id');
+    }
+
+    public function sentMessages() {
+        return $this->belongsToMany(Message::class, 'company_messages')->wherePivot('type', '=', 'sender');
+    }
+
+    public function receivedMessages() {
+        return $this->belongsToMany(Message::class, 'company_messages')->wherePivot('type', '=', 'receiver');
+    }
+
+    public function messages() {
+        return $this->belongsToMany(Message::class, 'company_messages');
     }
 
     /**

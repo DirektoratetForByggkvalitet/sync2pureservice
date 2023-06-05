@@ -833,7 +833,7 @@ class Pureservice
      *
      * @return assoc_array  Rapport på status og antall filer/opplastinger
      */
-    public function uploadAttachments($attachments, $ticket, $message): array {
+    public function uploadAttachments(array $attachments, array $ticket, array $message): array {
         $uri = '/attachment';
         $msgFiles = collect(Arr::get($message, 'filmetadata'));
         $attachmentCount = count($attachments);

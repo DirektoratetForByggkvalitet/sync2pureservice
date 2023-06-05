@@ -1,36 +1,37 @@
+<?php
 {
     "standardBusinessDocumentHeader" : {
       "headerVersion" : "1.0",
       "sender" : [ {
         "identifier" : {
-          "value" : "",
+          "value" : "{{ $senderId }}",
           "authority" : "iso6523-actorid-upis"
         }
       } ],
       "receiver" : [ {
         "identifier" : {
-          "value" : "",
+          "value" : "{{ $receiverId }}",
           "authority" : "iso6523-actorid-upis"
         }
       } ],
       "documentIdentification" : {
         "standard" : "urn:no:difi:arkivmelding:xsd::arkivmelding",
         "typeVersion" : "1.0",
-        "instanceIdentifier" : "",
+        "instanceIdentifier" : "{{ $messageId }}",
         "type" : "arkivmelding"
       },
       "businessScope" : {
         "scope" : [ {
           "type" : "ConversationId",
-          "instanceIdentifier" : "",
+          "instanceIdentifier" : "{{ $conversationId }}",
           "identifier" : "urn:no:difi:profile:arkivmelding:administrasjon:ver1.0",
           "scopeInformation" : [ {
-            "expectedResponseDateTime" : ""
+            "expectedResponseDateTime" : "{{ $responseDt }}"
           } ]
         } ]
       }
     },
     "arkivmelding" : {
-      "hoveddokument" : ""
+      "hoveddokument" : "{{ $mainDocument }}"
     }
 }

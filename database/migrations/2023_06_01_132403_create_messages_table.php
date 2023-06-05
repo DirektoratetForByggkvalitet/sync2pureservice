@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('messages', function (Blueprint $table) {
-            $table->id('internal_id');
+            $table->id();
             $table->timestamps();
             $table->integer('sender_id')->nullable();
             $table->string('sender');
@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('conversationId');
             $table->string('conversationIdentifier');
             $table->json('content');
+            $table->string('mainDocument')->nullable();
             $table->json('attachments')->nullable();
         });
     }

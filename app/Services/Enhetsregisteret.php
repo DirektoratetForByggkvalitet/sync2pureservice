@@ -12,18 +12,24 @@ class Enhetsregisteret extends API {
         $this->prefix = $this->myConf('api.prefix');
     }
 
-    public function getAndStoreCompany(string $regno): Company|false {
-        if ($company = $this->apiGet('/enheter/'.$regno)):
+    public function getCompany(string $regno): Company|false {
+        $regno = Str::squish(Str::remove(' ', $regno));
+        // Hvis foretaket allerede finnes i DB trenger vi ikke oppslag
+        if ($found = Company::firstWhere('organizationNumber', $regno)):
+            return $found;
+        endif;
+        if ($company = $this->apiGet($regno)):
             $fields = [
-                'name' => Str::replace(' Og ', ' og ', Str::replace(' I ', ' i ', Str::title(Str::squish($company['navn'])))),
-                'organizationNumber' => Str::squish($company['organisasjonsnummer']),
+                'name' => Str::replace(' For ' , ' for ', Str::replace(' Og ', ' og ', Str::replace(' I ', ' i ', Str::title(Str::squish($company['navn']))))),
+                'organizationNumber' => $regno,
                 'website' => isset($company['hjemmeside']) ? Str::squish($company['hjemmeside']) : null,
                 'category' => config('pureservice.company.categoryMap.'.Arr::get($company, 'organisasjonsform.kode'), null),
                 'email' => null,
                 'phone' => null,
             ];
-            $newCompany = Company::factory()->make($fields);
-            return $newCompany;
+            $c = Company::factory()->make($fields);
+            $c->save();
+            return $c;
         endif;
         return false;
     }

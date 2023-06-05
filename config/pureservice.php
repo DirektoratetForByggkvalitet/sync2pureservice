@@ -3,6 +3,12 @@
 return [
     'api_url' => env('PURESERVICE_URL', null),
     'apikey' =>  env('PURESERVICE_APIKEY', null),
+    'api' => [
+        'url' => env('PURESERVICE_URL', null),
+        'prefix' => env('PURESERVICE_PREFIX', '/agent/api'),
+        'token' => env('PURESERVICE_APIKEY', null),
+        'auth' => 'token',
+    ],
     'computer' => [
         'displayName' => env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Datamaskin'),
         'lifespan' => env('PURESERVICE_COMPUTER_LIFESPAN', 4), // Forventet levetid, oppgitt som år

@@ -1,8 +1,6 @@
 <?php
 
 namespace App\Services;
-use Psr\Http\Message\{RequestInterface, ResponseInterface};
-use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware, RequestOptions};
 use Illuminate\Http\Client\{Response, PendingRequest};
 use Illuminate\Support\{Str, Arr};
 use Illuminate\Support\Facades\Http;
@@ -27,6 +25,8 @@ class API {
 
     public function __construct() {
         $this->cKey = Str::lower(class_basename($this));
+        $this->auth = $this->myConf('api.auth', false);
+        $this->prefix = $this->myConf('api.prefix', '');
         //$this->getClient();
     }
 
@@ -34,49 +34,8 @@ class API {
         return $this->cKey;
     }
 
-    public function myConf($key): mixed {
-        return config($this->cKey.'.'.$key);
-    }
-
-    /**
-     * Oppretter en GuzzleHttp-klient til bruk mot Pureservice
-    */
-    private function getClient(): void {
-        $maxRetries = config($this->cKey.'.maxretries', 3);
-
-        // Funksjon som finner ut om vi skal kjøre en retry
-        $decider = function(int $retries, RequestInterface $request, ResponseInterface $response = null) use ($maxRetries) : bool {
-            return
-                $retries < $maxRetries
-                && null !== $response
-                && 429 === $response->getStatusCode();
-        };
-
-        // Funksjon for å finne ut hvor lenge man skal vente
-        $delay = function(int $retries, ResponseInterface $response) : int {
-            if (!$response->hasHeader('Retry-After')) {
-                return RetryMiddleware::exponentialDelay($retries);
-            }
-
-            $retryAfter = $response->getHeaderLine('Retry-After');
-
-            if (!is_numeric($retryAfter)) {
-                $retryAfter = (new \DateTime($retryAfter))->getTimestamp() - time();
-            }
-
-            return (int) $retryAfter * 1000;
-        };
-
-        $stack = HandlerStack::create();
-        $stack->push(Middleware::retry($decider, $delay));
-
-
-        $this->worker = new Client([
-            'base_uri' => $this->base_url,
-            'timeout'         => 30,
-            'allow_redirects' => false,
-            'handler' => $stack
-        ]);
+    public function myConf($key, $default = null): mixed {
+        return config($this->cKey.'.'.$key, $default);
     }
 
     /**
@@ -133,7 +92,7 @@ class API {
         if (Str::startsWith($path, 'https://') || Str::startsWith($path, 'http://')):
             return $path; // Returnerer samme verdi, siden det er en full URL
         else:
-            return $this->myConf('api.url') .'/'. $this->prefix .'/'. $path;
+            return $this->myConf('api.url') . Str::replace('//', '/', '/' . $this->prefix . '/' . $path);
         endif;
     }
 

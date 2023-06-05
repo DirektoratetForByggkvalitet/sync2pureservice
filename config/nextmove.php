@@ -15,4 +15,17 @@ return [
         'process' => env('EF_MESSAGE_PROCESS', 'urn:no:difi:profile:arkivmelding:administrasjon:ver1.0'),
         'template' => env('EF_MESSAGE_TEMPLATE', storage_path('arkivmelding.json')),
     ],
+    'ticket' => [
+        'codeTemplate' => env('PURESERVICE_TICKET_NUMBER_TEMPLATE', '[Sak ID# {{RequestNumber}}]'),
+        'source' => env('EF_TICKET_SOURCE', 'eFormidling'),
+        'zone' => env('EF_TICKET_ZONE', 'Dispatchers'),
+        'team' => env('EF_TICKET_TEAM', 'Dispatcher'),
+        'visibility' => env('EF_TICKET_VISIBILITY', 2),
+        'ticketType' => env('EF_TICKET_TYPE', 'Henvendelse'),
+        'priority' => env('EF_TICKET_PRIORITY', 'Normal'),
+        'status' => env('EF_TICKET_STATUS', 'Ny'),
+        'status_solved' => env('EF_TICKET_SOLVED_STATUS', 'Løst'),
+        'requestType' => env('EF_TICKET_REQUEST_TYPE','Ticket'),
+    ],
+
 ];
