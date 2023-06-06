@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasOne};
 use Illuminate\Support\{Arr, Str, Collection};
-use App\Services\Pureservice;
+use App\Services\{Pureservice, PsApi};
 //use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Ticket extends Model
@@ -72,7 +72,7 @@ class Ticket extends Model
         return Str::replace('{{RequestNumber}}', $this->requestNumber, $replaceString);
     }
 
-    public function extractRecipientsFromAsset(Pureservice $ps, array $recipientListAssetType) : void {
+    public function extractRecipientsFromAsset(PsApi|Pureservice $ps, array $recipientListAssetType) : void {
 
         $uri = '/relationship/'.$this->id.'/fromTicket?include=toAsset&filter=toAsset.typeId == '.$recipientListAssetType['id'];
         $relatedLists = $ps->apiGet($uri);
@@ -118,5 +118,13 @@ class Ticket extends Model
             endforeach; // $relatedLists['linked']['assets'] as $list
         endif; // $relatedLists && count($relatedLists['relationships']
 
+    }
+
+    /**
+     * Laster ned og tar vare på eventuelle vedlegg til saken
+     */
+    public function downloadAttachments(PsApi $ps) {
+        $uri = '/attachment/?filter=ticketId == '.$this->id;
+        $tickets = $ps->apiGet($uri, null, )
     }
 }

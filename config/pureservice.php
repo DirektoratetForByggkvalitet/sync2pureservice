@@ -8,6 +8,7 @@ return [
         'prefix' => env('PURESERVICE_PREFIX', '/agent/api'),
         'token' => env('PURESERVICE_APIKEY', null),
         'auth' => 'token',
+        'accept' => 'application/vnd.api+json',
     ],
     'computer' => [
         'displayName' => env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Datamaskin'),

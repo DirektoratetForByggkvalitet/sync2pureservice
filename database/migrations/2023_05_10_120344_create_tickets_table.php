@@ -31,9 +31,12 @@ return new class extends Migration
             $table->string('emailAddress');
             $table->string('subject');
             $table->longText('description');
+            $table->longText('solution')->nullable();
 
             $table->boolean('eForsendelse')->default(false);
             $table->string('action')->default('normalSend');
+            $table->json('attachments')->nullable();
+
 
             $table->timestamps();
         });

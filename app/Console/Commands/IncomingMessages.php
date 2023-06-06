@@ -3,8 +3,9 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{NextMove, Pureservice, Tools};
+use App\Services\{Eformidling, PsApi, Tools};
 use App\Models\Message;
+use Illuminate\Support\{Str, Arr};
 
 
 class IncomingMessages extends Command
@@ -12,7 +13,7 @@ class IncomingMessages extends Command
     protected float $start;
     protected string $version = '0.2';
     protected int $count = 0;
-    protected NextMove $ip;
+    protected Eformidling $ip;
     protected Pureservice $ps;
     /**
      * The name and signature of the console command.
@@ -39,7 +40,7 @@ class IncomingMessages extends Command
         $this->line($this->description);
         $this->newLine(2);
 
-        $this->ip = new NextMove();
+        $this->ip = new Eformidling();
         $messages = $this->ip->getIncomingMessages();
         if (!$messages):
             $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
@@ -62,13 +63,14 @@ class IncomingMessages extends Command
 
         $this->newLine();
         $this->info(Tools::l1().'Importerer meldinger til Pureservice');
-        $this->ps = new Pureservice();
-        $this->ps->setTicketOptions('nextmove');
+        $this->ps = new PsApi();
+        $this->ps->setCKey(Str::lower(class_basename($this->ip)));
+        $this->ps->setTicketOptions();
         $bar = $this->output->createProgressBar(Message::count());
         $bar->setFormat('verbose');
         $bar->start();
         foreach(Message::lazy() as $message):
-
+            $this->ps->createTicketFromDB($message);
             $bar->advance();
         endforeach;
         $bar->finish();

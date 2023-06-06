@@ -3,10 +3,10 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{Tools, Pureservice};
+use App\Services\{Tools, PsApi};
 use Illuminate\Support\{Arr, Str, Collection};
 use App\Models\{Company, User, Ticket, TicketCommunication};
-use Barryvdh\DomPDF\Facade as PDF;
+use Barryvdh\DomPDF\Facade as DomPDF;
 
 class PSUtsendelse extends Command {
     protected float $start;
@@ -47,7 +47,7 @@ class PSUtsendelse extends Command {
 
         $this->info(Tools::ts().'Kobler til Pureservice');
         $this->comment(Tools::l3().'Bruker '.config('pureservice.api_url'));
-        $this->ps = new Pureservice();
+        $this->ps = new PsApi();
         $this->recipientListAssetType = $this->ps->getEntityByName('assettype', config('pureservice.dispatch.assetTypeName'));
 
         $this->newLine();
@@ -138,26 +138,25 @@ class PSUtsendelse extends Command {
         foreach (Ticket::lazy() as $t):
             //$this->info(Tools::l2().'Behandler \''.$ticket->getTicketSlug().' '.$ticket->subject.'\''.' ID: '.$ticket->id);
             $t->extractRecipientsFromAsset($this->ps, $this->recipientListAssetType);
+            $t->downloadAttachments($this->ps);
             $bar->advance();
         endforeach; // Ticket as $ticket
         $bar->finish();
         $this->newLine(2);
 
-        /**
-         *
-         */
 
         $this->info(Tools::l1().'Ferdig. Operasjonen ble fullført på '.round(microtime(true) - $this->start, 0).' sekunder');
         return Command::SUCCESS;
     }
-
+/*
     protected function makePDFTest () {
         $data = [
             'title' => 'Jada!',
             'content' => '<H2>Gratulerer</H2>'.PHP_EOL.'<p>Du har vunnet!</p>',
         ];
-        $pdf = PDF::loadView('message', $data);
+        $pdf = DomPDF::loadView('message', $data);
         file_exists(storage_path('pdf/test.pdf')) ? unlink(storage_path('pdf/test.pdf')): true;
         $pdf->save(storage_path('pdf/test.pdf'));
     }
+*/
 }

@@ -7,7 +7,7 @@ use Illuminate\Support\{Str, Arr};
 use ZipArchive;
 
 
-class NextMove extends API {
+class Eformidling extends API {
     protected Enhetsregisteret $brreg;
 
     public function __construct() {

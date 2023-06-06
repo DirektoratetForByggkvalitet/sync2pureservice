@@ -25,9 +25,22 @@ class API {
 
     public function __construct() {
         $this->cKey = Str::lower(class_basename($this));
+        $this->setProperties();
+        //$this->getClient();
+    }
+
+    protected function setProperties() {
         $this->auth = $this->myConf('api.auth', false);
         $this->prefix = $this->myConf('api.prefix', '');
-        //$this->getClient();
+        $this->base_url = $this->myConf('api.url');
+    }
+    /**
+     * Set the value of cKey
+     */
+    public function setCKey($cKey) {
+        $this->cKey = $cKey;
+        // Endrer properties når cKey endres
+        $this->setProperties();
     }
 
     public function getCKey(): string {
@@ -151,6 +164,7 @@ class API {
         $response = $this->prepRequest($contentType)->delete($uri, $body);
         return $response->successful();
     }
+
 
 
 }

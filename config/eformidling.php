@@ -17,15 +17,15 @@ return [
     ],
     'ticket' => [
         'codeTemplate' => env('PURESERVICE_TICKET_NUMBER_TEMPLATE', '[Sak ID# {{RequestNumber}}]'),
-        'source' => env('EF_TICKET_SOURCE', 'eFormidling'),
-        'zone' => env('EF_TICKET_ZONE', 'Dispatchers'),
-        'team' => env('EF_TICKET_TEAM', 'Dispatcher'),
+        'source' => env('EF_TICKET_SOURCE', 'eForsendelse'),
+        'zone' => env('EF_TICKET_ZONE', 'Fordeling'),
+        'team' => env('EF_TICKET_TEAM', 'Postmottak'),
         'visibility' => env('EF_TICKET_VISIBILITY', 2),
         'ticketType' => env('EF_TICKET_TYPE', 'Henvendelse'),
         'priority' => env('EF_TICKET_PRIORITY', 'Normal'),
         'status' => env('EF_TICKET_STATUS', 'Ny'),
-        'status_solved' => env('EF_TICKET_SOLVED_STATUS', 'Løst'),
-        'requestType' => env('EF_TICKET_REQUEST_TYPE','Ticket'),
+        'status_solved' => env('PURESERVICE_TICKET_SOLVED_STATUS', 'Løst'),
+        'requestType' => env('PURESERVICE_TICKET_REQUEST_TYPE','Ticket'),
     ],
 
 ];
