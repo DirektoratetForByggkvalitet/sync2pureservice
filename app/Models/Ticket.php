@@ -124,7 +124,32 @@ class Ticket extends Model
      * Laster ned og tar vare på eventuelle vedlegg til saken
      */
     public function downloadAttachments(PsApi $ps) {
-        $uri = '/attachment/?filter=ticketId == '.$this->id;
-        $tickets = $ps->apiGet($uri, null, )
+        $uri = '/attachment/';
+        $query = [
+            'filter' => 'ticketId == '.$this->id
+        ];
+        $res = $ps->apiGet($uri, false, null, $query);
+        if (count($res['attachments'])):
+            $dlPath = config('pureservice.api.dlPath', storage_path('psApi'));
+            $dlPath .= '/'.$this->requestNumber;
+            mkdir($dlPath, 0755, true);
+            $filesToAttach = [];
+            foreach ($res['attachments'] as $att):
+                $uri = '/attachment/download/'.$att['id'];
+                $response = $ps->apiGet($uri, true, '*/*')->toPsrResponse();
+                // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
+                $fileName = preg_replace('/.*\"(.*)"/','$1', $response->getHeader('content-disposition')[0]);
+                $filePath = $dlPath.'/'.$fileName;
+                file_put_contents($filePath, $response->getBody()->getContents());
+                $filesToAttach[] = $filePath;
+            endforeach;
+
+            // Kobler vedlegget
+            if (count($filesToAttach)):
+                $this->attachments = $filesToAttach;
+                $this->save();
+            endif;
+        endif;
+
     }
 }

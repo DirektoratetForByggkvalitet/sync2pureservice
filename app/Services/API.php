@@ -93,8 +93,8 @@ class API {
                     $request->withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'));
             endswitch;
         endif;
-        if ($contentType):
-            $request->accept($contentType);
+        if ($contentType || $this->myConf('api.accept', false)):
+            $contentType ? $request->accept($contentType) : $request->accept($this->myConf('api.accept'));
         else:
             $request->acceptJson();
         endif;
