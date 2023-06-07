@@ -149,9 +149,15 @@ class PSUtsendelse extends Command {
         $bar = $this->output->createProgressBar(Ticket::count());
         $bar->start();
         $results = [
-            'eFormidling' => 0,
-            'e-post' => 0,
-            'ingen adresse' => 0,
+            'personer' => [
+                'e-post' => 0,
+                'ikke sendt' => 0,
+            ],
+            'virksomheter' => [
+                'eFormidling' => 0,
+                'e-post' => 0,
+                'ikke sendt' => 0,
+            ]
         ];
         $this->ef = new Eformidling();
         foreach (Ticket::lazy() as $t):

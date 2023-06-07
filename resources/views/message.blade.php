@@ -1,3 +1,10 @@
+@if (isset($ticket))
+    @php
+        $title = $ticket->subject;
+        $requestNumber = $ticket->requestNumber;
+        $content = $ticket->communications()->first()->text;
+    @endphp
+@endif
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,6 +26,12 @@
     </div>
 
     <div class="sheet">
+        @if (isset($requestNumber))
+            <h4>Saksnr: {{ $requestNumber }}</h4>
+        @endif
+        @if (isset($title))
+            <h2>{{ $title }}</h2>
+        @endif
 
 {!! $content !!}
 

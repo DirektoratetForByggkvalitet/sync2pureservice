@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasOne};
 use Illuminate\Support\{Arr, Str, Collection};
 use App\Services\{Eformidling, Pureservice, PsApi};
+use App\Mail\TicketMessage;
+use Illuminate\Support\Facades\Mail;
 //use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Ticket extends Model
@@ -70,6 +72,10 @@ class Ticket extends Model
     public function getTicketSlug() : string {
         $replaceString = config('pureservice.ticket.codeTemplate');
         return Str::replace('{{RequestNumber}}', $this->requestNumber, $replaceString);
+    }
+
+    public function emailSubject() : string {
+        return $this->subject . ' ' . $this->getTicketSlug();
     }
 
     public function extractRecipientsFromAsset(PsApi|Pureservice $ps, array $recipientListAssetType) : void {
@@ -177,10 +183,25 @@ class Ticket extends Model
         foreach ($this->recipients()->lazy() as $user):
             // Brukeren har ikke en gyldig e-postadresse, hopper over.
             if (Str::endsWith($user->email, 'pureservice.local')):
-                $results['ingen adresse']++;
+                $results['personer']['ikke sendt']++;
                 continue;
             endif;
-            
+            // Send e-post til brukeren
+            $user->name = $user->firstName.' '.$user->lastName;
+            Mail::to($user)->send(new TicketMessage($this));
+            $results['personer']['e-post']++;
+        endforeach;
+
+        // Går gjennom tilknyttede virksomheter
+        foreach ($this->recipientCompanies()->lazy() as $company):
+            if ($this->eFormidling && $company->organizationNumber):
+                $ef->createAndSendMessage($this, $company);
+                $results['virksomheter']['eFormidling']++;
+            elseif (Str::endsWith($company->email, 'pureservice.local')):
+                $results['virksomheter']['ikke sendt']++;
+            else: // Sender per e-post
+
+            endif;
         endforeach;
 
     }

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 use App\Services\{API, Enhetsregisteret};
-use App\Models\{Message, User, Company};
+use App\Models\{Message, User, Company, Ticket};
 use Illuminate\Support\{Str, Arr};
 use ZipArchive;
 
@@ -169,4 +169,7 @@ class Eformidling extends API {
         return true;
     }
 
+    public function createAndSendMessage(Ticket $ticket, Company $recipient) {
+        
+    }
 }
