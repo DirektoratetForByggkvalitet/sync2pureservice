@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Str;
 
+$cacert = env('DB_SSL_CA_PATH', database_path('cacert.pem'));
+
 return [
 
     /*
@@ -58,9 +60,15 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'options' => (env('DB_SSL')) ? ((env('DB_SSL_IS_PAAS')) ? [
+                PDO::MYSQL_ATTR_SSL_CA                  => $cacert,   // /path/to/ca.pem
+            ] : [
+                PDO::MYSQL_ATTR_SSL_KEY                 => env('DB_SSL_KEY_PATH'),  // /path/to/key.pem
+                PDO::MYSQL_ATTR_SSL_CERT                => env('DB_SSL_CERT_PATH'), // /path/to/cert.pem
+                PDO::MYSQL_ATTR_SSL_CA                  => $cacert,   // /path/to/ca.pem
+                PDO::MYSQL_ATTR_SSL_CIPHER              => env('DB_SSL_CIPHER')
+            ]) : []
         ],
 
         'pgsql' => [

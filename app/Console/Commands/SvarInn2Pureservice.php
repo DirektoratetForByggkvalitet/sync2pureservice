@@ -93,7 +93,8 @@ class SvarInn2Pureservice extends Command {
                      * Hvordan løse problematikk når e-postadresse ikke finnes?
                      * Vi oppretter en falsk e-postadresse basert på orgnr. som brukes til å lage bruker.
                      */
-                    $email = Arr::get($message,'svarSendesTil.orgnr') != null ? Arr::get($message,'svarSendesTil.orgnr').'@svarut.pureservice.local' : Str::random(16).'@svarut.pureservice.local';
+                    $email = Arr::get($message,'svarSendesTil.orgnr') != null ? Arr::get($message,'svarSendesTil.orgnr') : Str::random(16);
+                    $email .= '@'.config('pureservice.user.dummydomain');
                 endif;
                 if ($userInfo = $this->ps->findUser($email)):
                     $this->line($this->l3.'Foretaksbruker er registrert i Pureservice');

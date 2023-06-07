@@ -17,6 +17,7 @@ class CompanyFactory extends Factory
     public function definition()
     {
         return [
+            'id' => null,
             'name' => fake()->name(),
             'organizationNumber' => '000000000',
             'companyNumber' => null,

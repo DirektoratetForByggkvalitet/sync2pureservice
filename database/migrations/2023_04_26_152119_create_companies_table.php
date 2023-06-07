@@ -14,8 +14,8 @@ return new class extends Migration
     public function up()
     {
         Schema::create('companies', function (Blueprint $table) {
-            $table->id();
-            $table->integer('externalId')->nullable();
+            $table->id('internal_id');
+            $table->integer('id')->nullable();
             $table->string('name');
             $table->string('organizationNumber')->unique();
             $table->string('companyNumber')->nullable();

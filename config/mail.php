@@ -34,6 +34,20 @@ return [
     */
 
     'mailers' => [
+        'microsoft-graph' => [
+            'transport' => 'microsoft-graph',
+            'client_id' => env('MICROSOFT_GRAPH_CLIENT_ID', env('AZURE_SP_ID')),
+            'client_secret' => env('MICROSOFT_GRAPH_CLIENT_SECRET', env('AZURE_SP_SECRET')),
+            'tenant_id' => env('MICROSOFT_GRAPH_TENANT_ID', env('AZURE_TENANT_ID')),
+            'from' => [
+                'address' => env('MAIL_FROM_ADDRESS'),
+                'name' => env('MAIL_FROM_NAME'),
+            ],
+            'replyTo' => [
+                'address' => env('MAIL_REPLYTO_ADDRESS', env('MAIL_FROM_ADDRESS')),
+                'name' => env('MAIL_REPLYTO_NAME', env('MAIL_FROM_NAME'))
+            ],
+        ],
         'smtp' => [
             'transport' => 'smtp',
             'host' => env('MAIL_HOST', 'smtp.mailgun.org'),
@@ -43,6 +57,14 @@ return [
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
+            'from' => [
+                'address' => env('MAIL_FROM_ADDRESS'),
+                'name' => env('MAIL_FROM_NAME'),
+            ],
+            'replyTo' => [
+                'address' => env('MAIL_REPLYTO_ADDRESS', env('MAIL_FROM_ADDRESS')),
+                'name' => env('MAIL_REPLYTO_NAME', env('MAIL_FROM_NAME'))
+            ],
         ],
 
         'ses' => [
@@ -74,7 +96,7 @@ return [
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
-                'smtp',
+                'microsoft-graph',
                 'log',
             ],
         ],

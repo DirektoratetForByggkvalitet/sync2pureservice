@@ -78,7 +78,7 @@ pipelines:
             - scripts/php-install-alpine.sh
             - cp .env.example .env
             - composer install --no-dev
-            - ./artisan pureservice:offentlige2ps
+            - ./artisan pureservice:offentlige2ps --reset-db
 
 
     tool-build-dekrypter:

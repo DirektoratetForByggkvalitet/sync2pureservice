@@ -3,6 +3,14 @@
 return [
     'api_url' => env('PURESERVICE_URL', null),
     'apikey' =>  env('PURESERVICE_APIKEY', null),
+    'api' => [
+        'url' => env('PURESERVICE_URL', null),
+        'prefix' => env('PURESERVICE_PREFIX', '/agent/api'),
+        'token' => env('PURESERVICE_APIKEY', null),
+        'auth' => 'token',
+        'accept' => 'application/vnd.api+json',
+        'dlPath' => env('PURESERVICE_TMP_PATH', storage_path('psApi')),
+    ],
     'computer' => [
         'displayName' => env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Datamaskin'),
         'lifespan' => env('PURESERVICE_COMPUTER_LIFESPAN', 4), // Forventet levetid, oppgitt som år
@@ -81,6 +89,7 @@ return [
         'invisible' => 2,
     ],
     'ticket' => [
+        'codeTemplate' => env('PURESERVICE_TICKET_NUMBER_TEMPLATE', '[Sak ID# {{RequestNumber}}]'),
         'source' => env('PURESERVICE_TICKET_SOURCE', 'SvarUt'),
         'zone' => env('PURESERVICE_TICKET_ZONE', 'Dispatchers'),
         'team' => env('PURESERVICE_TICKET_TEAM', 'Dispatcher'),
@@ -94,6 +103,7 @@ return [
     'user' => [
         'role_id' => env('PURESERVICE_USER_ROLE_ID', 10),
         'no_email_field' => env('PURESERVICE_USER_NOEMAIL_FIELD', false),
+        'dummydomain' => env('PURESERVICE_USER_DUMMYDOMAIN', 'svarut.pureservice.local'),
     ],
     'company' => [
         'categoryfield' => env('PURESERVICE_COMPANY_CATEGORY_FIELD', false),
@@ -102,6 +112,20 @@ return [
             'STAT' => 'Statlig virksomhet',
             'FYLK' => 'Fylkeskommune',
             'ORGL' => 'Underliggende statlig virksomhet',
+        ],
+    ],
+    // Oppsett for PSUtsendelse
+    'dispatch' => [
+        'address_ef' => env('PURESERVICE_DISPATCH_EF', 'ut@eforsendelse.pureservice.local'),
+        'address_email' => env('PURESERVICE_DISPATCH_EMAIL', 'ut@e-post.pureservice.local'),
+        'commTypeName' => env('PURESERVICE_DISPATCH_COMMTYPE_NAME', 'Til utsending'),
+        'status' => env('PURESERVICE_DISPATCH_STATUS', 'Elektronisk forsendelse'),
+        'finishStatus' => env('PURESERVICE_DISPATCH_SOLVED_STATUS', 'Løst'),
+        'assetTypeName' => env('PURESERVICE_DISPATCH_LIST_ASSETNAME', 'Mottakerliste'),
+        'listRelationName' => [
+            'toCompany' => env('PURESERVICE_DISPATCH_LINK_TO_COMPANY', 'Inneholder firma'),
+            'toUser' => env('PURESERVICE_DISPATCH_LINK_TO_USER', 'Inneholder bruker'),
+            'toTicket' => env('PURESERVICE_DISPATCH_LINK_TO_TICKET', 'Gir mottakere til'),
         ],
     ],
 ];

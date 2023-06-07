@@ -5,8 +5,10 @@
  */
 
  return [
-    'api_url' => 'https://data.brreg.no',
-    'prefix' => '/enhetsregisteret/api/enheter',
+    'api' => [
+        'url' => 'https://data.brreg.no',
+        'prefix' => '/enhetsregisteret/api/enheter',
+    ],
     'search' => [
         'alleKommuner' => '?organisasjonsform=KOMM&size=400',
         'alleFylkeskommuner' => '?organisasjonsform=FYLK&size=100',

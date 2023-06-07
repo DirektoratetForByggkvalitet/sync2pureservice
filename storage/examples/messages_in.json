@@ -1,0 +1,100 @@
+{
+    "content" : [ {
+      "standardBusinessDocumentHeader" : {
+        "headerVersion" : "1.0",
+        "sender" : [ {
+          "identifier" : {
+            "value" : "0192:910077473",
+            "authority" : "iso6523-actorid-upis"
+          }
+        } ],
+        "receiver" : [ {
+          "identifier" : {
+            "value" : "0192:910075918",
+            "authority" : "iso6523-actorid-upis"
+          }
+        } ],
+        "documentIdentification" : {
+          "standard" : "urn:no:difi:arkivmelding:xsd::arkivmelding",
+          "typeVersion" : "1.0",
+          "instanceIdentifier" : "e99e5cd1-74de-4cce-b902-cecdf97dc4f3",
+          "type" : "arkivmelding",
+          "creationDateAndTime" : "2019-03-25T11:38:23+02:00"
+        },
+        "businessScope" : {
+          "scope" : [ {
+            "type" : "ConversationId",
+            "instanceIdentifier" : "b4567a25-672c-4c2e-9a0f-08c52c54254b",
+            "identifier" : "urn:no:difi:profile:arkivmelding:planByggOgGeodata:ver1.0",
+            "scopeInformation" : [ {
+              "expectedResponseDateTime" : "2019-04-25T11:38:23+02:00"
+            } ]
+          } ]
+        }
+      },
+      "arkivmelding" : {
+        "hoveddokument" : "before_the_law.txt"
+      }
+    }, {
+      "standardBusinessDocumentHeader" : {
+        "headerVersion" : "1.0",
+        "sender" : [ {
+          "identifier" : {
+            "value" : "0192:910077473",
+            "authority" : "iso6523-actorid-upis"
+          }
+        } ],
+        "receiver" : [ {
+          "identifier" : {
+            "value" : "0192:910075918",
+            "authority" : "iso6523-actorid-upis"
+          }
+        } ],
+        "documentIdentification" : {
+          "standard" : "urn:no:difi:einnsyn:xsd::publisering",
+          "typeVersion" : "1.0",
+          "instanceIdentifier" : "04f00fe6-eded-4fe8-8649-607650466a39",
+          "type" : "publisering",
+          "creationDateAndTime" : "2019-03-25T11:38:23+02:00"
+        },
+        "businessScope" : {
+          "scope" : [ {
+            "type" : "ConversationId",
+            "instanceIdentifier" : "e615f7ba-3089-46cb-9263-6c34f3b6769e",
+            "identifier" : "urn:no:difi:profile:einnsyn:journalpost:ver1.0",
+            "scopeInformation" : [ {
+              "expectedResponseDateTime" : "2019-04-25T11:38:23+02:00"
+            } ]
+          } ]
+        }
+      },
+      "publisering" : {
+        "orgnr" : "98765432"
+      }
+    } ],
+    "pageable" : {
+      "sort" : {
+        "sorted" : false,
+        "unsorted" : true,
+        "empty" : true
+      },
+      "pageNumber" : 0,
+      "pageSize" : 10,
+      "offset" : 0,
+      "paged" : true,
+      "unpaged" : false
+    },
+    "totalElements" : 2,
+    "last" : true,
+    "totalPages" : 1,
+    "sort" : {
+      "sorted" : false,
+      "unsorted" : true,
+      "empty" : true
+    },
+    "numberOfElements" : 2,
+    "first" : true,
+    "size" : 10,
+    "number" : 0,
+    "empty" : false
+  }
