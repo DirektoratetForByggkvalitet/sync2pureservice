@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsToMany};
 
+
 class Message extends Model
 {
     use HasFactory;
@@ -20,4 +21,5 @@ class Message extends Model
     public function companies(): BelongsToMany {
         return $this->belongsToMany(Company::class, 'company_messages');
     }
+
 }

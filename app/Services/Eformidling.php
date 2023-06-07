@@ -5,6 +5,7 @@ use App\Services\{API, Enhetsregisteret};
 use App\Models\{Message, User, Company, Ticket};
 use Illuminate\Support\{Str, Arr};
 use ZipArchive;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 
 class Eformidling extends API {
@@ -170,6 +171,15 @@ class Eformidling extends API {
     }
 
     public function createAndSendMessage(Ticket $ticket, Company $recipient) {
-        
+        $recipientIdentifier = '0192:'. $recipient->organizationNumber;
+        $mainFilePath = $ticket->getDownloadPath().'/message.pdf';
+        $data = [
+            'ticket' => $ticket,
+            'includeFonts' => true,
+        ];
+        $pdf = PDF::loadView('message', $data);
+        file_exists($mainFilePath) ? unlink($mainFilePath): true;
+        $pdf->save($mainFilePath);
+
     }
 }

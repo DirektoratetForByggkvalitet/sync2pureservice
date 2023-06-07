@@ -136,9 +136,7 @@ class Ticket extends Model
         ];
         $res = $ps->apiGet($uri, false, null, $query);
         if (count($res['attachments'])):
-            $dlPath = config('pureservice.api.dlPath', storage_path('psApi'));
-            $dlPath .= '/'.$this->requestNumber;
-            mkdir($dlPath, 0755, true);
+            $dlPath = $this->getDownloadPath();
             $filesToAttach = [];
             foreach ($res['attachments'] as $att):
                 $uri = '/attachment/download/'.$att['id'];
@@ -157,6 +155,13 @@ class Ticket extends Model
             endif;
         endif;
 
+    }
+
+    public function getDownloadPath() {
+        $path = config('pureservice.api.dlPath', storage_path('utsendelse'));
+        $path .= '/'.$this->requestNumber;
+        if (!is_dir($path)) mkdir($path, 0755, true);
+        return $path;
     }
 
     /**

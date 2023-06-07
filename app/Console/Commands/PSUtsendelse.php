@@ -6,7 +6,6 @@ use Illuminate\Console\Command;
 use App\Services\{Tools, PsApi, Eformidling};
 use Illuminate\Support\{Arr, Str, Collection};
 use App\Models\{Company, User, Ticket, TicketCommunication};
-use Barryvdh\DomPDF\Facade as DomPDF;
 
 class PSUtsendelse extends Command {
     protected float $start;
