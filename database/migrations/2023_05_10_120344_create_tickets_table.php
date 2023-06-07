@@ -33,7 +33,7 @@ return new class extends Migration
             $table->longText('description');
             $table->longText('solution')->nullable();
 
-            $table->boolean('eForsendelse')->default(false);
+            $table->boolean('eFormidling')->default(false);
             $table->string('action')->default('normalSend');
             $table->json('attachments')->nullable();
 

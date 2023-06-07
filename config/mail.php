@@ -34,6 +34,16 @@ return [
     */
 
     'mailers' => [
+        'microsoft-graph' => [
+            'transport' => 'microsoft-graph',
+            'client_id' => env('AZURE_SP_ID'),
+            'client_secret' => env('AZURE_SP_SECRET'),
+            'tenant_id' => env('AZURE_TENANT_ID'),
+            'from' => [
+                'address' => env('MAIL_FROM_ADDRESS'),
+                'name' => env('MAIL_FROM_NAME'),
+            ],
+        ],
         'smtp' => [
             'transport' => 'smtp',
             'host' => env('MAIL_HOST', 'smtp.mailgun.org'),
@@ -74,7 +84,7 @@ return [
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
-                'smtp',
+                'microsoft-graph',
                 'log',
             ],
         ],

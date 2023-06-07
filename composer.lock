@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4de38c565f9b2c64b9bb8cc6fe488b10",
+    "content-hash": "9c37e56313027f679166e2c119de8500",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -1173,6 +1173,77 @@
                 }
             ],
             "time": "2021-10-07T12:57:01+00:00"
+        },
+        {
+            "name": "innoge/laravel-msgraph-mail",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/InnoGE/laravel-msgraph-mail.git",
+                "reference": "8f8887ebbb76c022fdf52388185bd8b5ab4d553c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/InnoGE/laravel-msgraph-mail/zipball/8f8887ebbb76c022fdf52388185bd8b5ab4d553c",
+                "reference": "8f8887ebbb76c022fdf52388185bd8b5ab4d553c",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^9.38|^10.0",
+                "php": "^8.1",
+                "spatie/laravel-package-tools": "^1.14.0",
+                "symfony/mailer": "^6.0"
+            },
+            "require-dev": {
+                "guzzlehttp/guzzle": "^7.5",
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^6.0",
+                "nunomaduro/larastan": "^2.0.1",
+                "orchestra/testbench": "^7.0|^8.0",
+                "pestphp/pest": "^1.21",
+                "pestphp/pest-plugin-laravel": "^1.1",
+                "phpstan/extension-installer": "^1.1",
+                "phpstan/phpstan-deprecation-rules": "^1.0",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "phpunit/phpunit": "^9.5",
+                "spatie/laravel-ray": "^1.26"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "InnoGE\\LaravelMsGraphMail\\LaravelMsGraphMailServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "InnoGE\\LaravelMsGraphMail\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Tim Geisendoerfer",
+                    "email": "geisi@users.noreply.github.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Laravel Mail driver for Microsoft Office 365 using the MSGraph API",
+            "homepage": "https://github.com/innoge/laravel-msgraph-mail",
+            "keywords": [
+                "innoge",
+                "laravel",
+                "laravel-msgraph-mail"
+            ],
+            "support": {
+                "issues": "https://github.com/InnoGE/laravel-msgraph-mail/issues",
+                "source": "https://github.com/InnoGE/laravel-msgraph-mail/tree/1.0.1"
+            },
+            "time": "2023-02-13T09:59:53+00:00"
         },
         {
             "name": "laravel/framework",
@@ -3756,6 +3827,66 @@
                 "source": "https://github.com/sabberworm/PHP-CSS-Parser/tree/8.4.0"
             },
             "time": "2021-12-11T13:40:54+00:00"
+        },
+        {
+            "name": "spatie/laravel-package-tools",
+            "version": "1.15.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/laravel-package-tools.git",
+                "reference": "efab1844b8826443135201c4443690f032c3d533"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/laravel-package-tools/zipball/efab1844b8826443135201c4443690f032c3d533",
+                "reference": "efab1844b8826443135201c4443690f032c3d533",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^9.28|^10.0",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.5",
+                "orchestra/testbench": "^7.7|^8.0",
+                "pestphp/pest": "^1.22",
+                "phpunit/phpunit": "^9.5.24",
+                "spatie/pest-plugin-test-time": "^1.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Spatie\\LaravelPackageTools\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Freek Van der Herten",
+                    "email": "freek@spatie.be",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Tools for creating Laravel packages",
+            "homepage": "https://github.com/spatie/laravel-package-tools",
+            "keywords": [
+                "laravel-package-tools",
+                "spatie"
+            ],
+            "support": {
+                "issues": "https://github.com/spatie/laravel-package-tools/issues",
+                "source": "https://github.com/spatie/laravel-package-tools/tree/1.15.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/spatie",
+                    "type": "github"
+                }
+            ],
+            "time": "2023-04-27T08:09:01+00:00"
         },
         {
             "name": "symfony/console",

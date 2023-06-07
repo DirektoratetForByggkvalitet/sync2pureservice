@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{Tools, PsApi};
+use App\Services\{Tools, PsApi, Eformidling};
 use Illuminate\Support\{Arr, Str, Collection};
 use App\Models\{Company, User, Ticket, TicketCommunication};
 use Barryvdh\DomPDF\Facade as DomPDF;
@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade as DomPDF;
 class PSUtsendelse extends Command {
     protected float $start;
     protected Pureservice $ps;
+    protected Eformidling $ef;
     protected int|null $ticketId = null;
     protected int $ticketCount = 0;
     protected array $recipientListAssetType;
@@ -136,7 +137,7 @@ class PSUtsendelse extends Command {
         $bar = $this->output->createProgressBar(Ticket::count());
         $bar->start();
         foreach (Ticket::lazy() as $t):
-            //$this->info(Tools::l2().'Behandler \''.$ticket->getTicketSlug().' '.$ticket->subject.'\''.' ID: '.$ticket->id);
+            $t->decideAction();
             $t->extractRecipientsFromAsset($this->ps, $this->recipientListAssetType);
             $t->downloadAttachments($this->ps);
             $bar->advance();
@@ -144,6 +145,21 @@ class PSUtsendelse extends Command {
         $bar->finish();
         $this->newLine(2);
 
+        $this->info('Del 2: Utføre utsendelsen');
+        $bar = $this->output->createProgressBar(Ticket::count());
+        $bar->start();
+        $results = [
+            'eFormidling' => 0,
+            'e-post' => 0,
+            'ingen adresse' => 0,
+        ];
+        $this->ef = new Eformidling();
+        foreach (Ticket::lazy() as $t):
+            $t->dispatchMessage($this->ef, $results);
+            $bar->advance();
+        endforeach;
+        $bar->finish();
+        $this->newLine(2);
 
         $this->info(Tools::l1().'Ferdig. Operasjonen ble fullført på '.round(microtime(true) - $this->start, 0).' sekunder');
         return Command::SUCCESS;

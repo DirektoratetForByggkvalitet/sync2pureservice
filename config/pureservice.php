@@ -116,8 +116,8 @@ return [
     ],
     // Oppsett for PSUtsendelse
     'dispatch' => [
-        '121user' => env('PURESERVICE_DISPATCH_USER_121', '121@dispatch.pureservice.local'),
-        '12muser' => env('PURESERVICE_DISPATCH_USER_12M', '12m@dispatch.pureservice.local'),
+        'address_ef' => env('PURESERVICE_DISPATCH_EF', 'ut@eforsendelse.pureservice.local'),
+        'address_email' => env('PURESERVICE_DISPATCH_EMAIL', 'ut@e-post.pureservice.local'),
         'commTypeName' => env('PURESERVICE_DISPATCH_COMMTYPE_NAME', 'Til utsending'),
         'status' => env('PURESERVICE_DISPATCH_STATUS', 'Elektronisk forsendelse'),
         'finishStatus' => env('PURESERVICE_DISPATCH_SOLVED_STATUS', 'Løst'),

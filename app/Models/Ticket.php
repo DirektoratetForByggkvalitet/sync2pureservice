@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasOne};
 use Illuminate\Support\{Arr, Str, Collection};
-use App\Services\{Pureservice, PsApi};
+use App\Services\{Eformidling, Pureservice, PsApi};
 //use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Ticket extends Model
@@ -31,7 +31,7 @@ class Ticket extends Model
         'emailAddress',
         'subject',
         'description',
-        'eForsendelse',
+        'eFormidling',
         'action',
     ];
 
@@ -144,12 +144,44 @@ class Ticket extends Model
                 $filesToAttach[] = $filePath;
             endforeach;
 
-            // Kobler vedlegget
+            // Kobler vedlegget til saken i DB
             if (count($filesToAttach)):
                 $this->attachments = $filesToAttach;
                 $this->save();
             endif;
         endif;
+
+    }
+
+    /**
+     * Hvordan skal saken sendes ut?
+     */
+    public function decideAction() {
+        switch ($this->emailAddress):
+            case config('pureservice.dispatch.address_ef'):
+                $this->eFormidling = true;
+                $this->action = 'normalSend';
+                break;
+            default:
+                $this->eFormidling = false;
+                $this->action = 'normalSend';
+        endswitch;
+        $this->save();
+    }
+
+    /**
+     * Utsendelse av saken, oppdaterer $results
+     */
+    public function dispatchMessage(Eformidling $ef, array &$results): void {
+        // Først brukere. De har ikke orgnr, og må dermed kontaktes per e-post
+        foreach ($this->recipients()->lazy() as $user):
+            // Brukeren har ikke en gyldig e-postadresse, hopper over.
+            if (Str::endsWith($user->email, 'pureservice.local')):
+                $results['ingen adresse']++;
+                continue;
+            endif;
+            
+        endforeach;
 
     }
 }
