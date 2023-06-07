@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 class Ticket extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'internal_id';
 
     protected $fillable = [
         'id',
@@ -63,7 +64,7 @@ class Ticket extends Model
     }
 
     public function recipientCompanies(): BelongsToMany {
-        return $this->belongsToMany(Company::class);
+        return $this->belongsToMany(Company::class, 'company_tickets');
     }
 
     /**
@@ -86,11 +87,14 @@ class Ticket extends Model
             foreach ($relatedLists['linked']['assets'] as $list):
                 // Henter ut mottakerlistens relaterte bruker og firma,
                 // og kobler dem til saken som mottakere
-                $uri = '/relationship/'.$list['id'].'/fromAsset?include=toUser,toCompany,toUser.emailaddresses,toCompany.emailaddresses';
-                if ($listRelations = $ps->apiGet($uri)):
+                $uri = '/relationship/'.$list['id'].'/fromAsset';
+                $query = [
+                    'include=toUser,toCompany,toUser.emailaddresses,toCompany.emailaddresses',
+                ];
+                if ($listRelations = $ps->apiGet($uri, false, null, $query)):
 
                     // 1. Legger sluttbrukere som er relatert til mottakerlisten til saken
-                    if (count($listRelations['linked']['users'])):
+                    if (isset($listRelations['linked']['users']) && count($listRelations['linked']['users'])):
                         $users = collect($listRelations['linked']['users'])
                         ->mapInto(User::class)
                         ->each(function (User $user, int $key) use ($listRelations) {
@@ -107,7 +111,7 @@ class Ticket extends Model
                     endif;
 
                     // 2. Legger firma som er relatert til mottakerlisten til saken
-                    if (count($listRelations['linked']['companies'])):
+                    if (isset($listRelations['linked']['companies']) && count($listRelations['linked']['companies'])):
                         $companies = collect($listRelations['linked']['companies'])
                         ->mapInto(Company::class)
                         ->each(function (Company $company, int $key) use ($listRelations) : void {
@@ -188,24 +192,25 @@ class Ticket extends Model
         foreach ($this->recipients()->lazy() as $user):
             // Brukeren har ikke en gyldig e-postadresse, hopper over.
             if (Str::endsWith($user->email, 'pureservice.local')):
-                $results['personer']['ikke sendt']++;
+                $results[2]++;
                 continue;
             endif;
             // Send e-post til brukeren
             $user->name = $user->firstName.' '.$user->lastName;
             Mail::to($user)->send(new TicketMessage($this));
-            $results['personer']['e-post']++;
+            $results[1]++;
         endforeach;
 
         // Går gjennom tilknyttede virksomheter
         foreach ($this->recipientCompanies()->lazy() as $company):
             if ($this->eFormidling && $company->organizationNumber):
                 $ef->createAndSendMessage($this, $company);
-                $results['virksomheter']['eFormidling']++;
+                $results[0]++;
             elseif (Str::endsWith($company->email, 'pureservice.local')):
-                $results['virksomheter']['ikke sendt']++;
+                $results[2]++;
             else: // Sender per e-post
-
+                Mail::to($company)->send(new TicketMessage($this));
+                $results[1]++;
             endif;
         endforeach;
 

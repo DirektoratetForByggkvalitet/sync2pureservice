@@ -9,7 +9,7 @@ use App\Models\{Company, User, Ticket, TicketCommunication};
 
 class PSUtsendelse extends Command {
     protected float $start;
-    protected Pureservice $ps;
+    protected PsApi $ps;
     protected Eformidling $ef;
     protected int|null $ticketId = null;
     protected int $ticketCount = 0;
@@ -147,17 +147,7 @@ class PSUtsendelse extends Command {
         $this->info('Del 2: Utføre utsendelsen');
         $bar = $this->output->createProgressBar(Ticket::count());
         $bar->start();
-        $results = [
-            'personer' => [
-                'e-post' => 0,
-                'ikke sendt' => 0,
-            ],
-            'virksomheter' => [
-                'eFormidling' => 0,
-                'e-post' => 0,
-                'ikke sendt' => 0,
-            ]
-        ];
+        $results = [0, 0, 0];
         $this->ef = new Eformidling();
         foreach (Ticket::lazy() as $t):
             $t->dispatchMessage($this->ef, $results);
