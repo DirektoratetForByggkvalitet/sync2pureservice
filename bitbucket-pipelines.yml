@@ -101,7 +101,7 @@ pipelines:
           deployment: Test
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
           script:
-            - scripts/php-install-alpine.sh
+            - scripts/php-install-alpine.sh imagick
             - composer install --no-dev
             - ./artisan pureservice:utsendelse --reset-db
 
