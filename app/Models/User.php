@@ -11,6 +11,7 @@ use App\Services\{Pureservice, Tools};
 class User extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'internal_id';
     protected $fillable = [
         'firstName',
         'lastName',

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 class Ticket extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'internal_id';
 
     protected $fillable = [
         'id',
@@ -80,17 +81,24 @@ class Ticket extends Model
 
     public function extractRecipientsFromAsset(PsApi|Pureservice $ps, array $recipientListAssetType) : void {
 
-        $uri = '/relationship/'.$this->id.'/fromTicket?include=toAsset&filter=toAsset.typeId == '.$recipientListAssetType['id'];
-        $relatedLists = $ps->apiGet($uri);
+        $uri = '/relationship/'.$this->id.'/fromTicket';
+        $query = [
+            'include' => 'toAsset',
+            'filter' => 'toAsset.typeId == '.$recipientListAssetType['id'],
+        ];
+        $relatedLists = $ps->apiQuery($uri, $query);
         if (count($relatedLists['relationships']) > 0):
             foreach ($relatedLists['linked']['assets'] as $list):
                 // Henter ut mottakerlistens relaterte bruker og firma,
                 // og kobler dem til saken som mottakere
-                $uri = '/relationship/'.$list['id'].'/fromAsset?include=toUser,toCompany,toUser.emailaddresses,toCompany.emailaddresses';
-                if ($listRelations = $ps->apiGet($uri)):
-
+                $uri = '/relationship/'.$list['id'].'/fromAsset';
+                $query = [
+                    'include' => 'toUser,toCompany,toUser.emailaddresses,toCompany.emailaddresses',
+                    'filter' => 'toTicketId == null',
+                ];
+                if ($listRelations = $ps->apiQuery($uri, $query)):
                     // 1. Legger sluttbrukere som er relatert til mottakerlisten til saken
-                    if (count($listRelations['linked']['users'])):
+                    if (isset($listRelations['linked']['users']) && count($listRelations['linked']['users'])):
                         $users = collect($listRelations['linked']['users'])
                         ->mapInto(User::class)
                         ->each(function (User $user, int $key) use ($listRelations) {
@@ -107,7 +115,7 @@ class Ticket extends Model
                     endif;
 
                     // 2. Legger firma som er relatert til mottakerlisten til saken
-                    if (count($listRelations['linked']['companies'])):
+                    if (isset($listRelations['linked']['companies']) && count($listRelations['linked']['companies'])):
                         $companies = collect($listRelations['linked']['companies'])
                         ->mapInto(Company::class)
                         ->each(function (Company $company, int $key) use ($listRelations) : void {
@@ -142,7 +150,7 @@ class Ticket extends Model
                 $uri = '/attachment/download/'.$att['id'];
                 $response = $ps->apiGet($uri, true, '*/*')->toPsrResponse();
                 // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
-                $fileName = preg_replace('/.*\"(.*)"/','$1', $response->getHeader('content-disposition')[0]);
+                $fileName = explode('=', explode(';', $response->getHeader('content-disposition')[0])[1])[1];
                 $filePath = $dlPath.'/'.$fileName;
                 file_put_contents($filePath, $response->getBody()->getContents());
                 $filesToAttach[] = $filePath;
@@ -180,34 +188,4 @@ class Ticket extends Model
         $this->save();
     }
 
-    /**
-     * Utsendelse av saken, oppdaterer $results
-     */
-    public function dispatchMessage(Eformidling $ef, array &$results): void {
-        // Først brukere. De har ikke orgnr, og må dermed kontaktes per e-post
-        foreach ($this->recipients()->lazy() as $user):
-            // Brukeren har ikke en gyldig e-postadresse, hopper over.
-            if (Str::endsWith($user->email, 'pureservice.local')):
-                $results['personer']['ikke sendt']++;
-                continue;
-            endif;
-            // Send e-post til brukeren
-            $user->name = $user->firstName.' '.$user->lastName;
-            Mail::to($user)->send(new TicketMessage($this));
-            $results['personer']['e-post']++;
-        endforeach;
-
-        // Går gjennom tilknyttede virksomheter
-        foreach ($this->recipientCompanies()->lazy() as $company):
-            if ($this->eFormidling && $company->organizationNumber):
-                $ef->createAndSendMessage($this, $company);
-                $results['virksomheter']['eFormidling']++;
-            elseif (Str::endsWith($company->email, 'pureservice.local')):
-                $results['virksomheter']['ikke sendt']++;
-            else: // Sender per e-post
-
-            endif;
-        endforeach;
-
-    }
 }

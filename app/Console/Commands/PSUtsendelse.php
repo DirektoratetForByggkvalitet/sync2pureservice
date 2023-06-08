@@ -6,10 +6,13 @@ use Illuminate\Console\Command;
 use App\Services\{Tools, PsApi, Eformidling};
 use Illuminate\Support\{Arr, Str, Collection};
 use App\Models\{Company, User, Ticket, TicketCommunication};
+use App\Mail\TicketMessage;
+use Illuminate\Support\Facades\{Mail, Blade};
+
 
 class PSUtsendelse extends Command {
     protected float $start;
-    protected Pureservice $ps;
+    protected PsApi $ps;
     protected Eformidling $ef;
     protected int|null $ticketId = null;
     protected int $ticketCount = 0;
@@ -46,7 +49,7 @@ class PSUtsendelse extends Command {
         endif;
 
         $this->info(Tools::ts().'Kobler til Pureservice');
-        $this->comment(Tools::l3().'Bruker '.config('pureservice.api_url'));
+        $this->comment(Tools::l3().'Bruker '.config('pureservice.api.url'));
         $this->ps = new PsApi();
         $this->recipientListAssetType = $this->ps->getEntityByName('assettype', config('pureservice.dispatch.assetTypeName'));
 
@@ -56,13 +59,16 @@ class PSUtsendelse extends Command {
          * API-kall som henter inn kommunikasjonstype av riktig type, der saken venter på ekspedering
          * Det smarte her er at vi får all informasjon vi trenger om utsendelsen: saken, brukeren, firmaet
          */
-        $uri = '/communication/?include=ticket,ticket.user,ticket.user.company,ticket.user.emailaddresses,ticket.user.company.emailaddresses';
-        $uri .= '&sortBy=created DESC&filter=customtype.name == "' .
-            config('pureservice.dispatch.commTypeName') .
-            '" AND ticket.status.name == "' .
-            config('pureservice.dispatch.status') . '"';
-
-        $result = $this->ps->apiGet($uri);
+        $uri = '/communication/';
+        $query = [
+            'include' => 'ticket,ticket.user,ticket.user.company,ticket.user.emailaddresses,ticket.user.company.emailaddresses',
+            'sortBy' => 'created',
+            'filter' => 'customtype.name == "' .
+                config('pureservice.dispatch.commTypeName') .
+                '" AND ticket.status.name == "' .
+                config('pureservice.dispatch.status') . '"',
+        ];
+        $result = $this->ps->apiGet($uri, false, null, $query);
 
         // Hvis ingen blir funnet, stopper vi videre behandling.
         if (count($result['communications']) == 0):
@@ -107,9 +113,17 @@ class PSUtsendelse extends Command {
                 if ($existing = Ticket::firstWhere('id', $item->id)):
                     $item = $existing;
                 endif;
-                $item->recipients()->attach(User::firstWhere('id', $item->userId));
-                $item->recipientCompanies()->attach(Company::firstWhere('id', $item->companyId));
                 $item->save();
+                /*
+                if ($attachedUser = User::firstWhere('id', $item->userId)):
+                    $item->recipients()->attach($attachedUser->internal_id);
+                endif;
+                if ($attachedCompany = Company::firstWhere('id', $item->companyId)):
+                    $item->recipientCompanies()->attach($attachedCompany->internal_id);
+                endif;
+
+                $item->save();
+                */
             }
         );
 
@@ -145,28 +159,86 @@ class PSUtsendelse extends Command {
         $this->newLine(2);
 
         $this->info('Del 2: Utføre utsendelsen');
-        $bar = $this->output->createProgressBar(Ticket::count());
-        $bar->start();
         $results = [
-            'personer' => [
-                'e-post' => 0,
-                'ikke sendt' => 0,
-            ],
-            'virksomheter' => [
-                'eFormidling' => 0,
-                'e-post' => 0,
-                'ikke sendt' => 0,
-            ]
+            'saker' => 0,
+            'e-post' => 0,
+            'eFormidling' => 0,
+            'ikke sendt' => 0
         ];
         $this->ef = new Eformidling();
         foreach (Ticket::lazy() as $t):
-            $t->dispatchMessage($this->ef, $results);
-            $bar->advance();
-        endforeach;
-        $bar->finish();
-        $this->newLine(2);
+            $ticketResults = [
+                'e-post' => 0,
+                'eFormidling' => 0,
+                'ikke sendt' => 0,
+            ];
+            // Først brukere. De har ikke orgnr, og må dermed kontaktes per e-post
+            $this->line(Tools::l1().'Går gjennom sak nr '.$t->requestNumber);
+            $this->line(Tools::l2().'Personer:');
+            $bar = $this->output->createProgressBar($t->recipients()->count());
+            $bar->start();
+            foreach ($t->recipients()->lazy() as $user):
+                $user->name = $user->firstName.' '.$user->lastName;
+                //$this->line(Tools::l2().$user->name.' - '.$user->email);
+                if (!Str::endsWith($user->email, '.local')):
+                    // Send e-post til brukeren
+                    Mail::to($user)->send(new TicketMessage($t));
+                    $ticketResults['e-post']++;
+                endif;
+                $bar->advance();
+            endforeach;
+            $bar->finish();
+            $this->newLine();
 
+            // Går gjennom tilknyttede virksomheter
+            $this->line(Tools::l2().'Virksomheter:');
+            $bar = $this->output->createProgressBar($t->recipientCompanies()->count());
+            $bar->start();
+            foreach ($t->recipientCompanies()->lazy() as $company):
+                //$this->line(Tools::l2().$company->name.' - '.$company->email);
+                if ($t->eFormidling && $company->organizationNumber):
+                    $this->ef->createAndSendMessage($t, $company);
+                    $ticketResults['eFormidling']++;
+                elseif (Str::endsWith($company->email, '.local')):
+                    // lokal adresse, hopper over
+                    continue;
+                elseif ($company->email == null):
+                else: // Sender per e-post
+                    Mail::to($company)->send(new TicketMessage($t));
+                    $ticketResults['e-post']++;
+                endif;
+                $bar->advance();
+            endforeach;
+            $bar->finish();
+            // Løser saken med en rapport
+            $this->newLine();
+            $statusId = $this->ps->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
+            $solution = Blade::render('report', ['ticket' => $t, 'results' => $ticketResults]);
+            $body = [
+                'statusId' => $statusId,
+                'solution' => $solution,
+            ];
+            $uri = '/ticket/' . $t->id;
+            if ($updated = $this->ps->apiPatch($uri, $body, true)):
+                $this->line(Tools::l2().'Saken har blitt satt til løst.');
+            endif;
+
+            $results['saker']++;
+            foreach ($ticketResults as $key => $value):
+                $results[$key] += $value;
+            endforeach;
+
+         endforeach; // Ticket
+
+        $this->newLine(2);
         $this->info(Tools::l1().'Ferdig. Operasjonen ble fullført på '.round(microtime(true) - $this->start, 0).' sekunder');
+        $this->line('Resultater');
+        $this->line('----------');
+        $this->line('Antall saker: '.$results['saker']);
+        $this->line('Antall e-post sendt: '.$results['e-post']);
+        $this->line('Antall eFormidling-forsendelser: '.$results['eFormidling']);
+        $this->line('Antall manglende adresser: '.$results['ikke sendt']);
+
         return Command::SUCCESS;
     }
 /*

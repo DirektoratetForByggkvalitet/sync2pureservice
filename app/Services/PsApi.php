@@ -33,10 +33,16 @@ class PsApi extends API {
      */
     public function getEntityId($entity, $name, $useKey = false) {
         $entity = Str::lower($entity);
-        $uri = $useKey ? '/'.$entity.'/?filter=key == "'.$name.'"' : '/'.$entity.'/?filter=name == "'.$name.'"';
+        $uri = '/'.$entity.'/';
+        $query = [];
+        if ($useKey):
+            $query['filter'] = 'key == "'.$name.'"';
+        else:
+            $query['filter'] = 'name == "'.$name.'"';
+        endif;
         $entities = Str::plural($entity);
-        if ($result = $this->apiGet($uri)):
-            if (count($result[$entities]) > 0) return $result[$entities][0]['id'];
+        if ($result = $this->apiQuery($uri, $query)):
+            if (count($result[$entities])) return $result[$entities][0]['id'];
         endif;
         return null; // Hvis ikke funnet
 
@@ -52,9 +58,15 @@ class PsApi extends API {
      */
     public function getEntityByName($entity, $name, $useKey = false) {
         $entity = Str::lower($entity);
-        $uri = $useKey ? '/'.$entity.'/?filter=key == "'.$name.'"' : '/'.$entity.'/?filter=name == "'.$name.'"';
+        $uri = '/'.$entity.'/';
+        $query = [];
+        if ($useKey):
+            $query['filter'] = 'key == "'.$name.'"';
+        else:
+            $query['filter'] = 'name == "'.$name.'"';
+        endif;
         $entities = Str::plural($entity);
-        if ($result = $this->apiGet($uri)):
+        if ($result = $this->apiQuery($uri, $query)):
             if (count($result[$entities]) > 0) return $result[$entities][0];
         endif;
         return null; // Hvis ikke funnet

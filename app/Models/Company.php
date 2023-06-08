@@ -34,16 +34,20 @@ class Company extends Model {
         return $this->hasMany(User::class, 'companyId', 'id');
     }
 
-    public function sentMessages() {
+    public function sentMessages(): BelongsToMany {
         return $this->belongsToMany(Message::class, 'company_messages')->wherePivot('type', '=', 'sender');
     }
 
-    public function receivedMessages() {
+    public function receivedMessages(): BelongsToMany {
         return $this->belongsToMany(Message::class, 'company_messages')->wherePivot('type', '=', 'receiver');
     }
 
-    public function messages() {
+    public function messages(): BelongsToMany {
         return $this->belongsToMany(Message::class, 'company_messages');
+    }
+
+    public function tickets(): BelongsToMany {
+        return $this->belongsToMany(Ticket::class);
     }
 
     /**
