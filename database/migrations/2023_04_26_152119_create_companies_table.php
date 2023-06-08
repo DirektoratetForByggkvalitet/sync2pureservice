@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id('internal_id');
             $table->integer('id')->nullable();
             $table->string('name');
-            $table->string('organizationNumber')->unique();
+            $table->string('organizationNumber')->nullable();
             $table->string('companyNumber')->nullable();
             $table->string('website')->nullable();
             $table->string('email')->nullable();
