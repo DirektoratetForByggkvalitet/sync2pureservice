@@ -1,7 +1,7 @@
 definitions:
   scripts:
     - script: &resetDB
-        rm database/database.db && cp database/database.db.dist database/database.db
+        ./artisan migrate:fresh --force
 
 # Setter maksimum kjøretid for et steg
 options:
