@@ -47,7 +47,7 @@ class Company extends Model {
     }
 
     public function tickets(): BelongsToMany {
-        return $this->belongsToMany(Ticket::class, 'company_tickets');
+        return $this->belongsToMany(Ticket::class);
     }
 
     /**

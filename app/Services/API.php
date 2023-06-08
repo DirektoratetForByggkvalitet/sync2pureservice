@@ -115,7 +115,7 @@ class API {
      * @param   bool    $returnResponse Returnerer Response-objektet, fremfor kun dataene
      * @param   string  $contentType    Setter Content-Type for forespørselen
      */
-    public function apiGet(string $uri, bool $returnResponse = false, string|false $contentType = null, $query = null, $statusOnError = null): Response|array|false {
+    public function apiGet(string $uri, bool $returnResponse = false, string|null|false $contentType = null, array $query = [], bool $statusOnError = false): Response|array|false {
         $uri = $this->resolveUri($uri);
         $response = $this->prepRequest($contentType)->get($uri, $query);
         if ($response->successful()):
@@ -124,6 +124,15 @@ class API {
         endif;
         if ($statusOnError) return $response->status();
         return false;
+    }
+
+    public function ApiQuery(string $uri,
+        array $query = [],
+        bool $returnResponse = false,
+        string|null|false $contentType = null,
+        bool $statusOnError = false
+    ): Response|array|false {
+        return $this->apiGet($uri, $returnResponse, $contentType, $query, $statusOnError);
     }
 
     /**
