@@ -103,7 +103,7 @@ pipelines:
           script:
             - scripts/php-install-alpine.sh
             - composer install --no-dev
-            - ./artisan pureservice:utsendelse
+            - ./artisan pureservice:utsendelse --reset-db
 
     splittInnsynskrav:
       - step:
