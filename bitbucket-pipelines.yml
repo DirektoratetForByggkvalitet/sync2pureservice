@@ -102,7 +102,7 @@ pipelines:
 
     masseutsendelse:
       - step:
-          deployment: Test
+          deployment: Production
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
           script:
             - scripts/php-install-alpine.sh imagick
