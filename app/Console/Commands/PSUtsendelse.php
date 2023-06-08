@@ -24,7 +24,7 @@ class PSUtsendelse extends Command {
      */
     protected $signature = 'pureservice:utsendelse {--reset-db : Nullstiller databasen før kjøring}';
 
-    protected $version = '0.2';
+    protected $version = '0.5';
     /**
      * The console command description.
      *
@@ -44,7 +44,7 @@ class PSUtsendelse extends Command {
         $this->info(Tools::ts().'Setter opp miljøet...');
         if ($this->option('reset-db')):
             $this->info('### NULLSTILLER DATABASEN ###');
-            $this->call('migrate:fresh');
+            $this->call('migrate:fresh', ['--force']);
             $this->newLine(2);
         endif;
 

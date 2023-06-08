@@ -1,4 +1,7 @@
-
+definitions:
+  scripts:
+    - script: &resetDB
+        ./artisan migrate:fresh --force
 
 # Setter maksimum kjøretid for et steg
 options:
@@ -78,7 +81,8 @@ pipelines:
             - scripts/php-install-alpine.sh
             - cp .env.example .env
             - composer install --no-dev
-            - ./artisan pureservice:offentlige2ps --reset-db
+            - *resetDB
+            - ./artisan pureservice:offentlige2ps
 
 
     tool-build-dekrypter:
@@ -101,9 +105,10 @@ pipelines:
           deployment: Test
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
           script:
-            - scripts/php-install-alpine.sh
+            - scripts/php-install-alpine.sh imagick
             - composer install --no-dev
-            - ./artisan pureservice:utsendelse --reset-db
+            - *resetDB
+            - ./artisan pureservice:utsendelse
 
     splittInnsynskrav:
       - step:
