@@ -1,4 +1,7 @@
-
+definitions:
+  scripts:
+    - script: &resetDB
+        rm database/database.db && cp database/database.db.dist database/database.db
 
 # Setter maksimum kjøretid for et steg
 options:
@@ -78,7 +81,8 @@ pipelines:
             - scripts/php-install-alpine.sh
             - cp .env.example .env
             - composer install --no-dev
-            - ./artisan pureservice:offentlige2ps --reset-db
+            - *resetDB
+            - ./artisan pureservice:offentlige2ps
 
 
     tool-build-dekrypter:
@@ -103,7 +107,8 @@ pipelines:
           script:
             - scripts/php-install-alpine.sh imagick
             - composer install --no-dev
-            - ./artisan pureservice:utsendelse --reset-db
+            - *resetDB
+            - ./artisan pureservice:utsendelse
 
     splittInnsynskrav:
       - step:
