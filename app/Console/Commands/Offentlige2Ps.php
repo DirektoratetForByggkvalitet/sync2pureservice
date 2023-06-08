@@ -47,7 +47,7 @@ class Offentlige2Ps extends Command
         $this->start = microtime(true);
         if ($this->option('reset-db')):
             $this->info('### NULLSTILLER DATABASEN ###');
-            $this->call('migrate:fresh');
+            $this->call('migrate:fresh', ['--force']);
             $this->newLine(2);
         endif;
         $this->newLine(2);
