@@ -118,7 +118,7 @@ return [
     'dispatch' => [
         'address_ef' => env('PURESERVICE_DISPATCH_EF', 'ut@eforsendelse.pureservice.local'),
         'address_email' => env('PURESERVICE_DISPATCH_EMAIL', 'ut@e-post.pureservice.local'),
-        'commTypeName' => env('PURESERVICE_DISPATCH_COMMTYPE_NAME', 'Til utsending'),
+        'commTypeName' => env('PURESERVICE_DISPATCH_COMMTYPE_NAME', 'Utsendelse - innhold'),
         'status' => env('PURESERVICE_DISPATCH_STATUS', 'Til ekspedering'),
         'finishStatus' => env('PURESERVICE_DISPATCH_SOLVED_STATUS', 'Løst'),
         'assetTypeName' => env('PURESERVICE_DISPATCH_LIST_ASSETNAME', 'Mottakerliste'),
