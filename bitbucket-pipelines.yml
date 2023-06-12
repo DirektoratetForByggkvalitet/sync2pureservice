@@ -7,16 +7,27 @@ definitions:
 options:
   max-time: 60
 
-image: php:fpm-alpine
+image: dibk/sync2pureservice:latest
 
 pipelines:
+  branches:
+    prod:
+      - step:
+          name: Bygger et docker-image for kjøring av sync2pureservice
+          image: atlassian/default-image:4
+          services:
+            - docker
+          script:
+            - echo ${DOCKER_TOKEN} | docker login --username ${DOCKER_USER} --password-stdin
+            - curl -L https://depot.dev/install-cli.sh | DEPOT_INSTALL_DIR=/usr/local/bin sh
+            - depot bake --project ${DEPOT_PID} -f docker-bake.hcl --push
+
   custom:
     jamf2pureservice:
       - step:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: Production
           script:
-            - scripts/php-install-alpine.sh
             - cp .env.example .env
             - composer install --no-dev
             - ./artisan pureservice:jamf2ps
@@ -25,7 +36,6 @@ pipelines:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: Test
           script:
-            - scripts/php-install-alpine.sh
             - cp .env.example .env
             - composer install --no-dev
             - ./artisan pureservice:jamf2ps
@@ -59,7 +69,6 @@ pipelines:
           name: Sjekker SvarUtMottak og innsynskrav
           deployment: Production
           script:
-            - scripts/php-install-alpine.sh
             - echo 'Installerer OpenJDK 11 og CMS dekrypter'
             - apk add openjdk11 unzip
             - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/${DEKRYPTER_VER}/dekrypter-${DEKRYPTER_VER}-dist.zip
@@ -78,7 +87,6 @@ pipelines:
           name: 'Importerer offentlige instanser fra BRREG inn i Pureservice'
           deployment: Production
           script:
-            - scripts/php-install-alpine.sh
             - cp .env.example .env
             - composer install --no-dev
             - *resetDB
@@ -105,7 +113,6 @@ pipelines:
           deployment: Production
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
           script:
-            - scripts/php-install-alpine.sh imagick
             - composer install --no-dev
             - *resetDB
             - ./artisan pureservice:utsendelse
@@ -115,7 +122,6 @@ pipelines:
           deployment: Test
           name: 'TEST: Ser etter masseutsendelser i PS og sørger for å sende dem'
           script:
-            - scripts/php-install-alpine.sh imagick
             - composer install --no-dev
             - *resetDB
             - ./artisan pureservice:utsendelse
@@ -124,18 +130,6 @@ pipelines:
       - step:
           name: Splitter et innsynskrav gitt med requestNumber
           script:
-            - scripts/php-install-alpine.sh
             - composer install --no-dev
             - ./artisan pureservice:splittInnsynskrav ${requestNumber}
-
-    build-docker-worker:
-      - step:
-          name: Bygger et docker-image for kjøring av sync2pureservice
-          image: atlassian/default-image:4
-          services:
-            - docker
-          script:
-            - echo ${DOCKER_TOKEN} | docker login --username ${DOCKER_USER} --password-stdin
-            - curl -L https://depot.dev/install-cli.sh | DEPOT_INSTALL_DIR=/usr/local/bin sh
-            - depot bake --project ${DEPOT_PID} -f docker-bake.hcl --push
 
