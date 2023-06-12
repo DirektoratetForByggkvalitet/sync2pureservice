@@ -166,7 +166,7 @@ class Ticket extends Model
     }
 
     public function getDownloadPath() {
-        $path = config('pureservice.api.dlPath', storage_path('utsendelse'));
+        $path = config('pureservice.api.dlPath', storage_path('app/psApi'));
         $path .= '/'.$this->requestNumber;
         if (!is_dir($path)) mkdir($path, 0755, true);
         return $path;

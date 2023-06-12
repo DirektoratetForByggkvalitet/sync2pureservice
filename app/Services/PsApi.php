@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Models\{Ticket, TicketCommunication, User, Company};
 use Carbon\Carbon;
 use Illuminate\Support\{Str, Arr};
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Versjon 2 av Pureservice sitt API, basert på Laravel sitt HTTP Client-bibliotek
@@ -93,6 +94,43 @@ class PsApi extends API {
      */
     public function getTicketOptions() {
         return $this->ticketOptions;
+    }
+
+
+        /**
+     * Laster opp vedlegg til en sak i Pureservice
+     * @param array         $attachments    Array over filstier som skal lastes opp
+     * @param App\Models\Ticket   $ticket   Saken som skal ha vedlegget
+     * @param assoc_array   $message        SvarUt-meldingen som assoc_array
+     *
+     * @return assoc_array  Rapport på status og antall filer/opplastinger
+     */
+    public function uploadAttachments(array $attachments, Ticket $ticket): array {
+        $uri = '/attachment';
+        $attachmentCount = count($attachments);
+        $uploadCount = 0;
+        $status = 'OK';
+        foreach ($attachments as $file):
+            $filename = basename($file);
+            $body = [
+                'name' => Str::beforeLast($filename, '.'),
+                'fileName' => $filename,
+                'size' => $this->human_filesize(filesize($file)),
+                'contentType' => Storage::mimeType($file),
+                'ticketId' => $ticket->id,
+                'bytes' => base64_encode(file_get_contents($file)),
+            ];
+            if ($result = $this->apiPOST($uri, $body, 'application/vnd.api+json')):
+                $uploadCount++;
+            else:
+                $status = 'Error';
+            endif;
+        endforeach;
+        return [
+            'status' => $status,
+            'fileCount' => $attachmentCount,
+            'uploadCount' => $uploadCount,
+        ];
     }
 
 }

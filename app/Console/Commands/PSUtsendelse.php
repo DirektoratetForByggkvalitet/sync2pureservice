@@ -8,6 +8,7 @@ use Illuminate\Support\{Arr, Str, Collection};
 use App\Models\{Company, User, Ticket, TicketCommunication};
 use App\Mail\TicketMessage;
 use Illuminate\Support\Facades\{Mail, Blade};
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 
 class PSUtsendelse extends Command {
@@ -212,6 +213,9 @@ class PSUtsendelse extends Command {
             $bar->finish();
             // Løser saken med en rapport
             $this->newLine();
+            $fileToAttach = $this->makePdf($t);
+            // Laster opp sendt melding
+            
             $statusId = $this->ps->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
             $solution = Blade::render('report', ['ticket' => $t, 'results' => $ticketResults]);
             $body = [
@@ -241,15 +245,18 @@ class PSUtsendelse extends Command {
 
         return Command::SUCCESS;
     }
-/*
-    protected function makePDFTest () {
+
+    protected function makePdf (Ticket $ticket, string $view = 'message') {
         $data = [
-            'title' => 'Jada!',
-            'content' => '<H2>Gratulerer</H2>'.PHP_EOL.'<p>Du har vunnet!</p>',
+            'ticket' => $ticket,
+            'includeFonts' => true,
         ];
-        $pdf = DomPDF::loadView('message', $data);
-        file_exists(storage_path('pdf/test.pdf')) ? unlink(storage_path('pdf/test.pdf')): true;
-        $pdf->save(storage_path('pdf/test.pdf'));
+        $pdf = PDF::loadView($view, $data);
+        $filePath = $ticket->getDownloadPath() . '/' . 'melding.pdf';
+        file_exists($filePath) ? unlink($filePath): true;
+        $pdf->save($filePath);
+
+        return $filePath;
     }
-*/
+
 }

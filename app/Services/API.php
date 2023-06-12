@@ -4,6 +4,8 @@ namespace App\Services;
 use Illuminate\Http\Client\{Response, PendingRequest};
 use Illuminate\Support\{Str, Arr};
 use Illuminate\Support\Facades\Http;
+use Carbon\Carbon;
+
 
 /**
  * Generell klasse for å kommunisere med ulike RESTful APIer.
@@ -174,6 +176,17 @@ class API {
         return $response->successful();
     }
 
+    protected function human_filesize($bytes, $decimals = 2): string {
+        $sz = 'BKMGTP';
+        $factor = floor((strlen($bytes) - 1) / 3);
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
+    }
+
+    protected function dateFromEpochTime($ts): string {
+        return Carbon::createFromTimestampMs($ts, config('app.timezone'))
+            ->locale(config('app.locale'))
+            ->toDateTimeString();
+    }
 
 
 }
