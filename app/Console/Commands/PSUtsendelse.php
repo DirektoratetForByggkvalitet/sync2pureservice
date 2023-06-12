@@ -213,9 +213,16 @@ class PSUtsendelse extends Command {
             $bar->finish();
             // Løser saken med en rapport
             $this->newLine();
-            $fileToAttach = $this->makePdf($t);
+            $reportAttachments = [];
+            $reportAttachments[] = $this->makePdf($t);
             // Laster opp sendt melding
-            
+            $result = $this->ps->uploadAttachments($reportAttachments, $t);
+            if ($result['status'] == 'OK'):
+                $this->line(Tools::l2().'Lastet opp meldingen som vedlegg til saken');
+            else:
+                $this->error(Tools::l2().'Vedlegg ble ikke lastet opp');
+            endif;
+
             $statusId = $this->ps->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
             $solution = Blade::render('report', ['ticket' => $t, 'results' => $ticketResults]);
             $body = [
@@ -252,7 +259,7 @@ class PSUtsendelse extends Command {
             'includeFonts' => true,
         ];
         $pdf = PDF::loadView($view, $data);
-        $filePath = $ticket->getDownloadPath() . '/' . 'melding.pdf';
+        $filePath = $ticket->getDownloadPath(true) . '/' . 'melding.pdf';
         file_exists($filePath) ? unlink($filePath): true;
         $pdf->save($filePath);
 

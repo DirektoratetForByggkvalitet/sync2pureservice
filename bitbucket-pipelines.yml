@@ -110,6 +110,16 @@ pipelines:
             - *resetDB
             - ./artisan pureservice:utsendelse
 
+    masseutsendelse-test:
+      - step:
+          deployment: Test
+          name: 'TEST: Ser etter masseutsendelser i PS og sørger for å sende dem'
+          script:
+            - scripts/php-install-alpine.sh imagick
+            - composer install --no-dev
+            - *resetDB
+            - ./artisan pureservice:utsendelse
+
     splittInnsynskrav:
       - step:
           name: Splitter et innsynskrav gitt med requestNumber

@@ -7,8 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasOne};
 use Illuminate\Support\{Arr, Str, Collection};
 use App\Services\{Eformidling, Pureservice, PsApi};
-use App\Mail\TicketMessage;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 //use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Ticket extends Model
@@ -152,8 +151,8 @@ class Ticket extends Model
                 // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
                 $fileName = explode('=', explode(';', $response->getHeader('content-disposition')[0])[1])[1];
                 $filePath = $dlPath.'/'.$fileName;
-                file_put_contents($filePath, $response->getBody()->getContents());
-                $filesToAttach[] = $filePath;
+                Storage::put($filePath, $response->getBody()->getContents());
+                $filesToAttach[] = Storage::path($filePath);
             endforeach;
 
             // Kobler vedlegget til saken i DB
@@ -165,11 +164,11 @@ class Ticket extends Model
 
     }
 
-    public function getDownloadPath() {
-        $path = config('pureservice.api.dlPath', storage_path('app/psApi'));
+    public function getDownloadPath(bool $full = false): string {
+        $path = config('pureservice.api.dlPath');
         $path .= '/'.$this->requestNumber;
-        if (!is_dir($path)) mkdir($path, 0755, true);
-        return $path;
+
+        return $full ? Storage::path($path): $path;
     }
 
     /**

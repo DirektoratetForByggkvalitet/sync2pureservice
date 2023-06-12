@@ -112,15 +112,16 @@ class PsApi extends API {
         $status = 'OK';
         foreach ($attachments as $file):
             $filename = basename($file);
+            $storagePath = Str::after($file, storage_path('app').'/');
             $body = [
                 'name' => Str::beforeLast($filename, '.'),
                 'fileName' => $filename,
-                'size' => $this->human_filesize(filesize($file)),
-                'contentType' => Storage::mimeType($file),
+                'size' => $this->human_filesize(Storage::size($storagePath)),
+                'contentType' => Storage::mimeType($storagePath),
                 'ticketId' => $ticket->id,
-                'bytes' => base64_encode(file_get_contents($file)),
+                'bytes' => base64_encode(Storage::get($filename)),
             ];
-            if ($result = $this->apiPOST($uri, $body, 'application/vnd.api+json')):
+            if ($result = $this->apiPost($uri, $body)):
                 $uploadCount++;
             else:
                 $status = 'Error';
