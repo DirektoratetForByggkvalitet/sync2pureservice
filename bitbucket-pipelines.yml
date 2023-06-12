@@ -131,6 +131,7 @@ pipelines:
     build-docker-worker:
       - step:
           name: Bygger et docker-image for kjøring av sync2pureservice
+          image: atlassian/default-image:4
           services:
             - docker
           script:
