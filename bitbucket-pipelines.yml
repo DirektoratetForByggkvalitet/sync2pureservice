@@ -128,4 +128,13 @@ pipelines:
             - composer install --no-dev
             - ./artisan pureservice:splittInnsynskrav ${requestNumber}
 
+    build-docker-worker:
+      - step:
+          name: Bygger et docker-image for kjøring av sync2pureservice
+          services:
+            - docker
+          script:
+            - echo ${DOCKER_TOKEN} | docker login --username ${DOCKER_USER} --password-stdin
+            - curl -L https://depot.dev/install-cli.sh | DEPOT_INSTALL_DIR=/usr/local/bin sh
+            - depot bake --project ${DEPOT_PID} -f docker-bake.hcl --push
 
