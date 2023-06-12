@@ -80,7 +80,7 @@ class API {
      * @param   string    $contentType    Setter forespørselens Content-Type, standard 'application/json'
      * @return  Illuminate\Http\Client\PendingRequest
      */
-    public function prepRequest(string|null $contentType = null): PendingRequest {
+    public function prepRequest(string|null $accept = null, string|null $contentType = null): PendingRequest {
         $headers = $this->options['headers'];
         $request = Http::withHeaders($headers);
         if ($this->auth):
@@ -95,10 +95,13 @@ class API {
                     $request->withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'));
             endswitch;
         endif;
-        if ($contentType || $this->myConf('api.accept', false)):
-            $contentType ? $request->accept($contentType) : $request->accept($this->myConf('api.accept'));
+        if ($accept || $this->myConf('api.accept', false)):
+            $contentType ? $request->accept($accept) : $request->accept($this->myConf('api.accept'));
         else:
             $request->acceptJson();
+        endif;
+        if ($contentType):
+            $request->contentType($contentType);
         endif;
         return $request;
     }
@@ -117,9 +120,9 @@ class API {
      * @param   bool    $returnResponse Returnerer Response-objektet, fremfor kun dataene
      * @param   string  $contentType    Setter Content-Type for forespørselen
      */
-    public function apiGet(string $uri, bool $returnResponse = false, string|null|false $contentType = null, array $query = [], bool $statusOnError = false): Response|array|false {
+    public function apiGet(string $uri, bool $returnResponse = false, string|null|false $accept = null, array $query = [], bool $statusOnError = false): Response|array|false {
         $uri = $this->resolveUri($uri);
-        $response = $this->prepRequest($contentType)->get($uri, $query);
+        $response = $this->prepRequest($accept)->get($uri, $query);
         if ($response->successful()):
             if ($returnResponse) return $response;
             return $response->json();
@@ -131,18 +134,18 @@ class API {
     public function ApiQuery(string $uri,
         array $query = [],
         bool $returnResponse = false,
-        string|null|false $contentType = null,
+        string|null|false $accept = null,
         bool $statusOnError = false
     ): Response|array|false {
-        return $this->apiGet($uri, $returnResponse, $contentType, $query, $statusOnError);
+        return $this->apiGet($uri, $returnResponse, $accept, $query, $statusOnError);
     }
 
     /**
      * POST-forespørsel mot APIet
      */
-    public function apiPost(string $uri, array $body, string|null $contentType = null, bool $returnBool = false): Response {
+    public function apiPost(string $uri, array $body, string|null $accept = null, string|null $contentType = null, bool $returnBool = false): Response {
         $uri = $this->resolveUri($uri);
-        $response = $this->prepRequest($contentType)->post($uri, $body);
+        $response = $this->prepRequest($accept, $contentType)->post($uri, $body);
         if ($returnBool) return $response->successful();
         return $response;
     }

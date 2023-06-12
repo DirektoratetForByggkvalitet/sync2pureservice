@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, H
 use Illuminate\Support\{Arr, Str, Collection};
 use App\Services\{Eformidling, Pureservice, PsApi};
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 //use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Ticket extends Model
@@ -152,7 +153,7 @@ class Ticket extends Model
                 $fileName = explode('=', explode(';', $response->getHeader('content-disposition')[0])[1])[1];
                 $filePath = $dlPath.'/'.$fileName;
                 Storage::put($filePath, $response->getBody()->getContents());
-                $filesToAttach[] = Storage::path($filePath);
+                $filesToAttach[] = $filePath;
             endforeach;
 
             // Kobler vedlegget til saken i DB
@@ -162,6 +163,19 @@ class Ticket extends Model
             endif;
         endif;
 
+    }
+
+    public function makePdf (string $view = 'message', $filename = 'Utgående melding') {
+        $data = [
+            'ticket' => $this,
+            'includeFonts' => true,
+        ];
+        $pdf = PDF::loadView($view, $data);
+        $filePath = $this->getDownloadPath(true) . '/' .$filename. '.pdf';
+        file_exists($filePath) ? unlink($filePath): true;
+        $pdf->save($filePath);
+
+        return Str::after($filePath, storage_path('app').'/');
     }
 
     public function getDownloadPath(bool $full = false): string {

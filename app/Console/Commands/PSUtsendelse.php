@@ -8,7 +8,7 @@ use Illuminate\Support\{Arr, Str, Collection};
 use App\Models\{Company, User, Ticket, TicketCommunication};
 use App\Mail\TicketMessage;
 use Illuminate\Support\Facades\{Mail, Blade};
-use Barryvdh\DomPDF\Facade\Pdf as PDF;
+
 
 
 class PSUtsendelse extends Command {
@@ -147,16 +147,16 @@ class PSUtsendelse extends Command {
         /**
          * Går gjennom alle saker og kobler mottakerne fra relaterte mottakerlister til sakene
          */
-        $this->line(Tools::l1().'Går gjennom sakene og henter ut mottakerlistene');
-        $bar = $this->output->createProgressBar(Ticket::count());
-        $bar->start();
+        $this->line(Tools::l1().'Går gjennom saken(e) og henter ut mottakerlistene');
+        $nr = 0;
         foreach (Ticket::lazy() as $t):
+            $nr++;
+            $this->line(Tools::l2().$nr.'. Sak nr '.$t->requestNumber.' - \''. $t->subject.'\'');
             $t->decideAction();
             $t->extractRecipientsFromAsset($this->ps, $this->recipientListAssetType);
             $t->downloadAttachments($this->ps);
-            $bar->advance();
         endforeach; // Ticket as $ticket
-        $bar->finish();
+
         $this->newLine(2);
 
         $this->info('Del 2: Utføre utsendelsen');
@@ -167,6 +167,7 @@ class PSUtsendelse extends Command {
             'ikke sendt' => 0
         ];
         $this->ef = new Eformidling();
+        $nr = 0;
         foreach (Ticket::lazy() as $t):
             $ticketResults = [
                 'e-post' => 0,
@@ -174,29 +175,26 @@ class PSUtsendelse extends Command {
                 'ikke sendt' => 0,
             ];
             // Først brukere. De har ikke orgnr, og må dermed kontaktes per e-post
-            $this->line(Tools::l1().'Går gjennom sak nr '.$t->requestNumber);
+            $nr++;
+            $this->line(Tools::l2().$nr.'. Sak nr '.$t->requestNumber.' - \''. $t->subject.'\'');
             $this->line(Tools::l2().'Personer:');
-            $bar = $this->output->createProgressBar($t->recipients()->count());
-            $bar->start();
             foreach ($t->recipients()->lazy() as $user):
                 $user->name = $user->firstName.' '.$user->lastName;
-                //$this->line(Tools::l2().$user->name.' - '.$user->email);
+                $this->line(Tools::l3().$user->name.' - '.$user->email);
                 if (!Str::endsWith($user->email, '.local')):
                     // Send e-post til brukeren
                     Mail::to($user)->send(new TicketMessage($t));
                     $ticketResults['e-post']++;
                 endif;
-                $bar->advance();
+
             endforeach;
-            $bar->finish();
+
             $this->newLine();
 
             // Går gjennom tilknyttede virksomheter
             $this->line(Tools::l2().'Virksomheter:');
-            $bar = $this->output->createProgressBar($t->recipientCompanies()->count());
-            $bar->start();
             foreach ($t->recipientCompanies()->lazy() as $company):
-                //$this->line(Tools::l2().$company->name.' - '.$company->email);
+                $this->line(Tools::l3().$company->name.' - '.$company->email);
                 if ($t->eFormidling && $company->organizationNumber):
                     $this->ef->createAndSendMessage($t, $company);
                     $ticketResults['eFormidling']++;
@@ -208,13 +206,12 @@ class PSUtsendelse extends Command {
                     Mail::to($company)->send(new TicketMessage($t));
                     $ticketResults['e-post']++;
                 endif;
-                $bar->advance();
             endforeach;
-            $bar->finish();
+
             // Løser saken med en rapport
             $this->newLine();
             $reportAttachments = [];
-            $reportAttachments[] = $this->makePdf($t);
+            $reportAttachments[] = $t->makePdf();
             // Laster opp sendt melding
             $result = $this->ps->uploadAttachments($reportAttachments, $t);
             if ($result['status'] == 'OK'):
@@ -253,17 +250,5 @@ class PSUtsendelse extends Command {
         return Command::SUCCESS;
     }
 
-    protected function makePdf (Ticket $ticket, string $view = 'message') {
-        $data = [
-            'ticket' => $ticket,
-            'includeFonts' => true,
-        ];
-        $pdf = PDF::loadView($view, $data);
-        $filePath = $ticket->getDownloadPath(true) . '/' . 'melding.pdf';
-        file_exists($filePath) ? unlink($filePath): true;
-        $pdf->save($filePath);
-
-        return $filePath;
-    }
 
 }

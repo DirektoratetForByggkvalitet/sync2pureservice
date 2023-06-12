@@ -99,9 +99,8 @@ class PsApi extends API {
 
         /**
      * Laster opp vedlegg til en sak i Pureservice
-     * @param array         $attachments    Array over filstier som skal lastes opp
+     * @param array         $attachments    Array over filstier relative til storage/app som skal lastes opp
      * @param App\Models\Ticket   $ticket   Saken som skal ha vedlegget
-     * @param assoc_array   $message        SvarUt-meldingen som assoc_array
      *
      * @return assoc_array  Rapport på status og antall filer/opplastinger
      */
@@ -111,20 +110,24 @@ class PsApi extends API {
         $uploadCount = 0;
         $status = 'OK';
         foreach ($attachments as $file):
-            $filename = basename($file);
-            $storagePath = Str::after($file, storage_path('app').'/');
-            $body = [
-                'name' => Str::beforeLast($filename, '.'),
-                'fileName' => $filename,
-                'size' => $this->human_filesize(Storage::size($storagePath)),
-                'contentType' => Storage::mimeType($storagePath),
-                'ticketId' => $ticket->id,
-                'bytes' => base64_encode(Storage::get($filename)),
-            ];
-            if ($result = $this->apiPost($uri, $body)):
-                $uploadCount++;
+            if (Storage::exists($file)):
+                $filename = Str::afterLast($file, '/');
+                $body = [
+                    'name' => Str::beforeLast($filename, '.'),
+                    'fileName' => $filename,
+                    'size' => $this->human_filesize(Storage::size($file)),
+                    'contentType' => Storage::mimeType($file),
+                    'ticketId' => $ticket->id,
+                    'bytes' => base64_encode(Storage::get($file)),
+                ];
+                // Sender med Content-Type satt til korrekt type
+                if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'))):
+                    $uploadCount++;
+                else:
+                    $status = 'Error ';
+                endif;
             else:
-                $status = 'Error';
+                $status = 'Error for '.$file;
             endif;
         endforeach;
         return [
