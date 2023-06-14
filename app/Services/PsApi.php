@@ -104,7 +104,7 @@ class PsApi extends API {
      *
      * @return assoc_array  Rapport på status og antall filer/opplastinger
      */
-    public function uploadAttachments(array $attachments, Ticket $ticket): array {
+    public function uploadAttachments(array $attachments, Ticket $ticket, bool $connectToSolution = false): array {
         $uri = '/attachment';
         $attachmentCount = count($attachments);
         $uploadCount = 0;
@@ -121,6 +121,7 @@ class PsApi extends API {
                     'bytes' => base64_encode(Storage::get($file)),
                     'isVisible' => true,
                 ];
+                if ($connectToSolution) $body['isPartOfCurrentSolution'] = true;
                 // Sender med Content-Type satt til korrekt type
                 if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'))):
                     $uploadCount++;
@@ -140,54 +141,85 @@ class PsApi extends API {
 
     public function solveWithAttachment(Ticket $ticket, string $file, string $solution) {
         // Først laste opp vedlegget
-        $uri = '/attachment/';
-        $body = [
-                'name' => Str::beforeLast(basename($file), '.'),
-                'fileName' => basename($file),
+        // $uri = '/attachment/';
+        // $body = [
+        //         'name' => Str::beforeLast(basename($file), '.'),
+        //         'fileName' => basename($file),
+        //         'size' => $this->human_filesize(Storage::size($file)),
+        //         'contentType' => Storage::mimeType($file),
+        //         'ticketId' => $ticket->id,
+        //         'bytes' => base64_encode(Storage::get($file)),
+        //         'isVisible' => true,
+        //         'embedded' => false,
+        // ];
+        // if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept')))
+        //     $attachment = $result['attachments'][0];
+
+
+        // $uri = '/ticket/'.$ticket->id.'/';
+        // $res = $this->apiGet($uri);
+        // $ticketData = $res['tickets'][0];
+
+        // $ticketData['links']['attachments'] = [];
+        // $linked = ['attachments' => []];
+        // $statusId = $this->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
+        // $fileId = 'file-'.Str::ulid();
+        // $linked['attachments'][] = [
+        //     'attachmentCopyId' => $attachment['id'],
+        //     'name' => $attachment['name'],
+        //     'fileName' => $attachment['fileName'],
+        //     'contentId' => $attachment['contentId'],
+        //     'contentLength' => $attachment['contentLength'],
+        //     'contentType' => $attachment['contentType'],
+        //     'ticketId' => $ticket->id,
+        //     'isVisible' => false,
+        //     'embedded' => false,
+        //     'isPartofCurrentSolution' => true,
+        //     'temporaryId' => $fileId,
+        // ];
+        // $ticketData['links']['attachments'][] = [
+        //     'temporaryId' => $fileId,
+        //     'type' => 'attachment',
+        // ];
+        // $ticketData['solution'] = $solution;
+        // $ticketData['statusId'] = $statusId;
+        // $body = [
+        //     'tickets' => [
+        //         $ticketData
+        //     ],
+        //     'linked' => $linked,
+        // ];
+        $uri = '/communication/?include=ticket';
+        $fileId = 'file-'.Str::ulid();
+        $body = ['linked' => [], 'communications' => []];
+        $body['communications'][] = [
+            'direction' => config('pureservice.comms.direction.out'),
+            'ticketId' => $ticket->id,
+            'type' => config('pureservice.comms.solution'),
+            'subject' => $ticket->subject,
+            'text' => $solution,
+            'links' => [
+                'attachments' => [
+                    [
+                        'temporaryId' => $fileId,
+                    ],
+                ],
+            ]
+        ];
+        $body['linked']['attachments'] = [
+            [
+                'name' => Str::beforeLast($file, '.'),
+                'fileName' => $file,
                 'size' => $this->human_filesize(Storage::size($file)),
                 'contentType' => Storage::mimeType($file),
                 'ticketId' => $ticket->id,
                 'bytes' => base64_encode(Storage::get($file)),
                 'isVisible' => true,
-                'embedded' => false,
-        ];
-        if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept')))
-            $attachment = $result['attachments'][0];
-
-        $uri = '/ticket/'.$ticket->id.'/';
-        $res = $this->apiGet($uri);
-        $ticketData = $res['tickets'][0];
-
-        $ticketData['links']['attachments'] = [];
-        $linked = ['attachments' => []];
-        $statusId = $this->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
-        $fileId = 'file-'.Str::ulid();
-        $linked['attachments'][] = [
-            'attachmentCopyId' => $attachment['id'],
-            'name' => $attachment['name'],
-            'fileName' => $attachment['fileName'],
-            'contentId' => $attachment['contentId'],
-            'contentLength' => $attachment['contentLength'],
-            'contentType' => $attachment['contentType'],
-            'ticketId' => $ticket->id,
-            'isVisible' => false,
-            'embedded' => false,
-            'isPartofCurrentSolution' => true,
-            'temporaryId' => $fileId,
-        ];
-        $ticketData['links']['attachments'][] = [
-            'temporaryId' => $fileId,
-            'type' => 'attachment',
-        ];
-        $ticketData['solution'] = $solution;
-        $ticketData['statusId'] = $statusId;
-        $body = [
-            'tickets' => [
-                $ticketData
+                'isPartofCurrentSolution' => true,
+                'temporaryId' => $fileId,
             ],
-            'linked' => $linked,
         ];
-        //dd($body);
+
         return $this->apiPut($uri, $body, $this->myConf('api.accept'));
     }
 

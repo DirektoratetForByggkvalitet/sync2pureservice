@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\{Mail, Blade, Storage};
 
 
 
-class PSUtsendelse extends Command {
+class PSUtsending extends Command {
     protected float $start;
     protected PsApi $ps;
     protected Eformidling $ef;
@@ -23,7 +23,7 @@ class PSUtsendelse extends Command {
      *
      * @var string
      */
-    protected $signature = 'pureservice:utsendelse {--reset-db : Nullstiller databasen før kjøring}';
+    protected $signature = 'pureservice:utsending {--reset-db : Nullstiller databasen før kjøring}';
 
     protected $version = '0.5';
     /**
@@ -210,28 +210,27 @@ class PSUtsendelse extends Command {
 
             // Løser saken med en rapport
             $this->newLine();
-            // $reportAttachments = [];
-            // $reportAttachments[] = $t->makePdf();
-            // // Laster opp sendt melding og setter som koblet til løsningen
-            // $result = $this->ps->uploadAttachments($reportAttachments, $t, true);
-            // if ($result['status'] == 'OK'):
-            //     $this->line(Tools::l2().'Lastet opp meldingen som vedlegg til saken');
-            // else:
-            //     $this->error(Tools::l2().'Vedlegg ble ikke lastet opp');
-            // endif;
+            $reportAttachments = [];
+            $reportAttachments[] = $t->makePdf();
+            // Laster opp sendt melding og setter som koblet til løsningen
+            $result = $this->ps->uploadAttachments($reportAttachments, $t, true);
+            if ($result['status'] == 'OK'):
+                $this->line(Tools::l2().'Lastet opp meldingen som vedlegg til saken');
+            else:
+                $this->error(Tools::l2().'Vedlegg ble ikke lastet opp');
+            endif;
 
-            // $statusId = $this->ps->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
+            $statusId = $this->ps->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
             $solution = Blade::render('report', ['ticket' => $t, 'results' => $ticketResults]);
-            $file = $t->makePdf();
-            // $body = [
-            //     'statusId' => $statusId,
-            //     'solution' => $solution,
-            // ];
-            // $uri = '/ticket/' . $t->id. '/';
+            // $file = $t->makePdf();
+            $body = [
+                'statusId' => $statusId,
+                'solution' => $solution,
+            ];
+            $uri = '/ticket/' . $t->id. '/';
 
-            // if ($updated = $this->ps->apiPatch($uri, $body, 'application/json', true)):
-            if ($updated = $this->ps->solveWithAttachment($t, $file, $solution)):
-                dd($updated);
+            if ($updated = $this->ps->apiPatch($uri, $body, 'application/json', true)):
+            // if ($updated = $this->ps->solveWithAttachment($t, $file, $solution)):
                 $this->line(Tools::l2().'Saken har blitt satt til løst.');
             else:
                 $this->error(Tools::l2().'Kunne ikke løse saken.');

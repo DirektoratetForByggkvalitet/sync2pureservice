@@ -115,7 +115,7 @@ pipelines:
           script:
             - composer install --no-dev
             - *resetDB
-            - ./artisan pureservice:utsendelse
+            - ./artisan pureservice:utsending
 
     masseutsendelse-test:
       - step:
@@ -124,7 +124,7 @@ pipelines:
           script:
             - composer install --no-dev
             - *resetDB
-            - ./artisan pureservice:utsendelse
+            - ./artisan pureservice:utsending
 
     splittInnsynskrav:
       - step:

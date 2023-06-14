@@ -77,6 +77,8 @@ return [
         'out' => 2,
         'internal' => 1,
         'standard' => 2,
+        'solution' => 50,
+        'custom' => 9,
         'direction' => [
             'in' => 1,
             'out' => 2,
