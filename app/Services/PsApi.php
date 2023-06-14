@@ -111,7 +111,7 @@ class PsApi extends API {
         $status = 'OK';
         foreach ($attachments as $file):
             if (Storage::exists($file)):
-                $filename = Str::afterLast($file, '/');
+                $filename = basename($file);
                 $body = [
                     'name' => Str::beforeLast($filename, '.'),
                     'fileName' => $filename,
@@ -119,6 +119,7 @@ class PsApi extends API {
                     'contentType' => Storage::mimeType($file),
                     'ticketId' => $ticket->id,
                     'bytes' => base64_encode(Storage::get($file)),
+                    'isVisible' => true,
                 ];
                 // Sender med Content-Type satt til korrekt type
                 if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'))):
@@ -135,6 +136,59 @@ class PsApi extends API {
             'fileCount' => $attachmentCount,
             'uploadCount' => $uploadCount,
         ];
+    }
+
+    public function solveWithAttachment(Ticket $ticket, string $file, string $solution) {
+        // Først laste opp vedlegget
+        $uri = '/attachment/';
+        $body = [
+                'name' => Str::beforeLast(basename($file), '.'),
+                'fileName' => basename($file),
+                'size' => $this->human_filesize(Storage::size($file)),
+                'contentType' => Storage::mimeType($file),
+                'ticketId' => $ticket->id,
+                'bytes' => base64_encode(Storage::get($file)),
+                'isVisible' => true,
+                'embedded' => false,
+        ];
+        if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept')))
+            $attachment = $result['attachments'][0];
+
+        $uri = '/ticket/'.$ticket->id.'/';
+        $res = $this->apiGet($uri);
+        $ticketData = $res['tickets'][0];
+
+        $ticketData['links']['attachments'] = [];
+        $linked = ['attachments' => []];
+        $statusId = $this->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
+        $fileId = 'file-'.Str::ulid();
+        $linked['attachments'][] = [
+            'attachmentCopyId' => $attachment['id'],
+            'name' => $attachment['name'],
+            'fileName' => $attachment['fileName'],
+            'contentId' => $attachment['contentId'],
+            'contentLength' => $attachment['contentLength'],
+            'contentType' => $attachment['contentType'],
+            'ticketId' => $ticket->id,
+            'isVisible' => false,
+            'embedded' => false,
+            'isPartofCurrentSolution' => true,
+            'temporaryId' => $fileId,
+        ];
+        $ticketData['links']['attachments'][] = [
+            'temporaryId' => $fileId,
+            'type' => 'attachment',
+        ];
+        $ticketData['solution'] = $solution;
+        $ticketData['statusId'] = $statusId;
+        $body = [
+            'tickets' => [
+                $ticketData
+            ],
+            'linked' => $linked,
+        ];
+        //dd($body);
+        return $this->apiPut($uri, $body, $this->myConf('api.accept'));
     }
 
 }

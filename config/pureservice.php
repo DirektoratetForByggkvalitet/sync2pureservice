@@ -9,7 +9,7 @@ return [
         'token' => env('PURESERVICE_APIKEY', null),
         'auth' => 'token',
         'accept' => 'application/vnd.api+json',
-        'dlPath' => env('PURESERVICE_TMP_PATH', 'psApi'),
+        'dlPath' => env('PURESERVICE_TMP_PATH', 'pureservice'),
     ],
     'computer' => [
         'displayName' => env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Datamaskin'),

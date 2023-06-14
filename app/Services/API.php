@@ -96,7 +96,7 @@ class API {
             endswitch;
         endif;
         if ($accept || $this->myConf('api.accept', false)):
-            $contentType ? $request->accept($accept) : $request->accept($this->myConf('api.accept'));
+            $accept ? $request->accept($accept) : $request->accept($this->myConf('api.accept'));
         else:
             $request->acceptJson();
         endif;
@@ -155,7 +155,9 @@ class API {
      */
     public function apiPatch(string $uri, array $body, string|null $contentType = null, bool $returnBool = false): Response|bool {
         $uri = $this->resolveUri($uri);
-        $response = $this->prepRequest($contentType)->patch($uri, $body);
+        $accept = $this->myConf('api.accept');
+        $contentType = $contentType ? $contentType : $accept;
+        $response = $this->prepRequest($accept, $contentType)->patch($uri, $body);
         if ($returnBool) return $response->successful();
         return $response;
     }
@@ -165,7 +167,9 @@ class API {
      */
     public function apiPut(string $uri, array $body, string|null $contentType = null, bool $returnBool = false) : Response|bool {
         $uri = $this->resolveUri($uri);
-        $response = $this->prepRequest($contentType)->put($uri, $body);
+        $accept = $this->myConf('api.accept');
+        $contentType = $contentType ? $contentType : $accept;
+        $response = $this->prepRequest($accept, $contentType)->put($uri, $body);
         if ($returnBool) return $response->successful();
         return $response;
    }
@@ -175,11 +179,13 @@ class API {
      */
     public function apiDelete($uri, array $body = [], string|null $contentType = null): bool {
         $uri = $this->resolveUri($uri);
-        $response = $this->prepRequest($contentType)->delete($uri, $body);
+        $accept = $this->myConf('api.accept');
+        $contentType = $contentType ? $contentType : $accept;
+        $response = $this->prepRequest($accept)->delete($uri, $body);
         return $response->successful();
     }
 
-    protected function human_filesize($bytes, $decimals = 2): string {
+    public function human_filesize($bytes, $decimals = 2): string {
         $sz = 'BKMGTP';
         $factor = floor((strlen($bytes) - 1) / 3);
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];

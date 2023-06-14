@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasOne};
 use Illuminate\Support\{Arr, Str, Collection};
 use App\Services\{Eformidling, Pureservice, PsApi};
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\{Storage};
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use App\Models\{Message, Company};
 //use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -37,6 +37,7 @@ class Ticket extends Model
         'description',
         'eFormidling',
         'action',
+        'pdf',
     ];
 
     protected $hidden = [
@@ -172,10 +173,11 @@ class Ticket extends Model
             'includeFonts' => true,
         ];
         $pdf = PDF::loadView($view, $data);
-        $filePath = $this->getDownloadPath(true) . '/' .$filename. '.pdf';
-        file_exists($filePath) ? unlink($filePath): true;
-        $pdf->save($filePath);
-        $this->pdf = $this->getDownloadPath().'/'.$filename.'.pdf';
+        $this->pdf = $this->getDownloadPath() . '/' .$filename. '.pdf';
+
+        if (Storage::exists($this->pdf)) Storage::delete($this->pdf);
+        $pdf->save($this->pdf, config('filesystems.default'));
+
         $this->save();
         return $this->pdf;
     }
@@ -204,10 +206,14 @@ class Ticket extends Model
     }
 
     public function createMessage(Company $receiver) {
-        $message = Message::factory()->create([
+        $message = Message::factory()->make([
             'sender_id' => config('eformidling.address.sender_id'),
             'receiver_id' => $receiver->getIso6523ActorIdUpi(),
-            'mainDocument' => isset($this->pdf) ? basename($this->pdf) : basename($this->makePdf()),
+            'mainDocument' => !$this->pdf ? basename($this->pdf) : basename($this->makePdf()),
         ]);
+        $message->attachments = Storage::allFiles($this->getDownloadPath());
+
+        // Lagrer JSON for meldingshodet og lagrer i DB
+        $message->renderContent();
     }
 }
