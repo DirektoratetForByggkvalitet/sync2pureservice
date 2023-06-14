@@ -9,6 +9,7 @@ use Illuminate\Support\{Arr, Str, Collection};
 use App\Services\{Eformidling, Pureservice, PsApi};
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use App\Models\{Message, Company};
 //use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Ticket extends Model
@@ -174,8 +175,9 @@ class Ticket extends Model
         $filePath = $this->getDownloadPath(true) . '/' .$filename. '.pdf';
         file_exists($filePath) ? unlink($filePath): true;
         $pdf->save($filePath);
-
-        return Str::after($filePath, storage_path('app').'/');
+        $this->pdf = $this->getDownloadPath().'/'.$filename.'.pdf';
+        $this->save();
+        return $this->pdf;
     }
 
     public function getDownloadPath(bool $full = false): string {
@@ -201,4 +203,11 @@ class Ticket extends Model
         $this->save();
     }
 
+    public function createMessage(Company $receiver) {
+        $message = Message::factory()->create([
+            'sender_id' => config('eformidling.address.sender_id'),
+            'receiver_id' => $receiver->getIso6523ActorIdUpi(),
+            'mainDocument' => isset($this->pdf) ? basename($this->pdf) : basename($this->makePdf()),
+        ]);
+    }
 }

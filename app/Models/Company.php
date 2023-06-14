@@ -50,6 +50,10 @@ class Company extends Model {
         return $this->belongsToMany(Ticket::class);
     }
 
+    public function getIso6523ActorIdUpi() {
+        return config('eformidling.address.prefix').$this->organizationNumber;
+    }
+
     /**
      * Synkroniserer virksomheten i Pureservice
      */

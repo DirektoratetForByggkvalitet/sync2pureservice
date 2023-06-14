@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('company_messages', function (Blueprint $table) {
+        Schema::create('company_message', function (Blueprint $table) {
             $table->id();
-            $table->integer('company_internal_id');
-            $table->integer('message_id');
-            $table->string('type', 20);
+            $table->unsignedBigInteger('company_internal_id')->unsigned();
+            $table->uuid('message_id');
+            $table->string('type', 20)->default('receiver');
             $table->timestamps();
         });
     }
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('company_messages');
+        Schema::dropIfExists('company_message');
     }
 };

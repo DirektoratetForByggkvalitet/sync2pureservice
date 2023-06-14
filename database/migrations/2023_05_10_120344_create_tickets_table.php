@@ -36,6 +36,7 @@ return new class extends Migration
             $table->boolean('eFormidling')->default(false);
             $table->string('action')->default('normalSend');
             $table->json('attachments')->nullable();
+            $table->string('pdf')->nullable();
 
 
             $table->timestamps();

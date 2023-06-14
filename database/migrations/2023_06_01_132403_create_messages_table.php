@@ -3,6 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+
 
 return new class extends Migration
 {
@@ -12,16 +14,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('messages', function (Blueprint $table) {
-            $table->id();
+            //$table->id();
+            $table->uuid('id')->primary();
             $table->timestamps();
             $table->integer('sender_id')->nullable();
-            $table->string('sender');
-            $table->string('receiver');
             $table->string('receiver_id')->nullable();
-            $table->string('documentId');
-            $table->string('documentStandard');
-            $table->string('conversationId');
-            $table->string('conversationIdentifier');
+            $table->string('documentStandard')->default('urn:no:difi:arkivmelding:xsd::arkivmelding');
+            $table->string('documentType')->default('arkivmelding');
+            $table->uuid('conversationId')->default(Str::uuid());
+            $table->string('processIdentifier')->default(
+                config('eformidling.process_pre').
+                config('eformidling.out.type').
+                config('eformidling.process_post')
+            );
             $table->json('content');
             $table->string('mainDocument')->nullable();
             $table->json('attachments')->nullable();

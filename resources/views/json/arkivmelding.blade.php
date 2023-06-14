@@ -4,34 +4,34 @@
       "headerVersion" : "1.0",
       "sender" : [ {
         "identifier" : {
-          "value" : "{{ $senderId }}",
+          "value" : "{{ $message->sender_id }}",
           "authority" : "iso6523-actorid-upis"
         }
       } ],
       "receiver" : [ {
         "identifier" : {
-          "value" : "{{ $receiverId }}",
+          "value" : "{{ $message->receiver_id }}",
           "authority" : "iso6523-actorid-upis"
         }
       } ],
       "documentIdentification" : {
-        "standard" : "urn:no:difi:arkivmelding:xsd::arkivmelding",
+        "standard" : "{{ $message->documentStandard }}",
         "typeVersion" : "1.0",
-        "instanceIdentifier" : "{{ $messageId }}",
+        "instanceIdentifier" : "{{ $message->id }}",
         "type" : "arkivmelding"
       },
       "businessScope" : {
         "scope" : [ {
           "type" : "ConversationId",
-          "instanceIdentifier" : "{{ $conversationId }}",
-          "identifier" : "urn:no:difi:profile:arkivmelding:administrasjon:ver1.0",
+          "instanceIdentifier" : "{{ $message->conversationId }}",
+          "identifier" : "{{ $message->processIdentifier }}",
           "scopeInformation" : [ {
-            "expectedResponseDateTime" : "{{ $responseDt }}"
+            "expectedResponseDateTime" : "{{ $message->getResponseDt() }}"
           } ]
         } ]
       }
     },
     "arkivmelding" : {
-      "hoveddokument" : "{{ $mainDocument }}"
+      "hoveddokument" : "{{ $message->mainDocument }}"
     }
 }

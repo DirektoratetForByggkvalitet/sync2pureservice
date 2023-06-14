@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('ticket_user', function (Blueprint $table) {
             $table->id();
-            $table->integer('ticket_internal_id');
-            $table->integer('user_internal_id');
+            $table->unsignedBigInteger('ticket_internal_id')->unsigned();
+            $table->unsignedBigInteger('user_internal_id')->unsigned();
             $table->timestamps();
         });
     }
