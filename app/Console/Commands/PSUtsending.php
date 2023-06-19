@@ -229,8 +229,8 @@ class PSUtsending extends Command {
             ];
             $uri = '/ticket/' . $t->id. '/';
 
-            if ($updated = $this->ps->apiPatch($uri, $body, 'application/json', true)):
-            // if ($updated = $this->ps->solveWithAttachment($t, $file, $solution)):
+            // if ($updated = $this->ps->apiPatch($uri, $body, 'application/json', true)):
+            if ($updated = $this->ps->solveWithAttachment($t, $solution)):
                 $this->line(Tools::l2().'Saken har blitt satt til løst.');
             else:
                 $this->error(Tools::l2().'Kunne ikke løse saken.');
