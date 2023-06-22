@@ -140,64 +140,76 @@ class PsApi extends API {
     }
 
     public function solveWithAttachment(Ticket $ticket, string $solution, null|string $file = null) {
-        // Først laste opp vedlegget
+        // Finner ID for løst-status
+        $statusId = $this->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
+
+        // Laster opp vedlegget
         if (!$file || !Storage::exists($file)):
             if (!$ticket->pdf) $ticket->makePdf();
             $file = $ticket->pdf;
         endif;
 
-        $fileId = 'file-'.Str::ulid();
-        $uri = '/attachment/';
+
+        $uri = '/attachment/'.$ticket->id.'/';
         $body = [
-                'name' => Str::beforeLast(basename($file), '.'),
-                'fileName' => basename($file),
-                'size' => $this->human_filesize(Storage::size($file)),
-                'contentType' => Storage::mimeType($file),
-                'ticketId' => $ticket->id,
-                'bytes' => base64_encode(Storage::get($file)),
-                'isVisible' => true,
-                'embedded' => false,
+            'name' => Str::beforeLast(basename($file), '.'),
+            'fileName' => basename($file),
+            'size' => $this->human_filesize(Storage::size($file)),
+            'contentType' => Storage::mimeType($file),
+            'bytes' => base64_encode(Storage::get($file)),
+            'isVisible' => true,
+            'relatedType' => 'ticket',
         ];
 
-        if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept')))
-            $attachment = $result['attachments'][0];
+        if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'))):
+
+            $attachment = $result->['attachments'][0];
+        endif;
 
 
-        $uri = '/ticket/'.$ticket->id.'/?include=attachments';
+        // // LØSER SAKEN
+        // $body = [
+        //     'solution' => $solution,
+        //     'statusId' => $statusId,
+        // ];
+        // $uri = '/ticket/'.$ticket->id.'/';
+
+        // return $this->apiPatch($uri, $body, 'application/json');
+
         $res = $this->apiGet($uri);
-        $ticketData = $res['tickets'][0];
 
-        $ticketData['links']['attachments'] = [];
-        $linked = ['attachments' => []];
-        $statusId = $this->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
+        $ticketData = $res['tickets'][0];
+        if (!isset($ticketData['links']['attachments'])) $ticketData['links']['attachments'] = [];
+        $ticketData['solution'] = $solution;
+        $ticketData['statusId'] = $statusId;
+
+        $linked = isset($res['linked']) ? $res['linked'] : [];
+        if (!isset($linked['attachments'])) $linked['attachments'] = [];
+
+        unset($res);
+
+        $fileId = 'file-'.Str::ulid();
         $linked['attachments'][] = [
             'attachmentCopyId' => $attachment['id'],
             'name' => $attachment['name'],
             'fileName' => $attachment['fileName'],
-            'contentId' => $attachment['contentId'],
-            'contentLength' => $attachment['contentLength'],
-            'contentType' => $attachment['contentType'],
             'ticketId' => $ticket->id,
-            'isVisible' => false,
-            'embedded' => false,
+            'isVisible' => true,
             'isPartofCurrentSolution' => true,
-            'temporaryId' => $fileId,
+            'links' => [
+                'ticket' => [
+                    'type' => 'ticket',
+                    'id' => $ticket->id,
+                ],
+                'temporaryId' => $fileId,
+            ],
         ];
-        $ticketData['links']['attachments'][] = [
-            'temporaryId' => $fileId,
-            'type' => 'attachment',
-        ];
-        $ticketData['solution'] = $solution;
-        $ticketData['statusId'] = $statusId;
         $body = [
             'tickets' => [
                 $ticketData
             ],
-            'linked' => $linked,
+           'linked' => $linked,
         ];
-
-        dd($body);
-        return $this->apiPut($uri, $body, $this->myConf('api.accept'));
     }
 
 }

@@ -1,9 +1,8 @@
-<h2>Forsendelsesrapport</h2>
+<h2>Rapport etter utsending</h2>
 
-<p>Forsendelse av saken "{{ $ticket->subject }}" er ferdig.</p>
 <p>
-    Forsendelsen var satt opp til å sendes ut med {{ $ticket->eFormidling ? 'eFormidling' : 'e-post' }}
-    som hovedkanal. Resultatet ble som følger:
+    Hovedkanal for utsendingen var {{ $ticket->eFormidling ? 'eFormidling' : 'e-post' }}.
+    Resultatet ble som følger:
 </p>
 <ul>
     <li>Totalt antall mottakere: {{ $ticket->recipients()->count() + $ticket->recipientCompanies()->count() }}</li>

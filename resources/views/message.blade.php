@@ -12,9 +12,7 @@
     <meta name="description" content="DiBK e-postmal v2.3.230530" />
     {{-- Henter inn fonter hvis de trengs --}}
     @includeWhen($includeFonts, 'parts.fonts')
-    <style type="text/css">
-        .bottom,.box{position:relative;left:0;right:0}body,code a,html{font-size:11pt;font-family:'Open Sans',Calibri,Arial,sans-serif}p{margin:0 0 1em}table{border-collapse:collapse;border-spacing:0}td{padding:5px;border:1px solid #ddd}h1,h2,h3,h4,h5,h6{margin-top:.5em;margin-bottom:.3em;font-weight:600}blockquote,div.sheet>div:first-of-type{background:#f2f1f0;padding:.5em;font-style:normal;margin:0 0 .5em}code a,code a:any-link{background-color:#072938;border:0;display:inline-block;cursor:pointer;color:#fff!important;font-weight:600;padding:8px;text-decoration:none;margin:0}.box{background-color:#ecf2f6;display:flex;flex-flow:column;top:0;padding:0;margin:0}.sheet{background-color:#fff;padding:1em 2vw;flex:1}.logo{margin:1.2em 0;padding-left:2vw}img#logo{max-width:100px;max-height:121px;width:25vw;height:auto}.sheet>h4:first-of-type{position:absolute;top:100px;right:0;display:block;padding-right:1em;font-weight:700}.bottom{background-color:#c9d12b;height:4px;top:relative}
-    </style>
+    @include('parts.css')
     <title>{{ $title }}</title>
 </head>
 <body>

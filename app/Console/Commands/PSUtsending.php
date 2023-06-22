@@ -210,15 +210,15 @@ class PSUtsending extends Command {
 
             // Løser saken med en rapport
             $this->newLine();
-            $reportAttachments = [];
-            $reportAttachments[] = $t->makePdf();
-            // Laster opp sendt melding og setter som koblet til løsningen
-            $result = $this->ps->uploadAttachments($reportAttachments, $t, true);
-            if ($result['status'] == 'OK'):
-                $this->line(Tools::l2().'Lastet opp meldingen som vedlegg til saken');
-            else:
-                $this->error(Tools::l2().'Vedlegg ble ikke lastet opp');
-            endif;
+            // $reportAttachments = [];
+            // $reportAttachments[] = $t->makePdf();
+            // // Laster opp sendt melding og setter som koblet til løsningen
+            // $result = $this->ps->uploadAttachments($reportAttachments, $t, true);
+            // if ($result['status'] == 'OK'):
+            //     $this->line(Tools::l2().'Lastet opp meldingen som vedlegg til saken');
+            // else:
+            //     $this->error(Tools::l2().'Vedlegg ble ikke lastet opp');
+            // endif;
 
             $statusId = $this->ps->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
             $solution = Blade::render('report', ['ticket' => $t, 'results' => $ticketResults]);
