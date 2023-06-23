@@ -150,7 +150,7 @@ class PsApi extends API {
         endif;
 
 
-        $uri = '/attachment/'.$ticket->id.'/';
+        $uri = '/attachment/';
         $body = [
             'name' => Str::beforeLast(basename($file), '.'),
             'fileName' => basename($file),
@@ -158,12 +158,10 @@ class PsApi extends API {
             'contentType' => Storage::mimeType($file),
             'bytes' => base64_encode(Storage::get($file)),
             'isVisible' => true,
-            'relatedType' => 'ticket',
+            'ticketId' => $ticket->id,
         ];
-
         if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'))):
-
-            $attachment = $result->['attachments'][0];
+            $attachment = $result->json('attachments')[0];
         endif;
 
 
@@ -172,28 +170,47 @@ class PsApi extends API {
         //     'solution' => $solution,
         //     'statusId' => $statusId,
         // ];
-        // $uri = '/ticket/'.$ticket->id.'/';
+        $uri = '/ticket/'.$ticket->id.'/';
 
         // return $this->apiPatch($uri, $body, 'application/json');
+        $fileId = 'file-'.Str::ulid();
 
-        $res = $this->apiGet($uri);
+        $res = $this->apiGet($uri.'?include=attachments');
 
         $ticketData = $res['tickets'][0];
-        if (!isset($ticketData['links']['attachments'])) $ticketData['links']['attachments'] = [];
+        if (!isset($ticketData['links']['attachments'])):
+            $ticketData['links']['attachments'] = [];
+        endif;
+        if (isset($ticketData['links']['attachments']['ids'])):
+            foreach ($ticketData['links']['attachments']['uids'] as $attach_id):
+                $ticketData['links']['attachments'][] = [
+                    'id' => $attach_id,
+                    'type' => 'attachment',
+                ];
+            endforeach;
+        endif;
+        $ticketData['links']['attachments'][] = [
+            'temporaryId' => $fileId,
+            'type' => 'attachment',
+        ];
+
         $ticketData['solution'] = $solution;
+        // Setter sakens status
         $ticketData['statusId'] = $statusId;
+        $ticketData['links']['status'] = [
+            'id' => $statusId,
+            'type' => 'status',
+        ];
 
         $linked = isset($res['linked']) ? $res['linked'] : [];
         if (!isset($linked['attachments'])) $linked['attachments'] = [];
 
         unset($res);
 
-        $fileId = 'file-'.Str::ulid();
         $linked['attachments'][] = [
             'attachmentCopyId' => $attachment['id'],
-            'name' => $attachment['name'],
+            'name' => $attachment['name'].'-vedlagt',
             'fileName' => $attachment['fileName'],
-            'ticketId' => $ticket->id,
             'isVisible' => true,
             'isPartofCurrentSolution' => true,
             'links' => [
@@ -206,10 +223,12 @@ class PsApi extends API {
         ];
         $body = [
             'tickets' => [
-                $ticketData
+                $ticketData,
             ],
            'linked' => $linked,
         ];
+        //dd($body);
+        $uri .= '?include=communications,communications.attachments,communications.sender,recipientsCc,communications.recipients,communications.recipientsCc';
+        return $this->apiPut($uri, $body);
     }
-
 }

@@ -45,7 +45,7 @@ class PSUtsending extends Command {
         $this->info(Tools::ts().'Setter opp miljøet...');
         if ($this->option('reset-db')):
             $this->info('### NULLSTILLER DATABASEN ###');
-            $this->call('migrate:fresh', ['--force']);
+            $this->call('migrate:fresh', ['--force' => true]);
             $this->newLine(2);
         endif;
 
@@ -231,6 +231,7 @@ class PSUtsending extends Command {
 
             // if ($updated = $this->ps->apiPatch($uri, $body, 'application/json', true)):
             if ($updated = $this->ps->solveWithAttachment($t, $solution)):
+                //dd($updated->json());
                 $this->line(Tools::l2().'Saken har blitt satt til løst.');
             else:
                 $this->error(Tools::l2().'Kunne ikke løse saken.');
