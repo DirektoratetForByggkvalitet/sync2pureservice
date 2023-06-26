@@ -150,19 +150,19 @@ class PsApi extends API {
         endif;
 
 
-        $uri = '/attachment/';
-        $body = [
-            'name' => Str::beforeLast(basename($file), '.'),
-            'fileName' => basename($file),
-            'size' => $this->human_filesize(Storage::size($file)),
-            'contentType' => Storage::mimeType($file),
-            'bytes' => base64_encode(Storage::get($file)),
-            'isVisible' => true,
-            'ticketId' => $ticket->id,
-        ];
-        if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'))):
-            $attachment = $result->json('attachments')[0];
-        endif;
+        // $uri = '/attachment/';
+        // $body = [
+        //     'name' => Str::beforeLast(basename($file), '.'),
+        //     'fileName' => basename($file),
+        //     'size' => $this->human_filesize(Storage::size($file)),
+        //     'contentType' => Storage::mimeType($file),
+        //     'bytes' => base64_encode(Storage::get($file)),
+        //     'isVisible' => true,
+        //     'ticketId' => $ticket->id,
+        // ];
+        // if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'))):
+        //     $attachment = $result->json('attachments')[0];
+        // endif;
 
 
         // // LØSER SAKEN
@@ -208,17 +208,26 @@ class PsApi extends API {
         unset($res);
 
         $linked['attachments'][] = [
-            'attachmentCopyId' => $attachment['id'],
-            'name' => $attachment['name'].'-vedlagt',
-            'fileName' => $attachment['fileName'],
+            // 'attachmentCopyId' => $attachment['id'],
+            // 'name' => $attachment['name'].'-vedlagt',
+            // 'fileName' => $attachment['fileName'],
+            // 'isVisible' => true,
+            // 'isPartofCurrentSolution' => true,
+            // 'ticketId' => $ticket->id,
+            'name' => Str::beforeLast(basename($file), '.'),
+            'fileName' => basename($file),
+            'size' => $this->human_filesize(Storage::size($file)),
+            'contentType' => Storage::mimeType($file),
+            'bytes' => base64_encode(Storage::get($file)),
             'isVisible' => true,
+            'ticketId' => $ticket->id,
+            'temporaryId' => $fileId,
             'isPartofCurrentSolution' => true,
             'links' => [
                 'ticket' => [
                     'type' => 'ticket',
                     'id' => $ticket->id,
                 ],
-                'temporaryId' => $fileId,
             ],
         ];
         $body = [
