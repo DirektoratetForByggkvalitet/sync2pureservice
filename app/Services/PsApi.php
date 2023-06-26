@@ -143,33 +143,12 @@ class PsApi extends API {
         // Finner ID for løst-status
         $statusId = $this->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
 
-        // Laster opp vedlegget
+        // Sjekker at vedlegget eksisterer
         if (!$file || !Storage::exists($file)):
             if (!$ticket->pdf) $ticket->makePdf();
             $file = $ticket->pdf;
         endif;
 
-
-        // $uri = '/attachment/';
-        // $body = [
-        //     'name' => Str::beforeLast(basename($file), '.'),
-        //     'fileName' => basename($file),
-        //     'size' => $this->human_filesize(Storage::size($file)),
-        //     'contentType' => Storage::mimeType($file),
-        //     'bytes' => base64_encode(Storage::get($file)),
-        //     'isVisible' => true,
-        //     'ticketId' => $ticket->id,
-        // ];
-        // if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'))):
-        //     $attachment = $result->json('attachments')[0];
-        // endif;
-
-
-        // // LØSER SAKEN
-        // $body = [
-        //     'solution' => $solution,
-        //     'statusId' => $statusId,
-        // ];
         $uri = '/ticket/'.$ticket->id.'/';
 
         // return $this->apiPatch($uri, $body, 'application/json');
@@ -208,12 +187,6 @@ class PsApi extends API {
         unset($res);
 
         $linked['attachments'][] = [
-            // 'attachmentCopyId' => $attachment['id'],
-            // 'name' => $attachment['name'].'-vedlagt',
-            // 'fileName' => $attachment['fileName'],
-            // 'isVisible' => true,
-            // 'isPartofCurrentSolution' => true,
-            // 'ticketId' => $ticket->id,
             'name' => Str::beforeLast(basename($file), '.'),
             'fileName' => basename($file),
             'size' => $this->human_filesize(Storage::size($file)),
