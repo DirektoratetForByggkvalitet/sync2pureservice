@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class PsApi extends API {
     protected array $ticketOptions;
-    protected bool $up;
+    protected bool $up = false;
     protected array $statuses;
 
     public function __construct() {
@@ -93,14 +93,22 @@ class PsApi extends API {
      */
     public function fetchTypeIds() {
         // Henter ut relasjonstyper allerede i bruk i basen
-        $uri = '/relationship/?include=type&filter=toAssetId!=null AND fromUserId!=null AND solvingRelationship == false';
-        $result = $this->apiGet($uri);
+        $uri = '/relationship/';
+        $query = [
+            'include' => 'type',
+            'filter' => 'toAssetId!=null AND fromUserId!=null AND solvingRelationship == false'
+        ];
+        $result = $this->apiQuery($uri, $query);
         $relationshipTypes = collect($result['linked']['relationshiptypes']);
         $this->statuses = [];
         foreach(['computer', 'mobile'] as $type):
             // Henter ut ressurstypen basert på displayName
-            $uri = '/assettype/?filter=name.equals("'.config('pureservice.'.$type.'.displayName').'")&include=fields,statuses';
-            $result = $this->apiGet($uri);
+            $uri = '/assettype/';
+            $query = [
+                'filter' => 'name.equals("'.$this->myConf($type.'.displayName').'")',
+                'include' => 'fields,statuses'
+            ];
+            $result = $this->apiQuery($uri, $query);
             if (count($result['assettypes']) > 0):
                 // setter asset_type_id og className i config basert på resultatet
                 config(['pureservice.'.$type.'.asset_type_id' => $result['assettypes'][0]['id']]);
@@ -154,8 +162,57 @@ class PsApi extends API {
         return $this->ticketOptions;
     }
 
+    /**
+     * Henter alle datamaskin- og mobilenhet-ressurser fra Pureservice
+     * @return  assoc_array     Array over ressursene
+     */
+    public function getAllAssets(): array {
+        $totalAssets = [];
+        foreach (['computer', 'mobile'] as $type):
+            $uri = '/asset/';
+            $query = [
+                'filter' => 'typeID=='.$this->myConf($type.'.asset_type_id'),
+            ];
+            $assets = $this->apiQuery($uri, $query)['assets'];
+            foreach ($assets as $asset):
+                $asset['type'] = $type;
+                $asset['usernames'] = $this->getAssetRelatedUsernames($asset['id']);
+                $totalAssets[] = $asset;
+            endforeach;
+        endforeach;
+        return $totalAssets;
+    }
 
-        /**
+    public function getAssetRelatedUsernames(int $assetId): array {
+        $relations_full = $this->getAssetRelationships($assetId);
+
+        if (count($relations_full['relationships']) == 0) return [];
+
+        $linkedUsers = &$relations_full['linked']['users'];
+        $linkedEmails = collect($relations_full['linked']['emailaddresses']);
+        $usernames = [];
+        foreach($linkedUsers as $user):
+            $usernames[] = $linkedEmails->firstWhere('id', $user['emailAddressId'])['email'];
+        endforeach;
+        return $usernames;
+    }
+    /**
+     * Henter relasjoner for en gitt ressurs
+     * @param string    $assetId    Ressursens ID
+     *
+     * @return assoc_array  Array over relasjonene knyttet til ressursen
+     */
+    public function getAssetRelationships($assetId) {
+        $uri = '/relationship/' . $assetId .'/fromAsset';
+        $query = [
+            'include' => 'type,type.relationshipTypeGroup,toUser,toUser.emailaddress',
+            'filter' => 'toUserId != NULL'
+        ];
+        return $this->apiQuery($uri, $query);
+    }
+
+
+    /**
      * Laster opp vedlegg til en sak i Pureservice
      * @param array         $attachments    Array over filstier relative til storage/app som skal lastes opp
      * @param App\Models\Ticket   $ticket   Saken som skal ha vedlegget
