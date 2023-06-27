@@ -7,7 +7,7 @@ use Illuminate\Support\{Str, Arr};
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Versjon 2 av Pureservice sitt API, basert på Laravel sitt HTTP Client-bibliotek
+ * Versjon 2 av Pureservice API-klient, basert på Laravel sitt HTTP Client-bibliotek
  */
 class PsApi extends API {
     protected array $ticketOptions;

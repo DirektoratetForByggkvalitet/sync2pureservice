@@ -116,7 +116,7 @@ class Eformidling extends API {
         foreach (Arr::get($message, 'standardBusinessDocumentHeader.sender') as $id):
             $idValue = Arr::get($id, 'identifier.value');
             $messageSender .= $messageSender == '' ? $idValue : ', ' . $idValue;
-            if (Str::contains($idValue, '0192:') && $c = $this->brreg->getCompany(Str::after($idValue, '0192:'))):
+            if (Str::startsWith($idValue, '0192:') && $c = $this->brreg->getCompany(Str::after($idValue, '0192:'))):
                 $newMessage->companies()->attach($c->internal_id, ['type' => 'sender']);
             endif;
         endforeach;
@@ -170,16 +170,28 @@ class Eformidling extends API {
         return true;
     }
 
+    // Returnerer array over meldingstyper som foretaket kan motta
+    public function getCapabilities(Company $org, $filter = true) : array {
+        $types = [];
+        $uri = 'capabilities/'.$org->organizationNumber;
+        if ($result = $this->apiGet($uri)):
+            if (count($result['capabilities'])):
+                $capabilities = collect($result['capabilities']);
+                if ($filter):
+                    $capabilities->each(function($c) use ($types) {
+                        $process = '';
+                    });
+                else:
+                    $types = $capabilities->all();
+                endif;
+            endif;
+        endif;
+        return $types;
+    }
+
     public function createAndSendMessage(Ticket $ticket, Company $recipient) {
         $recipientIdentifier = '0192:'. $recipient->organizationNumber;
-        $mainFilePath = $ticket->getDownloadPath().'/message.pdf';
-        $data = [
-            'ticket' => $ticket,
-            'includeFonts' => true,
-        ];
-        $pdf = PDF::loadView('message', $data);
-        file_exists($mainFilePath) ? unlink($mainFilePath): true;
-        $pdf->save($mainFilePath);
-
+        $mainFile = $ticket->makePdf('message', 'melding.pdf');
+        $recipientCapabilities = collect($this->getCapabilities($recipient));
     }
 }
