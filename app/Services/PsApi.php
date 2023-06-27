@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
  */
 class PsApi extends API {
     protected array $ticketOptions;
+    protected bool $up;
+    protected array $statuses;
 
     public function __construct() {
         $this->cKey = 'pureservice';
@@ -71,6 +73,62 @@ class PsApi extends API {
             if (count($result[$entities]) > 0) return $result[$entities][0];
         endif;
         return null; // Hvis ikke funnet
+    }
+
+    /** fetchTypeIds
+     * Henter inn IDer til forskjellige innholdstyper.
+     * Befolker følgende config-verdier med verdier fra Pureservice:
+     *  config('pureservice.computer.asset_type_id')
+     *  config('pureservice.computer.className')
+     *  config('pureservice.computer.status')
+     *  config('pureservice.computer.relationship_type_id')
+     *  config('pureservice.computer.properties')
+     *
+     *  config('pureservice.mobile.asset_type_id')
+     *  config('pureservice.mobile.className')
+     *  config('pureservice.mobile.status')
+     *  config('pureservice.mobile.relationship_type_id')
+     *  config('pureservice.mobile.properties')
+     * @return void
+     */
+    public function fetchTypeIds() {
+        // Henter ut relasjonstyper allerede i bruk i basen
+        $uri = '/relationship/?include=type&filter=toAssetId!=null AND fromUserId!=null AND solvingRelationship == false';
+        $result = $this->apiGet($uri);
+        $relationshipTypes = collect($result['linked']['relationshiptypes']);
+        $this->statuses = [];
+        foreach(['computer', 'mobile'] as $type):
+            // Henter ut ressurstypen basert på displayName
+            $uri = '/assettype/?filter=name.equals("'.config('pureservice.'.$type.'.displayName').'")&include=fields,statuses';
+            $result = $this->apiGet($uri);
+            if (count($result['assettypes']) > 0):
+                // setter asset_type_id og className i config basert på resultatet
+                config(['pureservice.'.$type.'.asset_type_id' => $result['assettypes'][0]['id']]);
+                config(['pureservice.'.$type.'.className' => '_'.config('pureservice.'.$type.'.asset_type_id').'_Assets_'.config('pureservice.'.$type.'.displayName')]);
+
+                // Henter ut status-IDer
+                $raw_statuses = collect($result['linked']['assetstatuses']);
+                $this->statuses[$type] = [];
+                foreach (config('pureservice.'.$type.'.status') as $key=>$value):
+                    $raw_status = $raw_statuses->firstWhere('name', $value);
+                    $statusId = $raw_status != null ? $raw_status['id'] : null;
+                    $this->statuses[$type][$key] = $statusId;
+                endforeach;
+            endif;
+
+            // Finner propertyName for feltnavnene definert i config('pureservice.'.$type.'.fields')
+            $properties = collect($result['linked']['assettypefields']);
+            foreach (config('pureservice.'.$type.'.fields') as $key => $fieldName):
+                $property = $properties->firstWhere('name', $fieldName);
+                config(['pureservice.'.$type.'.properties.'.$key => lcfirst($property['propertyName'])]);
+            endforeach;
+
+            // Finner relasjonstypens ID for brukerkoblingen
+            if ($relationshipType = $relationshipTypes->firstWhere('fromAssetTypeId', config('pureservice.'.$type.'.asset_type_id'))):
+                config(['pureservice.'.$type.'.relationship_type_id' => $relationshipType['id']]);
+            endif;
+        endforeach;
+        $this->up = true;
     }
 
     /**

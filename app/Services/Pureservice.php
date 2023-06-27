@@ -193,7 +193,7 @@ class Pureservice
      *  config('pureservice.mobile.properties')
      * @return void
      */
-    protected function fetchTypeIds() {
+    public function fetchTypeIds() {
         // Henter ut relasjonstyper allerede i bruk i basen
         $uri = '/relationship/?include=type&filter=toAssetId!=null AND fromUserId!=null AND solvingRelationship == false';
         $result = $this->apiGet($uri);
