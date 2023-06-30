@@ -134,7 +134,7 @@ class SvarInn2Pureservice extends Command {
                 $filesToInclude = [];
                 if ( $fileEnding == 'zip'):
                     // Må pakke ut zip-fil til enkeltfiler
-                    $this->line($this->l3.'Pakker ut zip-fil');
+                    $this->line($this->l3.'Pakker ut zip-filen \''.$decrypted.'\'');
                     $tmpPath = Storage::path(config('svarinn.dekrypt_path').'/'.$message['id']);
                     //mkdir($tmpPath, 0770, true);
                     $zipFile = new ZipArchive();
