@@ -126,15 +126,19 @@ class SvarInn2Pureservice extends Command {
                 //$fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
                 $decrypted = $this->decryptFile($fileName);
-                $fileEnding = Str::afterLast(Storage::path($fileName),'.');
+                if (!$decrypted):
+                    $this->error('Fila ble ikke dekryptert.');
+                    return Command::FAILURE;
+                endif;
+                $fileEnding = Str::lower(Str::afterLast($decrypted, '.'));
                 $filesToInclude = [];
-                if ( Str::lower($fileEnding) == 'zip'):
+                if ( $fileEnding == 'zip'):
                     // Må pakke ut zip-fil til enkeltfiler
                     $this->line($this->l3.'Pakker ut zip-fil');
-                    $tmpPath = Storage::path(config('svarinn.temp_path').'/'.$message['id']);
+                    $tmpPath = Storage::path(config('svarinn.dekrypt_path').'/'.$message['id']);
                     //mkdir($tmpPath, 0770, true);
                     $zipFile = new ZipArchive();
-                    $zipFile->open(Storage::path($fileName), ZipArchive::RDONLY);
+                    $zipFile->open(Storage::path($decrypted), ZipArchive::RDONLY);
                     $zipFile->extractTo($tmpPath);
                     $zipFile->close();
                     foreach (new \DirectoryIterator($tmpPath) as $fileInfo):
@@ -245,7 +249,7 @@ class SvarInn2Pureservice extends Command {
      * @param  string   $fileName    Filnavnet til den krypterte fila
      * @return int      $returnValue Verdi som angir resultatkoden fra dekrypteringen
      */
-    protected function decryptFile($fileName): int {
+    protected function decryptFile($fileName): string|false {
         if (Storage::exists($fileName)):
             $dekrypt = system (
                 'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . Storage::path(config('svarinn.privatekey_path')).
@@ -260,7 +264,8 @@ class SvarInn2Pureservice extends Command {
         else:
             $this->error($this->l3.'Fant ikke fila som skulle dekrypteres ['.$fileName.']');
             $exitCode = 2;
+            return false;
         endif;
-        return $exitCode;
+        return config('svarinn.dekrypt_path').'/'.Str::afterLast($fileName, '/');
     }
 }
