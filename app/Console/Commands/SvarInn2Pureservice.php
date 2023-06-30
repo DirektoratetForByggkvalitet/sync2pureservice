@@ -177,11 +177,11 @@ class SvarInn2Pureservice extends Command {
     protected function checkList(): bool {
         $rv = true;
         $this->info($this->ts().'Sjekker oppsettet…');
-        if (config('svarinn.username') == null):
+        if ($this->myConf('api.user') == null):
             $this->error('Brukernavn for SvarUt Mottakservice er ikke satt');
             $rv = false;
         endif;
-        if (config('svarinn.secret') == null):
+        if ($this->myConf('api.password') == null):
             $this->error('Passord for SvarUt Mottakservice er ikke satt');
             $rv = false;
         endif;
@@ -222,46 +222,11 @@ class SvarInn2Pureservice extends Command {
         endif;
 
         // Sikrer at mapper finnes
-        is_dir(config('svarinn.temp_path')) ? true : mkdir(config('svarinn.temp_path'), 0770, true);
-        is_dir(config('svarinn.dekrypt_path')) ? true : mkdir(config('svarinn.dekrypt_path'), 0770, true);
-        is_dir(config('svarinn.download_path')) ? true : mkdir(config('svarinn.download_path'), 0770, true);
+        //is_dir(config('svarinn.temp_path')) ? true : mkdir(config('svarinn.temp_path'), 0770, true);
+        //is_dir(config('svarinn.dekrypt_path')) ? true : mkdir(config('svarinn.dekrypt_path'), 0770, true);
+        //is_dir(config('svarinn.download_path')) ? true : mkdir(config('svarinn.download_path'), 0770, true);
     }
 
-    protected function getOptions(): array {
-        return [
-            'headers' => [
-                'Accept-Encoding' => 'gzip, deflate, br',
-                'Accept' => '*/*',
-            ],
-            'stream' => true,
-            'auth' => [
-                config('svarinn.username'),
-                config('svarinn.secret')
-            ],
-        ];
-    }
-
-    /**
-     * Returnerer en GuzzleHttp-klient
-     */
-    protected function getClient(): GuzzleClient {
-        return new GuzzleClient([
-            'allow_redirects' => true,
-        ]);
-    }
-    /**
-     * Henter ned forsendelsesfilen som er oppgitt i meldingen
-     */
-    protected function hentForsendelsefil($uri): string {
-
-        $fileResponse = $this->getClient()->get($uri, $this->getOptions());
-
-        $contentType = $fileResponse->getHeader('content-type');
-        // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
-        $fileName = preg_replace('/.*\"(.*)"/','$1', $fileResponse->getHeader('content-disposition')[0]);
-        file_put_contents(config('svarinn.download_path').'/'.$fileName, $fileResponse->getBody()->getContents());
-        return $fileName;
-    }
 
     /**
      * Dekrypterer fil fra SvarUt
