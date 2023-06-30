@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class Tools {
     public const L1 = '';
@@ -25,5 +27,16 @@ class Tools {
 
     public static function l3(): string {
         return self::L3;
+    }
+
+    public static function getPath (string $path, string $fileName = null): string {
+        //
+        if (Str::startsWith($path, '/')) return $fileName ? $path.'/'.$fileName : $path;
+
+        if ($fileName):
+            return Storage::path($path, $fileName);
+        else:
+            return Storage::path($path);
+        endif;
     }
 }

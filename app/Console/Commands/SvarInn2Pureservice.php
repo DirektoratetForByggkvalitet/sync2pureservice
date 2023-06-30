@@ -121,13 +121,13 @@ class SvarInn2Pureservice extends Command {
                 //$fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
                 $decrypted = $this->decryptFile($fileName);
-                $fileEnding = preg_replace('/.*\.(.*)/', '$1', $fileName);
+                $fileEnding = preg_replace('/.*\.(.*)/', '$1', Storage::path($fileName));
                 $filesToInclude = [];
-                if ( $fileEnding == 'zip' || $fileEnding == 'ZIP' ):
+                if ( Str::lower($fileEnding) == 'zip'):
                     // Må pakke ut zip-fil til enkeltfiler
                     $this->line($this->l3.'Pakker ut zip-fil');
                     $tmpPath = Storage::path(config('svarinn.temp_path').'/'.$message['id']);
-                    mkdir($tmpPath, 0770, true);
+                    //mkdir($tmpPath, 0770, true);
                     $zipFile = new ZipArchive();
                     $zipFile->open(Storage::path($fileName), ZipArchive::RDONLY);
                     $zipFile->extractTo($tmpPath);
@@ -241,11 +241,11 @@ class SvarInn2Pureservice extends Command {
      * @return int      $returnValue Verdi som angir resultatkoden fra dekrypteringen
      */
     protected function decryptFile($fileName): int {
-        if (file_exists(config('svarinn.download_path').'/'.$fileName)):
-            $dekrypt = system(
+        if (Storage::exists($fileName)):
+            $dekrypt = system (
                 'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . config('svarinn.privatekey_path').
-                ' -s ' . config('svarinn.download_path').'/'.$fileName .
-                ' -t '.config('svarinn.dekrypt_path'),
+                ' -s ' . Storage::path($fileName) .
+                ' -t '. Storage::path(config('svarinn.dekrypt_path')),
                 $exitCode
             );
             if ($exitCode != 0):
