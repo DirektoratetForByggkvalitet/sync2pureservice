@@ -3,8 +3,10 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{JamfPro, PSApi};
+use App\Services\{JamfPro, PsAssets, Tools};
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\{Arr, Str};
 
 
 class Jamf2Pureservice extends Command {
@@ -18,12 +20,9 @@ class Jamf2Pureservice extends Command {
     protected $version = '2.0';
 
     protected JamfPro $jpsApi;
-    protected PsApi $psApi;
+    protected PsAssets $psApi;
     protected $jamfDevices;
     protected $psDevices;
-    protected $l1 = '';
-    protected $l2 = '> ';
-    protected $l3 = '  ';
     protected $start;
     protected $jamfCount;
     protected $psCount;
@@ -44,69 +43,81 @@ class Jamf2Pureservice extends Command {
         $this->line($this->description);
         $this->newLine();
 
-        $this->line($this->l2.'Logger inn på Jamf Pro');
+        $this->line(Tools::l2().'Logger inn på Jamf Pro');
         $this->jpsApi = new JamfPro();
         if ($this->jpsApi->up):
-            $this->line($this->l3.'Jamf Pro er tilkoblet og klar til bruk');
+            $this->line(Tools::L3.'Jamf Pro er tilkoblet og klar til bruk');
         else:
-            $this->error($this->l3.'Jamf Pro er nede eller feilkonfigurert');
+            $this->error(Tools::L3.'Jamf Pro er nede eller feilkonfigurert');
             return Command::FAILURE;
         endif;
 
         $this->newLine();
 
-        $this->line($this->l2.'Logger inn på Pureservice');
-        $this->psApi = new PsApi();
-        $this->psApi->fetchTypeIds();
+        $this->line(Tools::L2.'Logger inn på Pureservice');
+        $this->psApi = new PsAssets();
         if ($this->psApi->up):
-            $this->line($this->l3.'Pureservice er tilkoblet og svarer normalt');
+            $this->line(Tools::L3.'Pureservice er tilkoblet og svarer normalt');
         else:
-            $this->error($this->l3.'Pureservice er nede eller feilkonfigurert');
+            $this->error(Tools::L3.'Pureservice er nede eller feilkonfigurert');
             return Command::FAILURE;
         endif;
 
+        $this->newLine();
+
 
         $time1 = microtime(true);
-        $this->info($this->ts().$this->l1.'Henter enheter fra Pureservice');
-        $this->psDevices = collect($this->psApi->getAllAssets());
-        $this->psCount = count($this->psDevices);
-        $this->line($this->l3.$this->psCount.' enheter totalt ('.round((microtime(true) - $time1), 2).' sek)');
+        $this->info(Tools::L1.'1. Henter enheter fra Jamf Pro');
+        $this->jamfDevices = Cache::remember('jamfDevices', 3600, function() {
+            return collect($this->getJamfAssetsAsPsAssets());
+        });
+        $this->jamfCount = $this->jamfDevices->count();
+        $this->line(Tools::L3.$this->jamfCount.' enheter totalt ('.round((microtime(true) - $time1), 2).' sek)');
 
         $this->newLine();
 
         $time1 = microtime(true);
-        $this->info($this->ts().$this->l1.'Henter enheter fra Jamf Pro');
-        $this->jamfDevices = collect($this->getJamfAssetsAsPsAssets());
-        $this->line($this->l3.$this->jamfCount.' enheter totalt ('.round((microtime(true) - $time1), 2).' sek)');
+        $this->info(Tools::L1.'2. Henter enheter fra Pureservice');
+        $this->psDevices = Cache::remember('psDevices', 3600, function() {
+            return collect($this->psApi->getAllAssets());
+        });
+        $this->psCount = count($this->psDevices);
+        $this->line(Tools::L3.$this->psCount.' enheter totalt ('.round((microtime(true) - $time1), 2).' sek)');
         unset($time1);
+        $this->newLine();
+
 
         // Looper gjennom Jamf-enheter for å oppdatere eller legge dem til i Pureservice
-        $this->info($this->ts().$this->l1.'Starter behandling av enheter fra Jamf Pro');
+        $this->info(Tools::L1.'3. Starter behandling av enheter fra Jamf Pro');
         $itemno = 0;
         foreach ($this->jamfDevices->lazy() as $jamfDev):
             $itemno++;
             $time1 = microtime(true);
             $fn = config('pureservice.'.$jamfDev['type'].'.properties');
             $this->line('');
-            $this->line($this->l2.$itemno.'/'.$this->jamfCount.' '.$jamfDev[$fn['serial']].' - '.$jamfDev[$fn['name']]);
-            $psDev = $this->psDevices->firstWhere('links.unique.id', $jamfDev[$fn['serial']]);
+            $this->line(Tools::L2.$itemno.'/'.$this->jamfCount.' '.$jamfDev[$fn['serial']].' - '.$jamfDev[$fn['name']]);
+            //$psDev = $this->psDevices->firstWhere('uniqueId', $jamfDev[$fn['serial']]);
+            // Sjekker om enheten finnes i Pureservice
+            $psDev = $this->psApi->getAssetByUniqueId($jamfDev[$fn['serial']], $jamfDev['type']);
+            //dd($psDev);
             $typeName = config('pureservice.'.$jamfDev['type'].'.displayName').'en';
 
-            if ($psDev != null):
+            if ($psDev):
                 $psDevId = $psDev['id'];
-                $this->line($this->l3.$typeName.' finnes i Pureservice fra før. Oppdaterer med data fra Jamf Pro...');
-                if ($ok = $this->psApi->updateAsset($jamfDev, $psDev)):
-                    $this->line($this->l3.'  Oppdaterte '.$typeName.' i Pureservice');
+                $this->line(Tools::L3.$typeName.' finnes i Pureservice fra før. Oppdaterer med data fra Jamf Pro...');
+                if ($result = $this->psApi->updateAssetFromJamf($jamfDev, $psDev)):
+                    $this->line(Tools::L3.'  Oppdaterte '.$typeName.' i Pureservice');
                 else:
-                    $this->error($this->l3.'  Det oppsto en feil under oppdatering...');
+                    dd($result);
+                    $this->error(Tools::L3.'  Det oppsto en feil under oppdatering...');
                 endif;
 
             else:
-                $this->line($this->l3.$typeName.' finnes ikke i Pureservice fra før. Legger til...');
+                $this->line(Tools::L3.$typeName.' finnes ikke i Pureservice fra før. Legger til...');
                 if ($psDevId = $this->psApi->createAsset($jamfDev)):
-                    $this->line($this->l3.'  Lagt til med id='.$psDevId);
+                    $this->line(Tools::L3.'  Lagt til med id='.$psDevId);
                 else:
-                    $this->error($this->l3.'Det oppsto en feil under innlegging...');
+                    $this->error(Tools::L3.'Det oppsto en feil under innlegging...');
                 endif;
             endif;
             if (count($jamfDev['usernames']) > 0):
@@ -117,73 +128,67 @@ class Jamf2Pureservice extends Command {
                         $doLink = false;
                     else:
                         // Fjerner eksisterende brukerkoblinger
-                        $this->line($this->l3.'Fjerner brukerkoblinger til enheten');
+                        $this->line(Tools::L3.'Fjerner brukerkoblinger til enheten');
                         $this->removeRelationships($psDevId);
                     endif;
                 endif;
 
                 if ($doLink):
-                    $this->line($this->l3.'Kobler '.$typeName.' ('.$psDevId.') til brukerkontoen '.implode(', ', $jamfDev['usernames']));
+                    $this->line(Tools::L3.'Kobler '.Str::lower($typeName).' ('.$psDevId.') til brukerkontoen '.implode(', ', $jamfDev['usernames']));
                     if ($this->psApi->relateAssetToUsernames($psDevId, $jamfDev['usernames'], $jamfDev['type'])):
-                        $this->line($this->l3.'  Kobling fullført');
+                        $this->line(Tools::L3.'  Kobling fullført');
                     else:
-                        $this->info($this->l3.'  Ingen kobling, brukeren finnes ikke i Pureservice');
+                        $this->info(Tools::L3.'  Ingen kobling, kanskje brukeren ikke finnes i Pureservice?');
                     endif;
                 else:
-                    $this->line($this->l3.'Brukerkobling trenger ikke oppdatering');
+                    $this->line(Tools::L3.'Brukerkobling trenger ikke oppdatering');
                 endif;
             else:
-                $this->line($this->l3.'Enheten er ikke koblet til noen bruker');
+                $this->line(Tools::L3.'Enheten er ikke koblet til noen bruker');
             endif;
             $elapsed = microtime(true) - $time1;
-            $this->line($this->l3.'Behandlingstid: '.round($elapsed, 2).' sek');
+            $this->line(Tools::L3.'Behandlingstid: '.round($elapsed, 2).' sek');
 
         endforeach;
 
         $this->newLine();
         // Looper gjennom Pureservice-enheter for å evt. endre status på enheter som ikke lenger finnes i Jamf Pro
-        $this->info($this->ts().$this->l1.'Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
+        $this->info(Tools::L1.'4. Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
 
         foreach ($this->psDevices->lazy() as $dev):
             $fn = config('pureservice.'.$dev['type'].'.properties');
             if (!$this->jamfDevices->contains($fn['serial'],$dev['uniqueId'])):
-                $this->line($this->l2.$dev['uniqueId'].' - '.$dev[$fn['name']]);
+                $this->line(Tools::L2.$dev['uniqueId'].' - '.$dev[$fn['name']]);
                 $typeName = config('pureservice.'.$dev['type'].'.displayName').'en';
-                $this->line($this->l3.$typeName.' er ikke registrert i Jamf Pro');
+                $this->line(Tools::L3.$typeName.' er ikke registrert i Jamf Pro');
                 if (
                     $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_deployed') ||
                     $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_phaseOut') ||
                     $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_inStorage')
                 ):
                     if ($dev['usernames'] != []):
-                        $this->line($this->l3.$typeName.' er registrert på '.implode(', ', $dev['usernames']));
-                        $this->line($this->l3.'Fjerner brukerkobling(er)');
+                        $this->line(Tools::L3.$typeName.' er registrert på '.implode(', ', $dev['usernames']));
+                        $this->line(Tools::L3.'Fjerner brukerkobling(er)');
                         $this->removeRelationships($dev['id']);
                     endif;
-                    $this->line($this->l3.'Endrer status på enheten i Pureservice');
                     $newStatusId = $this->psApi->calculateStatus($dev, true);
-                    if ($this->psApi->updateAssetDetail($dev['id'], ['statusId' => $newStatusId])):
-                        $this->line($this->l3.'Status oppdatert');
-                    else:
-                        $this->error($this->l3.'Fikk ikke endret status');
-                    endif;
-                    $this->line('');
+                    $this->psApi->changeAssetStatus($dev, $newStatusId);
                 endif;
-                if ($dev[$fn['jamfUrl']] != null):
-                    if ($this->psApi->updateAssetDetail($dev['id'], [$fn['jamfUrl'] => null])):
-                        $this->line($this->l3.'Tok vekk Jamf-URL');
-                    else:
-                        $this->line($this->l3.'Fikk ikke fjernet Jamf-URL');
-                    endif;
+                if ($dev[$fn['jamfUrl']] != null) $dev[$fn['jamfUrl']];
+                if ($this->psApi->updateAsset($dev)):
+                    $this->line(Tools::L3.'Enheten er oppdatert');
+                else:
+                    $this->error(Tools::L3.'Fikk ikke oppdatert enheten');
                 endif;
-            endif;
+                $this->newLine();
+           endif;
         endforeach;
 
         // Oppsummering
         $this->newLine();
         $this->info($this->ts().'Synkronisering ferdig');
-        $this->line($this->l3.$this->jamfCount.' enheter fra Jamf Pro ble synkroniserte med '.$this->psCount.' enheter i Pureservice.');
-        $this->line($this->l3.'Operasjonen ble fullført på '.round(microtime(true) - $this->start, 2).' sekunder');
+        $this->line(Tools::L3.$this->jamfCount.' enheter fra Jamf Pro ble synkroniserte med '.$this->psCount.' enheter i Pureservice.');
+        $this->line(Tools::L3.'Operasjonen ble fullført på '.round(microtime(true) - $this->start, 2).' sekunder');
 
         return Command::SUCCESS;
 
@@ -206,7 +211,7 @@ class Jamf2Pureservice extends Command {
     public function getJamfAssetsAsPsAssets() {
         $psAssets = [];
         $computers = $this->jpsApi->getJamfComputers();
-        $this->line($this->l3.count($computers).' datamaskiner');
+        //$this->line(Tools::L3.count($computers).' datamaskiner');
         foreach ($computers as $mac):
             // Skipper enheten hvis den ikke har serienummer
             if ($mac['hardware']['serialNumber'] == null || $mac['hardware']['serialNumber'] == '') continue;
@@ -248,7 +253,7 @@ class Jamf2Pureservice extends Command {
         unset($computers);
 
         $devices = $this->jpsApi->getJamfMobileDevices();
-        $this->line($this->l3.count($devices).' mobilenheter');
+        //$this->line(Tools::L3.count($devices).' mobilenheter');
         foreach ($devices as $dev):
             // Skipper enheten hvis den ikke har serienummer
             if ($dev['serialNumber'] == null || $dev['serialNumber'] == '') continue;
@@ -284,7 +289,6 @@ class Jamf2Pureservice extends Command {
             unset($psAsset);
         endforeach;
         unset($devices);
-        $this->jamfCount = count($psAssets);
         return $psAssets;
     }
 

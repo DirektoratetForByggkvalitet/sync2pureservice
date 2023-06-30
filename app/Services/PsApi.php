@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Storage;
  */
 class PsApi extends API {
     protected array $ticketOptions;
-    protected bool $up = false;
     protected array $statuses;
 
     public function __construct() {
@@ -75,69 +74,17 @@ class PsApi extends API {
         return null; // Hvis ikke funnet
     }
 
-    /** fetchTypeIds
-     * Henter inn IDer til forskjellige innholdstyper.
-     * Befolker følgende config-verdier med verdier fra Pureservice:
-     *  config('pureservice.computer.asset_type_id')
-     *  config('pureservice.computer.className')
-     *  config('pureservice.computer.status')
-     *  config('pureservice.computer.relationship_type_id')
-     *  config('pureservice.computer.properties')
+    /**
+     * Sletter en relasjon i Pureservice
+     * @param   string  $relationshipId     Relasjonen sin ID
      *
-     *  config('pureservice.mobile.asset_type_id')
-     *  config('pureservice.mobile.className')
-     *  config('pureservice.mobile.status')
-     *  config('pureservice.mobile.relationship_type_id')
-     *  config('pureservice.mobile.properties')
-     * @return void
+     * @return  bool    angir om slettingen lyktes eller ikke
      */
-    public function fetchTypeIds() {
-        // Henter ut relasjonstyper allerede i bruk i basen
-        $uri = '/relationship/';
-        $query = [
-            'include' => 'type',
-            'filter' => 'toAssetId!=null AND fromUserId!=null AND solvingRelationship == false'
-        ];
-        $result = $this->apiQuery($uri, $query);
-        $relationshipTypes = collect($result['linked']['relationshiptypes']);
-        $this->statuses = [];
-        foreach(['computer', 'mobile'] as $type):
-            // Henter ut ressurstypen basert på displayName
-            $uri = '/assettype/';
-            $query = [
-                'filter' => 'name.equals("'.$this->myConf($type.'.displayName').'")',
-                'include' => 'fields,statuses'
-            ];
-            $result = $this->apiQuery($uri, $query);
-            if (count($result['assettypes']) > 0):
-                // setter asset_type_id og className i config basert på resultatet
-                config(['pureservice.'.$type.'.asset_type_id' => $result['assettypes'][0]['id']]);
-                config(['pureservice.'.$type.'.className' => '_'.config('pureservice.'.$type.'.asset_type_id').'_Assets_'.config('pureservice.'.$type.'.displayName')]);
-
-                // Henter ut status-IDer
-                $raw_statuses = collect($result['linked']['assetstatuses']);
-                $this->statuses[$type] = [];
-                foreach (config('pureservice.'.$type.'.status') as $key=>$value):
-                    $raw_status = $raw_statuses->firstWhere('name', $value);
-                    $statusId = $raw_status != null ? $raw_status['id'] : null;
-                    $this->statuses[$type][$key] = $statusId;
-                endforeach;
-            endif;
-
-            // Finner propertyName for feltnavnene definert i config('pureservice.'.$type.'.fields')
-            $properties = collect($result['linked']['assettypefields']);
-            foreach (config('pureservice.'.$type.'.fields') as $key => $fieldName):
-                $property = $properties->firstWhere('name', $fieldName);
-                config(['pureservice.'.$type.'.properties.'.$key => lcfirst($property['propertyName'])]);
-            endforeach;
-
-            // Finner relasjonstypens ID for brukerkoblingen
-            if ($relationshipType = $relationshipTypes->firstWhere('fromAssetTypeId', config('pureservice.'.$type.'.asset_type_id'))):
-                config(['pureservice.'.$type.'.relationship_type_id' => $relationshipType['id']]);
-            endif;
-        endforeach;
-        $this->up = true;
+    public function deleteRelation($relationshipId) {
+        return $this->apiDelete('/relationship/'.$relationshipId.'/delete');
     }
+
+
 
     /**
      * Henter ned standardinnstillinger for å opprette saker i PS
@@ -162,54 +109,6 @@ class PsApi extends API {
         return $this->ticketOptions;
     }
 
-    /**
-     * Henter alle datamaskin- og mobilenhet-ressurser fra Pureservice
-     * @return  assoc_array     Array over ressursene
-     */
-    public function getAllAssets(): array {
-        $totalAssets = [];
-        foreach (['computer', 'mobile'] as $type):
-            $uri = '/asset/';
-            $query = [
-                'filter' => 'typeID=='.$this->myConf($type.'.asset_type_id'),
-            ];
-            $assets = $this->apiQuery($uri, $query)['assets'];
-            foreach ($assets as $asset):
-                $asset['type'] = $type;
-                $asset['usernames'] = $this->getAssetRelatedUsernames($asset['id']);
-                $totalAssets[] = $asset;
-            endforeach;
-        endforeach;
-        return $totalAssets;
-    }
-
-    public function getAssetRelatedUsernames(int $assetId): array {
-        $relations_full = $this->getAssetRelationships($assetId);
-
-        if (count($relations_full['relationships']) == 0) return [];
-
-        $linkedUsers = &$relations_full['linked']['users'];
-        $linkedEmails = collect($relations_full['linked']['emailaddresses']);
-        $usernames = [];
-        foreach($linkedUsers as $user):
-            $usernames[] = $linkedEmails->firstWhere('id', $user['emailAddressId'])['email'];
-        endforeach;
-        return $usernames;
-    }
-    /**
-     * Henter relasjoner for en gitt ressurs
-     * @param string    $assetId    Ressursens ID
-     *
-     * @return assoc_array  Array over relasjonene knyttet til ressursen
-     */
-    public function getAssetRelationships($assetId) {
-        $uri = '/relationship/' . $assetId .'/fromAsset';
-        $query = [
-            'include' => 'type,type.relationshipTypeGroup,toUser,toUser.emailaddress',
-            'filter' => 'toUserId != NULL'
-        ];
-        return $this->apiQuery($uri, $query);
-    }
 
 
     /**
@@ -328,4 +227,22 @@ class PsApi extends API {
         $uri .= '?include=communications,communications.attachments,communications.sender,recipientsCc,communications.recipients,communications.recipientsCc';
         return $this->apiPut($uri, $body);
     }
+
+    /**
+     * Finner en bruker basert på e-postadressen.
+     * Siden én bruker kan ha flere e-postadresser er det viktig at man søker etter e-postadresse-objekter,
+     * og inkluderer brukeren, fremfor å søke etter brukeren.
+     */
+    public function findUser($email): array|false {
+        $uri = '/emailaddress/';
+        $query = [
+            'include' => 'user',
+            'filter' => 'email == "'.$email.'"',
+        ];
+        if ($result = $this->apiQuery($uri, $query)):
+            if (count($result['emailaddresses']) > 0) return $result['linked']['users'][0];
+        endif;
+        return false;
+    }
+
 }

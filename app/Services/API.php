@@ -158,8 +158,7 @@ class API {
         $accept = $this->myConf('api.accept');
         $contentType = $contentType ? $contentType : $accept;
         $response = $this->prepRequest($accept, $contentType)->patch($uri, $body);
-        if ($returnBool) return $response->successful();
-        return $response;
+        return $returnBool ? $response->successful() : $response;
     }
 
     /**
