@@ -6,6 +6,8 @@ definitions:
     - step: &forberedeSvarInn
         name: Forbereder kjøring
         image: atlassian/default-image:3
+        caches:
+          - docker
         clone:
           enabled: false
         artifacts:
@@ -43,6 +45,8 @@ pipelines:
           name: Bygger et docker-image for kjøring av sync2pureservice
           image: atlassian/default-image:4
           services:
+            - docker
+          caches:
             - docker
           script:
             - echo ${DOCKER_TOKEN} | docker login --username ${DOCKER_USER} --password-stdin
