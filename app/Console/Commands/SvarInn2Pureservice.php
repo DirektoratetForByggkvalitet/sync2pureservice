@@ -111,7 +111,12 @@ class SvarInn2Pureservice extends Command {
                 $fileName = config('svarinn.temp_path').'/'.$message['id'].'/forsendelse.zip';
                 Storage::put(
                     $fileName,
-                    Http::withBasicAuth(config('svarinn.api.user'), config('svarinn.api.password'))->get($message['downloadUrl'])->body()
+                    Http::withBasicAuth(config('svarinn.api.user'), config('svarinn.api.password'))
+                        ->timeout(600)
+                        ->connectTimeout(5)
+                        ->retry(3, 1000)
+                        ->get($message['downloadUrl'])
+                        ->body()
                 );
                 //$fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
