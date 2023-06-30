@@ -3,11 +3,12 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{Pureservice, SvarInn, ExcelLookup};
+use App\Services\{Pureservice, SvarInn, ExcelLookup, Tools};
 use Carbon\Carbon;
 use GuzzleHttp\Client as GuzzleClient;
 use ZipArchive;
 use Illuminate\Support\{Arr, Str};
+use Illuminate\Support\Facades\{Storage, Http};
 
 class SvarInn2Pureservice extends Command {
     protected $l1 = '';
@@ -24,7 +25,7 @@ class SvarInn2Pureservice extends Command {
      */
     protected $signature = 'pureservice:svarinnMottak';
 
-    protected $version = '1.0';
+    protected $version = '2.0';
 
     /**
      * The console command description.
@@ -57,10 +58,10 @@ class SvarInn2Pureservice extends Command {
         $this->svarInn = new SvarInn();
 
         if (is_bool(config('svarinn.dryrun'))):
-            $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
+            $this->info(Tools::L2.'Ser etter nye meldinger i SvarInn');
             $msgs = $this->svarInn->sjekkForMeldinger();
         else:
-            $this->info($this->l2.'Laster inn eksempelmeldinger fra JSON');
+            $this->info(Tools::L2.'Laster inn eksempelmeldinger fra JSON');
             $msgs = json_decode(file_get_contents(storage_path(config('svarinn.dryrun'))), true);
         endif;
 
@@ -73,7 +74,7 @@ class SvarInn2Pureservice extends Command {
             foreach ($msgs as $message):
                 $i++;
 
-                $this->info($this->l2.$i.'/'.$msgCount.': '.$message['tittel']);
+                $this->info(Tools::L2.$i.'/'.$msgCount.': '.$message['tittel']);
                 $this->line($this->l3.'ID: '.$message['id']);
                 $this->line($this->l3.'Tittel: '.$message['tittel']);
                 $this->line($this->l3.'Avsender: \''. Arr::get($message, 'svarSendesTil.navn') .'\', '.Arr::get($message, 'svarSendesTil.orgnr'));
@@ -107,7 +108,13 @@ class SvarInn2Pureservice extends Command {
                     endif;
                 endif;
                 $this->line($this->l3.'Laster ned forsendelsesfilen');
-                $fileName = $this->hentForsendelsefil($message['downloadUrl']);
+                $fileName = config('svarinn.temp_path').'/'.$message['id'].'/forsendelse.zip';
+                //$response = Http::withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'))->get($message['downloadUrl']);
+                Storage::put(
+                    $fileName,
+                    Http::withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'))->get($message['downloadUrl'])->body()
+                );
+                //$fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
                 $decrypted = $this->decryptFile($fileName);
                 $fileEnding = preg_replace('/.*\.(.*)/', '$1', $fileName);
@@ -115,10 +122,10 @@ class SvarInn2Pureservice extends Command {
                 if ( $fileEnding == 'zip' || $fileEnding == 'ZIP' ):
                     // Må pakke ut zip-fil til enkeltfiler
                     $this->line($this->l3.'Pakker ut zip-fil');
-                    $tmpPath = config('svarinn.temp_path').'/'.$message['id'];
+                    $tmpPath = Storage::path(config('svarinn.temp_path').'/'.$message['id']);
                     mkdir($tmpPath, 0770, true);
                     $zipFile = new ZipArchive();
-                    $zipFile->open(config('svarinn.dekrypt_path').'/'.$fileName, ZipArchive::RDONLY);
+                    $zipFile->open(Storage::path($fileName), ZipArchive::RDONLY);
                     $zipFile->extractTo($tmpPath);
                     $zipFile->close();
                     foreach (new \DirectoryIterator($tmpPath) as $fileInfo):
@@ -150,12 +157,12 @@ class SvarInn2Pureservice extends Command {
 
                 else:
                     $this->error($this->l3.'Feil under oppretting av sak i Pureservice');
-                    if (config('svarinn.dryrun') == false) $this->forsendelseFeilet($message['id']);
+                    if (config('svarinn.dryrun') == false) $this->svarInn->settForsendelseFeilet($message['id']);
                 endif;
 
             endforeach;
         else:
-            $this->line($this->l2.'Ingen meldinger å hente');
+            $this->line(Tools::L2.'Ingen meldinger å hente');
         endif;
 
         $this->info('Fullført på '. round(microtime(true) - $this->start, 2).' sekunder');
@@ -246,6 +253,7 @@ class SvarInn2Pureservice extends Command {
      * Henter ned forsendelsesfilen som er oppgitt i meldingen
      */
     protected function hentForsendelsefil($uri): string {
+
         $fileResponse = $this->getClient()->get($uri, $this->getOptions());
 
         $contentType = $fileResponse->getHeader('content-type');
@@ -253,39 +261,6 @@ class SvarInn2Pureservice extends Command {
         $fileName = preg_replace('/.*\"(.*)"/','$1', $fileResponse->getHeader('content-disposition')[0]);
         file_put_contents(config('svarinn.download_path').'/'.$fileName, $fileResponse->getBody()->getContents());
         return $fileName;
-    }
-
-    /**
-     * Kvitterer for at meldingen er mottatt
-     * @param string    $id     Meldingens ID i SvarUt
-     */
-    protected function kvitterForMottak($id): bool {
-        $uri = config('svarinn.base_uri').config('svarinn.urlSettMottatt').'/'.$id;
-
-        $result = $this->getClient()->post($uri, $this->getOptions());
-
-        if ($result->getStatusCode() == '200') return true;
-
-        return false;
-    }
-
-    /**
-     * Merker en forsendelse som feilet
-     */
-    protected function forsendelseFeilet($id, $permanent = false, $melding = null): bool {
-        $uri = config('svarinn.base_uri').config('svarinn.urlMottakFeilet').'/'.$id;
-
-        $melding = $melding == null ? 'En feil oppsto under innhenting.': $melding;
-        $body = [
-            'feilmelding' => $melding,
-            'permanent' => $permanent,
-        ];
-        $options = $this->getOptions();
-        $options['json'] = $body;
-        $result = $this->getClient()->post($uri, $options);
-        if ($result->getStatusCode() == '200') return true;
-
-        return false;
     }
 
     /**

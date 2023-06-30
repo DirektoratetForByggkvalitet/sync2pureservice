@@ -5,6 +5,9 @@ namespace App\Services;
 use Carbon\Carbon;
 
 class Tools {
+    public const L1 = '';
+    public const L2 = '> ';
+    public const L3 = '  ';
     /**
      * Returnerer formatert tidspunkt til logging
      */
@@ -13,14 +16,14 @@ class Tools {
     }
 
     public static function l1(): string {
-        return '';
+        return self::L1;
     }
 
     public static function l2(): string {
-        return '> ';
+        return self::L2;
     }
 
     public static function l3(): string {
-        return '  ';
+        return self::L3;
     }
 }
