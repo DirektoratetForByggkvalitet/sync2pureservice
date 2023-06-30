@@ -177,11 +177,11 @@ class SvarInn2Pureservice extends Command {
     protected function checkList(): bool {
         $rv = true;
         $this->info($this->ts().'Sjekker oppsettet…');
-        if ($this->myConf('api.user') == null):
+        if (config('svarinn.api.user') == null):
             $this->error('Brukernavn for SvarUt Mottakservice er ikke satt');
             $rv = false;
         endif;
-        if ($this->myConf('api.password') == null):
+        if (config('svarinn.api.password') == null):
             $this->error('Passord for SvarUt Mottakservice er ikke satt');
             $rv = false;
         endif;
