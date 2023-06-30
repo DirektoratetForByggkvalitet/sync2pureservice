@@ -113,21 +113,20 @@ class SvarInn2Pureservice extends Command {
                     ->timeout(600)
                     ->connectTimeout(5)
                     ->retry(3, 1000)
-                    ->get($message['downloadUrl'])
-                    ->toPsrResponse();
-                $fileMimeType = Str::before($response->getHeader('content-type'), ';');
-                $file = trim(Str::after($response->getHeader('content-disposition'), "="), '\'" ');
+                    ->get($message['downloadUrl']);
+                $fileMimeType = Str::before($response->header('content-type'), ';');
+                $file = trim(Str::after($response->header('content-disposition'), "="), '\'" ');
                 $fileName = config('svarinn.temp_path').'/'.$message['id'].'/'.$file;
                 Storage::put(
                     $fileName,
-                    $response->getBody()
+                    $response->toPsrResponse()->getBody()->getContents()
                 );
                 unset($response);
                 $this->line(Tools::L3.'Lastet ned forsendelsesfil av typen '.$fileMimeType.' på '. Storage::fileSize($fileName).' bytes');
                 //$fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
                 $decrypted = $this->decryptFile($fileName);
-                $fileEnding = preg_replace('/.*\.(.*)/', '$1', Storage::path($fileName));
+                $fileEnding = Str::afterLast(Storage::path($fileName),'.');
                 $filesToInclude = [];
                 if ( Str::lower($fileEnding) == 'zip'):
                     // Må pakke ut zip-fil til enkeltfiler
