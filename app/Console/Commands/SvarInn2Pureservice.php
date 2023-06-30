@@ -190,7 +190,7 @@ class SvarInn2Pureservice extends Command {
             $this->error('Passord for SvarUt Mottakservice er ikke satt');
             $rv = false;
         endif;
-        if (Storage::exists(config('svarinn.privatekey_path'))):
+        if (!Storage::exists(config('svarinn.privatekey_path'))):
             $this->error('Privatnøkkelen for dekryptering er ikke tilgjengelig. Kan ikke lese \''.config('svarinn.privatekey_path').'\'');
             $rv = false;
         endif;
