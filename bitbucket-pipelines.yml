@@ -8,8 +8,6 @@ definitions:
         image: atlassian/default-image:3
         caches:
           - docker
-        runs-on:
-          - "self.hosted"
         clone:
           enabled: false
         artifacts:
