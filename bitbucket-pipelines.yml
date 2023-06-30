@@ -66,11 +66,14 @@ pipelines:
             - cp .env.example .env
             - composer install --no-dev
             - ./artisan pureservice:jamf2ps
-    svarinnOgInnsynskrav:
+    svarUtMottak:
       - step: *forberedeSvarInn
       - step:
           name: Sjekker SvarUtMottak
           deployment: Production
+          size: 2x
+          runs-on:
+            - "self.hosted"
           script:
             - echo 'Installerer OpenJDK 11 og CMS dekrypter'
             - apk add openjdk11 unzip
