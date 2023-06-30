@@ -23,7 +23,7 @@ class SvarInn2Pureservice extends Command {
      *
      * @var string
      */
-    protected $signature = 'pureservice:svarinnMottak';
+    protected $signature = 'pureservice:svarUtMottak';
 
     protected $version = '2.0';
 

@@ -2,11 +2,11 @@
 // Config for SvarInnController
 return [
     'dryrun' => env('SVARINN_DRYRUN', false),
-    'base_uri' => 'https://svarut.ks.no',
     'urlHentForsendelser' => '/tjenester/svarinn/mottaker/hentNyeForsendelser',
     'urlSettMottatt' => '/tjenester/svarinn/kvitterMottak/forsendelse',
     'urlMottakFeilet' => '/tjenester/svarinn/mottakFeilet/forsendelse',
     'api' => [
+        'url' => 'https://svarut.ks.no',
         'auth' => 'basic',
         'user' => env('SVARINN_USER', null),
         'password' => env('SVARINN_SECRET', null),
