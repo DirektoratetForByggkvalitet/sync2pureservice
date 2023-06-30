@@ -11,7 +11,7 @@ return [
         'user' => env('SVARINN_USER', null),
         'password' => env('SVARINN_SECRET', null),
     ],
-    'privatekey_path' => env('SVARINN_PRIVATEKEY_PATH', storage_path('privatekey.pem')),
+    'privatekey_path' => env('SVARINN_PRIVATEKEY_PATH', 'privatekey.pem'),
     'max_retries' => env('SVARINN_MAX_RETRIES', 3),
     'temp_path' => env('SVARINN_TEMP_PATH', 'svarinn_tmp'),
     'download_path' => env('SVARINN_DOWNLOAD_PATH', 'svarinn_download'),

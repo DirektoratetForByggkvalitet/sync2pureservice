@@ -116,7 +116,8 @@ class SvarInn2Pureservice extends Command {
                         ->connectTimeout(5)
                         ->retry(3, 1000)
                         ->get($message['downloadUrl'])
-                        ->body()
+                        ->toPsrResponse()
+                        ->getBody()
                 );
                 //$fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
@@ -243,7 +244,7 @@ class SvarInn2Pureservice extends Command {
     protected function decryptFile($fileName): int {
         if (Storage::exists($fileName)):
             $dekrypt = system (
-                'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . config('svarinn.privatekey_path').
+                'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . Storage::path(config('svarinn.privatekey_path')).
                 ' -s ' . Storage::path($fileName) .
                 ' -t '. Storage::path(config('svarinn.dekrypt_path')),
                 $exitCode
@@ -253,7 +254,7 @@ class SvarInn2Pureservice extends Command {
                 $this->line($this->l3.$dekrypt);
             endif;
         else:
-            $this->error($this->l3.'Fant ikke fila som skulle dekrypteres ['.config('svarinn.download_path').'/'.$fileName.']');
+            $this->error($this->l3.'Fant ikke fila som skulle dekrypteres ['.$fileName.']');
             $exitCode = 2;
         endif;
         return $exitCode;
