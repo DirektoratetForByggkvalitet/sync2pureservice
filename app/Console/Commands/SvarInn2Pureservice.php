@@ -108,17 +108,22 @@ class SvarInn2Pureservice extends Command {
                     endif;
                 endif;
                 $this->line($this->l3.'Laster ned forsendelsesfilen');
-                $fileName = config('svarinn.temp_path').'/'.$message['id'].'/forsendelse.zip';
+
+                $response = Http::withBasicAuth(config('svarinn.api.user'), config('svarinn.api.password'))
+                    ->timeout(600)
+                    ->connectTimeout(5)
+                    ->retry(3, 1000)
+                    ->get($message['downloadUrl'])
+                    ->toPsrResponse();
+                $fileMimeType = Str::before($response->getHeader('content-type'), ';');
+                $file = trim(Str::after($response->getHeader('content-disposition'), "="), '\'" ');
+                $fileName = config('svarinn.temp_path').'/'.$message['id'].'/'.$file;
                 Storage::put(
                     $fileName,
-                    Http::withBasicAuth(config('svarinn.api.user'), config('svarinn.api.password'))
-                        ->timeout(600)
-                        ->connectTimeout(5)
-                        ->retry(3, 1000)
-                        ->get($message['downloadUrl'])
-                        ->toPsrResponse()
-                        ->getBody()
+                    $response->getBody()
                 );
+                unset($response);
+                $this->line(Tools::L3.'Lastet ned forsendelsesfil av typen '.$fileMimeType.' på '. Storage::fileSize($fileName).' bytes');
                 //$fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
                 $decrypted = $this->decryptFile($fileName);
