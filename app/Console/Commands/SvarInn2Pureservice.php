@@ -109,10 +109,9 @@ class SvarInn2Pureservice extends Command {
                 endif;
                 $this->line($this->l3.'Laster ned forsendelsesfilen');
                 $fileName = config('svarinn.temp_path').'/'.$message['id'].'/forsendelse.zip';
-                //$response = Http::withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'))->get($message['downloadUrl']);
                 Storage::put(
                     $fileName,
-                    Http::withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'))->get($message['downloadUrl'])->body()
+                    Http::withBasicAuth(config('svarinn.api.user'), config('svarinn.api.password'))->get($message['downloadUrl'])->body()
                 );
                 //$fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
