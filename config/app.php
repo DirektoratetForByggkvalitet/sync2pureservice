@@ -187,6 +187,7 @@ return [
          * Package Service Providers...
          */
         Barryvdh\DomPDF\ServiceProvider::class,
+        ZanySoft\Zip\ZipServiceProvider::class,
 
 
         /*
@@ -197,6 +198,7 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+
 
     ],
 
@@ -213,6 +215,7 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'ExampleClass' => App\Example\ExampleClass::class,
+        'Zip' => ZanySoft\Zip\Facades\Zip::class,
     ])->toArray(),
 
 ];

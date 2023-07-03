@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use App\Services\{Pureservice, SvarInn, ExcelLookup, Tools};
 use Carbon\Carbon;
 use GuzzleHttp\Client as GuzzleClient;
-use ZipArchive;
+use ZanySoft\Zip\Facades\Zip;
 use Illuminate\Support\{Arr, Str};
 use Illuminate\Support\Facades\{Storage, Http};
 
@@ -45,16 +45,16 @@ class SvarInn2Pureservice extends Command {
         $this->info(class_basename($this).' v'.$this->version);
         $this->line($this->description);
 
-        $this->info($this->ts().'Setter opp miljøet...');
+        $this->info(Tools::ts().'Setter opp miljøet...');
         $this->setConfig();
         if ($this->checkList() == false) return Command::INVALID;
         $this->line('');
 
-        $this->info($this->ts().'Kobler til Pureservice');
+        $this->info(Tools::ts().'Kobler til Pureservice');
         $this->ps = new Pureservice();
         $this->ps->setTicketOptions();
 
-        $this->info($this->ts().'Kobler til SvarUt Mottakstjeneste');
+        $this->info(Tools::ts().'Kobler til SvarUt Mottakstjeneste');
         $this->svarInn = new SvarInn();
 
         if (is_bool(config('svarinn.dryrun'))):
@@ -73,6 +73,10 @@ class SvarInn2Pureservice extends Command {
             $this->line($this->l3.'Fant '.$msgCount.' '.$messageString);
             foreach ($msgs as $message):
                 $i++;
+
+                $dlPath = config('svarinn.path.download').'/'.$message['id'];
+                $tmpPath = config('svarinn.path.tmp').'/'.$message['id'];
+                $dekryptPath = config('svarinn.path.dekrypt').'/'.$message['id'];
 
                 $this->info(Tools::L2.$i.'/'.$msgCount.': '.$message['tittel']);
                 $this->line($this->l3.'ID: '.$message['id']);
@@ -116,16 +120,16 @@ class SvarInn2Pureservice extends Command {
                     ->get($message['downloadUrl']);
                 $fileMimeType = Str::before($response->header('content-type'), ';');
                 $file = trim(Str::after($response->header('content-disposition'), "="), '\'" ');
-                $fileName = config('svarinn.temp_path').'/'.$message['id'].'/'.$file;
+                $fileName = $dlPath.'/'.$file;
                 Storage::put(
                     $fileName,
                     $response->toPsrResponse()->getBody()->getContents()
                 );
                 unset($response);
-                $this->line(Tools::L3.'Lastet ned forsendelsesfil av typen '.$fileMimeType.' på '. Storage::fileSize($fileName).' bytes');
+                $this->line(Tools::L3.'Lastet ned forsendelsesfil av typen '.$fileMimeType.' på '. Tools::human_filesize(Storage::fileSize($fileName)).'b');
                 //$fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
-                $decrypted = $this->decryptFile($fileName);
+                $decrypted = $this->decryptFile($fileName, $dekryptPath);
                 if (!$decrypted):
                     $this->error('Fila ble ikke dekryptert.');
                     return Command::FAILURE;
@@ -134,19 +138,17 @@ class SvarInn2Pureservice extends Command {
                 $filesToInclude = [];
                 if ( $fileEnding == 'zip'):
                     // Må pakke ut zip-fil til enkeltfiler
-                    $this->line($this->l3.'Pakker ut zip-filen \''.$decrypted.'\'');
-                    $tmpPath = Storage::path(config('svarinn.dekrypt_path').'/'.$message['id']);
-                    //mkdir($tmpPath, 0770, true);
-                    $zipFile = new ZipArchive();
-                    $zipFile->open(Storage::path($decrypted), ZipArchive::RDONLY);
-                    $zipFile->extractTo($tmpPath);
-                    $zipFile->close();
-                    foreach (new \DirectoryIterator($tmpPath) as $fileInfo):
+                    $this->line(Tools::L2.'Pakker ut zip-filen \''.$decrypted.'\'');
+                    if (!Storage::directoryExists($tmpPath)) mkdir($tmpPath, 0770, true);
+                    $zip = Zip::open(Storage::path($decrypted));
+                    $zip->extract(Storage::path($tmpPath));
+                    $zip->close();
+                    foreach (new \DirectoryIterator(Storage::path($tmpPath)) as $fileInfo):
                         if($fileInfo->isDot()) continue;
                         $filesToInclude[] = $tmpPath.'/'.$fileInfo->getFilename();
                     endforeach;
                 else:
-                    $filesToInclude[] = config('svarinn.dekrypt_path').'/'.$fileName;
+                    $filesToInclude[] = $dekryptPath.'/'.$fileName;
                 endif;
                 $this->line($this->l3.'Lastet ned og/eller pakket ut '.count($filesToInclude).' fil(er)');
 
@@ -161,10 +163,10 @@ class SvarInn2Pureservice extends Command {
                     endif;
 
                     if (config('svarinn.dryrun') == false):
-                        if ($this->kvitterForMottak($message['id'])):
-                            $this->line($this->l3.'Forsendelsen er kvittert mottatt hos KS');
+                        if ($this->svarInn->settForsendelseMottatt($message['id'])):
+                            $this->line($this->l3.'Forsendelsen \''.$message['id'].'\' er kvittert mottatt hos KS');
                         else:
-                            $this->error($this->l3.'Forsendelsen kunne ikke settes som mottatt');
+                            $this->error($this->l3.'Forsendelsen \''.$message['id'].'\' kunne ikke settes som mottatt');
                         endif;
                     endif;
 
@@ -189,7 +191,7 @@ class SvarInn2Pureservice extends Command {
      */
     protected function checkList(): bool {
         $rv = true;
-        $this->info($this->ts().'Sjekker oppsettet…');
+        $this->info(Tools::ts().'Sjekker oppsettet…');
         if (config('svarinn.api.user') == null):
             $this->error('Brukernavn for SvarUt Mottakservice er ikke satt');
             $rv = false;
@@ -218,13 +220,6 @@ class SvarInn2Pureservice extends Command {
     }
 
     /**
-     * Returnerer formatert tidspunkt til logging
-     */
-    protected function ts(): string {
-        return '['.Carbon::now(config('app.timezone'))->toDateTimeLocalString().'] ';
-    }
-
-    /**
      * Utvider config til å inkludere svarut-dekrypter sitt oppsett
      */
     protected function setConfig(): void {
@@ -249,12 +244,12 @@ class SvarInn2Pureservice extends Command {
      * @param  string   $fileName    Filnavnet til den krypterte fila
      * @return int      $returnValue Verdi som angir resultatkoden fra dekrypteringen
      */
-    protected function decryptFile($fileName): string|false {
+    protected function decryptFile(string $fileName, string $destPath): string|false {
         if (Storage::exists($fileName)):
             $dekrypt = system (
                 'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . Storage::path(config('svarinn.privatekey_path')).
                 ' -s ' . Storage::path($fileName) .
-                ' -t '. Storage::path(config('svarinn.dekrypt_path')),
+                ' -t '. Storage::path($destPath),
                 $exitCode
             );
             if ($exitCode != 0):
@@ -266,6 +261,6 @@ class SvarInn2Pureservice extends Command {
             $exitCode = 2;
             return false;
         endif;
-        return config('svarinn.dekrypt_path').'/'.Str::afterLast($fileName, '/');
+        return $destPath.'/'.Str::afterLast($fileName, '/');
     }
 }

@@ -13,9 +13,11 @@ return [
     ],
     'privatekey_path' => env('SVARINN_PRIVATEKEY_PATH', 'privatekey.pem'),
     'max_retries' => env('SVARINN_MAX_RETRIES', 3),
-    'temp_path' => env('SVARINN_TEMP_PATH', 'svarinn_tmp'),
-    'download_path' => env('SVARINN_DOWNLOAD_PATH', 'svarinn_download'),
-    'dekrypt_path' => env('SVARINN_DEKRYPT_PATH', 'svarinn_dekryptert'),
+    'path' => [
+        'tmp' => env('SVARINN_TEMP_PATH', 'svarinn_tmp'),
+        'download' => env('SVARINN_DOWNLOAD_PATH', 'svarinn_download'),
+        'dekrypt' => env('SVARINN_DEKRYPT_PATH', 'svarinn_dekryptert'),
+    ],
     'dekrypter' => [
         'version' => env('DEKRYPTERVER', '1.0'),
         'jar' => env('DEKRYPTER_JAR', null),

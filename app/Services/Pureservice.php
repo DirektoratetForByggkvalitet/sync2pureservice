@@ -5,7 +5,7 @@ namespace App\Services;
 use Psr\Http\Message\{RequestInterface, ResponseInterface};
 use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware, RequestOptions};
 use Carbon\Carbon;
-use Illuminate\Support\{Str, Arr};
+use Illuminate\Support\{Str, Arr, Facades\Storage};
 use App\Models\{Company, User, Ticket, TicketCommunication};
 
 class Pureservice
@@ -840,6 +840,8 @@ class Pureservice
         $uploadCount = 0;
         $status = 'OK';
         foreach ($attachments as $file):
+            // Hvis filnavnet er relativt til Storage
+            if (Storage::exists($file)) $file = Storage::path($file);
             $filename = basename($file);
             $filmetadata = $msgFiles->firstWhere('filnavn', $filename);
             $body = [

@@ -39,4 +39,17 @@ class Tools {
             return Storage::path($path);
         endif;
     }
+
+    public static function human_filesize($bytes, $decimals = 2): string {
+        $sz = 'BKMGTP';
+        $factor = floor((strlen($bytes) - 1) / 3);
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
+    }
+
+    public static function dateFromEpochTime($ts): string {
+        return Carbon::createFromTimestampMs($ts, config('app.timezone'))
+            ->locale(config('app.locale'))
+            ->toDateTimeString();
+    }
+
 }
