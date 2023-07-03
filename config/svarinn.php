@@ -2,17 +2,22 @@
 // Config for SvarInnController
 return [
     'dryrun' => env('SVARINN_DRYRUN', false),
-    'base_uri' => 'https://svarut.ks.no',
     'urlHentForsendelser' => '/tjenester/svarinn/mottaker/hentNyeForsendelser',
     'urlSettMottatt' => '/tjenester/svarinn/kvitterMottak/forsendelse',
     'urlMottakFeilet' => '/tjenester/svarinn/mottakFeilet/forsendelse',
-    'username' => env('SVARINN_USER', null),
-    'secret' => env('SVARINN_SECRET', null),
-    'privatekey_path' => env('SVARINN_PRIVATEKEY_PATH', storage_path('privatekey.pem')),
+    'api' => [
+        'url' => 'https://svarut.ks.no',
+        'auth' => 'basic',
+        'user' => env('SVARINN_USER', null),
+        'password' => env('SVARINN_SECRET', null),
+    ],
+    'privatekey_path' => env('SVARINN_PRIVATEKEY_PATH', 'privatekey.pem'),
     'max_retries' => env('SVARINN_MAX_RETRIES', 3),
-    'temp_path' => env('SVARINN_TEMP_PATH', storage_path('svarinn_tmp')),
-    'download_path' => env('SVARINN_DOWNLOAD_PATH', storage_path('svarinn_download')),
-    'dekrypt_path' => env('SVARINN_DEKRYPT_PATH', storage_path('svarinn_dekryptert')),
+    'path' => [
+        'tmp' => env('SVARINN_TEMP_PATH', 'svarinn_tmp'),
+        'download' => env('SVARINN_DOWNLOAD_PATH', 'svarinn_download'),
+        'dekrypt' => env('SVARINN_DEKRYPT_PATH', 'svarinn_dekryptert'),
+    ],
     'dekrypter' => [
         'version' => env('DEKRYPTERVER', '1.0'),
         'jar' => env('DEKRYPTER_JAR', null),

@@ -2,6 +2,35 @@ definitions:
   scripts:
     - script: &resetDB
         ./artisan migrate:fresh --force
+  steps:
+    - step: &forberedeSvarInn
+        name: Forbereder kjøring
+        image: atlassian/default-image:3
+        caches:
+          - docker
+        clone:
+          enabled: false
+        artifacts:
+          - "*.pem"
+          - "*.xlsx"
+          - "*.json"
+        script:
+          - echo "Laster ned privatnøkkel til dekryptering fra Key Vault"
+          - pipe: microsoft/azure-cli-run:1.1.0
+            variables:
+              AZURE_APP_ID: $AZURE_SP_ID
+              AZURE_PASSWORD: $AZURE_SP_SECRET
+              AZURE_TENANT_ID: $AZURE_SP_TENANT
+              CLI_COMMAND: az keyvault secret download --file privatekey.tmp --name ${AZURE_KV_KEY_NAME} --vault-name ${AZURE_KV_NAME}
+          - echo -e "-----BEGIN PRIVATE KEY-----\n$(cat privatekey.tmp)\n-----END PRIVATE KEY-----" > privatekey.pem
+          - echo "Laster ned kommunefil fra Azure Blob Storage"
+          - pipe: microsoft/azure-cli-run:1.1.0
+            variables:
+              AZURE_APP_ID: $AZURE_SP_ID
+              AZURE_PASSWORD: $AZURE_SP_SECRET
+              AZURE_TENANT_ID: $AZURE_SP_TENANT
+              CLI_COMMAND: az storage blob download --auth-mode login --file ${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
+
 
 # Setter maksimum kjøretid for et steg
 options:
@@ -16,6 +45,8 @@ pipelines:
           name: Bygger et docker-image for kjøring av sync2pureservice
           image: atlassian/default-image:4
           services:
+            - docker
+          caches:
             - docker
           script:
             - echo ${DOCKER_TOKEN} | docker login --username ${DOCKER_USER} --password-stdin
@@ -38,36 +69,14 @@ pipelines:
           script:
             - cp .env.example .env
             - composer install --no-dev
-            - ./artisan pureservice:sync-jamf
-    svarinnOgInnsynskrav:
+            - ./artisan pureservice:jamf2ps
+    svarUtMottak:
+      - step: *forberedeSvarInn
       - step:
-          name: Forbereder kjøring
-          image: atlassian/default-image:3
-          clone:
-            enabled: false
-          artifacts:
-            - "*.pem"
-            - "*.xlsx"
-            - "*.json"
-          script:
-            - echo "Laster ned privatnøkkel til dekryptering fra Key Vault"
-            - pipe: microsoft/azure-cli-run:1.1.0
-              variables:
-                AZURE_APP_ID: $AZURE_SP_ID
-                AZURE_PASSWORD: $AZURE_SP_SECRET
-                AZURE_TENANT_ID: $AZURE_SP_TENANT
-                CLI_COMMAND: az keyvault secret download --file privatekey.tmp --name ${AZURE_KV_KEY_NAME} --vault-name ${AZURE_KV_NAME}
-            - echo -e "-----BEGIN PRIVATE KEY-----\n$(cat privatekey.tmp)\n-----END PRIVATE KEY-----" > privatekey.pem
-            - echo "Laster ned kommunefil fra Azure Blob Storage"
-            - pipe: microsoft/azure-cli-run:1.1.0
-              variables:
-                AZURE_APP_ID: $AZURE_SP_ID
-                AZURE_PASSWORD: $AZURE_SP_SECRET
-                AZURE_TENANT_ID: $AZURE_SP_TENANT
-                CLI_COMMAND: az storage blob download --auth-mode login --file ${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
-      - step:
-          name: Sjekker SvarUtMottak og innsynskrav
+          name: Sjekker SvarUtMottak
           deployment: Production
+          runs-on:
+            - "self.hosted"
           script:
             - echo 'Installerer OpenJDK 11 og CMS dekrypter'
             - apk add openjdk11 unzip
@@ -75,12 +84,21 @@ pipelines:
             - unzip dekrypter-${DEKRYPTER_VER}-dist.zip && rm dekrypter-${DEKRYPTER_VER}-dist.zip
             - echo 'Setter opp og legger inn avhengigheter'
             - cp .env.example .env
-            - mv ${SVARINN_EXCEL_LOOKUP_FILE} *.pem storage/
+            - mv ${SVARINN_EXCEL_LOOKUP_FILE} *.pem storage/app/
             - composer install --no-dev
             - echo 'Kjører svarinn2pureservice'
-            - ./artisan pureservice:svarinnMottak
+            - ./artisan pureservice:svarUtMottak
+
+    sjekkInnsynskrav:
+      - step: *forberedeSvarInn
+      - step:
+          name: Sjekker innsynskrav
+          deployment: Production
+          script:
             - echo 'Kjører sjekkInnsynskrav'
+            - composer install --no-dev
             - ./artisan pureservice:sjekkInnsynskrav
+
 
     offentlige2ps:
       - step:

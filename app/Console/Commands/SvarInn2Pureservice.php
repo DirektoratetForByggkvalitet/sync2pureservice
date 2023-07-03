@@ -3,11 +3,12 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{Pureservice, SvarInn, ExcelLookup};
+use App\Services\{Pureservice, SvarInn, ExcelLookup, Tools};
 use Carbon\Carbon;
 use GuzzleHttp\Client as GuzzleClient;
-use ZipArchive;
+use ZanySoft\Zip\Facades\Zip;
 use Illuminate\Support\{Arr, Str};
+use Illuminate\Support\Facades\{Storage, Http};
 
 class SvarInn2Pureservice extends Command {
     protected $l1 = '';
@@ -22,9 +23,9 @@ class SvarInn2Pureservice extends Command {
      *
      * @var string
      */
-    protected $signature = 'pureservice:svarinnMottak';
+    protected $signature = 'pureservice:svarUtMottak';
 
-    protected $version = '1.0';
+    protected $version = '2.0';
 
     /**
      * The console command description.
@@ -44,23 +45,23 @@ class SvarInn2Pureservice extends Command {
         $this->info(class_basename($this).' v'.$this->version);
         $this->line($this->description);
 
-        $this->info($this->ts().'Setter opp miljøet...');
+        $this->info(Tools::ts().'Setter opp miljøet...');
         $this->setConfig();
         if ($this->checkList() == false) return Command::INVALID;
         $this->line('');
 
-        $this->info($this->ts().'Kobler til Pureservice');
+        $this->info(Tools::ts().'Kobler til Pureservice');
         $this->ps = new Pureservice();
         $this->ps->setTicketOptions();
 
-        $this->info($this->ts().'Kobler til SvarUt Mottakstjeneste');
+        $this->info(Tools::ts().'Kobler til SvarUt Mottakstjeneste');
         $this->svarInn = new SvarInn();
 
         if (is_bool(config('svarinn.dryrun'))):
-            $this->info($this->l2.'Ser etter nye meldinger i SvarInn');
+            $this->info(Tools::L2.'Ser etter nye meldinger i SvarInn');
             $msgs = $this->svarInn->sjekkForMeldinger();
         else:
-            $this->info($this->l2.'Laster inn eksempelmeldinger fra JSON');
+            $this->info(Tools::L2.'Laster inn eksempelmeldinger fra JSON');
             $msgs = json_decode(file_get_contents(storage_path(config('svarinn.dryrun'))), true);
         endif;
 
@@ -73,7 +74,14 @@ class SvarInn2Pureservice extends Command {
             foreach ($msgs as $message):
                 $i++;
 
-                $this->info($this->l2.$i.'/'.$msgCount.': '.$message['tittel']);
+                $dlPath = config('svarinn.path.download').'/'.$message['id'];
+                if (Storage::directoryMissing($dlPath)) Storage::makeDirectory($dlPath);
+                $tmpPath = config('svarinn.path.tmp').'/'.$message['id'];
+                if (Storage::directoryMissing($tmpPath)) Storage::makeDirectory($tmpPath);
+                $dekryptPath = config('svarinn.path.dekrypt').'/'.$message['id'];
+                if (Storage::directoryMissing($dekryptPath)) Storage::makeDirectory($dekryptPath);
+
+                $this->info(Tools::L2.$i.'/'.$msgCount.': '.$message['tittel']);
                 $this->line($this->l3.'ID: '.$message['id']);
                 $this->line($this->l3.'Tittel: '.$message['tittel']);
                 $this->line($this->l3.'Avsender: \''. Arr::get($message, 'svarSendesTil.navn') .'\', '.Arr::get($message, 'svarSendesTil.orgnr'));
@@ -107,26 +115,49 @@ class SvarInn2Pureservice extends Command {
                     endif;
                 endif;
                 $this->line($this->l3.'Laster ned forsendelsesfilen');
-                $fileName = $this->hentForsendelsefil($message['downloadUrl']);
+
+                $response = Http::withBasicAuth(config('svarinn.api.user'), config('svarinn.api.password'))
+                    ->timeout(600)
+                    ->connectTimeout(5)
+                    ->retry(3, 1000)
+                    ->get($message['downloadUrl']);
+                $fileMimeType = Str::before($response->header('content-type'), ';');
+                $file = trim(Str::after($response->header('content-disposition'), "="), '\'" ');
+                $fileName = $dlPath.'/'.$file;
+                Storage::put(
+                    $fileName,
+                    $response->toPsrResponse()->getBody()->getContents()
+                );
+                unset($response);
+                $this->line(Tools::L3.'Lastet ned forsendelsesfil av typen '.$fileMimeType.' på '. Tools::human_filesize(Storage::fileSize($fileName)).'b');
+                //$fileName = $this->hentForsendelsefil($message['downloadUrl']);
                 $this->line($this->l3.'Dekrypterer forsendelsesfila');
-                $decrypted = $this->decryptFile($fileName);
-                $fileEnding = preg_replace('/.*\.(.*)/', '$1', $fileName);
+                $decrypted = $this->decryptFile($fileName, $dekryptPath);
+                if (!$decrypted):
+                    $this->error('Fila ble ikke dekryptert.');
+                    return Command::FAILURE;
+                endif;
+                $fileEnding = Str::lower(Str::afterLast($decrypted, '.'));
                 $filesToInclude = [];
-                if ( $fileEnding == 'zip' || $fileEnding == 'ZIP' ):
+                if ( $fileEnding == 'zip'):
                     // Må pakke ut zip-fil til enkeltfiler
-                    $this->line($this->l3.'Pakker ut zip-fil');
-                    $tmpPath = config('svarinn.temp_path').'/'.$message['id'];
-                    mkdir($tmpPath, 0770, true);
-                    $zipFile = new ZipArchive();
-                    $zipFile->open(config('svarinn.dekrypt_path').'/'.$fileName, ZipArchive::RDONLY);
-                    $zipFile->extractTo($tmpPath);
-                    $zipFile->close();
-                    foreach (new \DirectoryIterator($tmpPath) as $fileInfo):
+                    if (Storage::exists($decrypted)):
+                        $this->line(Tools::L2.'Pakker ut zip-filen \''.$decrypted.'\'');
+                        $zip = Zip::open(Storage::path($decrypted));
+
+                    elseif (file_exists(app_path(basename($decrypted)))):
+                        // Tar høyde for at dekrypter pakker ut til app-rot
+                        $zip = Zip::open(app_path(basename($decrypted)));
+                    endif;
+
+                    $zip->extract(Storage::path($tmpPath));
+                    $zip->close();
+                    foreach (new \DirectoryIterator(Storage::path($tmpPath)) as $fileInfo):
                         if($fileInfo->isDot()) continue;
                         $filesToInclude[] = $tmpPath.'/'.$fileInfo->getFilename();
                     endforeach;
                 else:
-                    $filesToInclude[] = config('svarinn.dekrypt_path').'/'.$fileName;
+                    $filesToInclude[] = $dekryptPath.'/'.$fileName;
                 endif;
                 $this->line($this->l3.'Lastet ned og/eller pakket ut '.count($filesToInclude).' fil(er)');
 
@@ -141,21 +172,21 @@ class SvarInn2Pureservice extends Command {
                     endif;
 
                     if (config('svarinn.dryrun') == false):
-                        if ($this->kvitterForMottak($message['id'])):
-                            $this->line($this->l3.'Forsendelsen er kvittert mottatt hos KS');
+                        if ($this->svarInn->settForsendelseMottatt($message['id'])):
+                            $this->line($this->l3.'Forsendelsen \''.$message['id'].'\' er kvittert mottatt hos KS');
                         else:
-                            $this->error($this->l3.'Forsendelsen kunne ikke settes som mottatt');
+                            $this->error($this->l3.'Forsendelsen \''.$message['id'].'\' kunne ikke settes som mottatt');
                         endif;
                     endif;
 
                 else:
                     $this->error($this->l3.'Feil under oppretting av sak i Pureservice');
-                    if (config('svarinn.dryrun') == false) $this->forsendelseFeilet($message['id']);
+                    if (config('svarinn.dryrun') == false) $this->svarInn->settForsendelseFeilet($message['id']);
                 endif;
-
+                $this->newLine(2);
             endforeach;
         else:
-            $this->line($this->l2.'Ingen meldinger å hente');
+            $this->line(Tools::L2.'Ingen meldinger å hente');
         endif;
 
         $this->info('Fullført på '. round(microtime(true) - $this->start, 2).' sekunder');
@@ -169,16 +200,16 @@ class SvarInn2Pureservice extends Command {
      */
     protected function checkList(): bool {
         $rv = true;
-        $this->info($this->ts().'Sjekker oppsettet…');
-        if (config('svarinn.username') == null):
+        $this->info(Tools::ts().'Sjekker oppsettet…');
+        if (config('svarinn.api.user') == null):
             $this->error('Brukernavn for SvarUt Mottakservice er ikke satt');
             $rv = false;
         endif;
-        if (config('svarinn.secret') == null):
+        if (config('svarinn.api.password') == null):
             $this->error('Passord for SvarUt Mottakservice er ikke satt');
             $rv = false;
         endif;
-        if (!is_readable(config('svarinn.privatekey_path'))):
+        if (!Storage::exists(config('svarinn.privatekey_path'))):
             $this->error('Privatnøkkelen for dekryptering er ikke tilgjengelig. Kan ikke lese \''.config('svarinn.privatekey_path').'\'');
             $rv = false;
         endif;
@@ -198,13 +229,6 @@ class SvarInn2Pureservice extends Command {
     }
 
     /**
-     * Returnerer formatert tidspunkt til logging
-     */
-    protected function ts(): string {
-        return '['.Carbon::now(config('app.timezone'))->toDateTimeLocalString().'] ';
-    }
-
-    /**
      * Utvider config til å inkludere svarut-dekrypter sitt oppsett
      */
     protected function setConfig(): void {
@@ -215,78 +239,11 @@ class SvarInn2Pureservice extends Command {
         endif;
 
         // Sikrer at mapper finnes
-        is_dir(config('svarinn.temp_path')) ? true : mkdir(config('svarinn.temp_path'), 0770, true);
-        is_dir(config('svarinn.dekrypt_path')) ? true : mkdir(config('svarinn.dekrypt_path'), 0770, true);
-        is_dir(config('svarinn.download_path')) ? true : mkdir(config('svarinn.download_path'), 0770, true);
+        //is_dir(config('svarinn.temp_path')) ? true : mkdir(config('svarinn.temp_path'), 0770, true);
+        //is_dir(config('svarinn.dekrypt_path')) ? true : mkdir(config('svarinn.dekrypt_path'), 0770, true);
+        //is_dir(config('svarinn.download_path')) ? true : mkdir(config('svarinn.download_path'), 0770, true);
     }
 
-    protected function getOptions(): array {
-        return [
-            'headers' => [
-                'Accept-Encoding' => 'gzip, deflate, br',
-                'Accept' => '*/*',
-            ],
-            'stream' => true,
-            'auth' => [
-                config('svarinn.username'),
-                config('svarinn.secret')
-            ],
-        ];
-    }
-
-    /**
-     * Returnerer en GuzzleHttp-klient
-     */
-    protected function getClient(): GuzzleClient {
-        return new GuzzleClient([
-            'allow_redirects' => true,
-        ]);
-    }
-    /**
-     * Henter ned forsendelsesfilen som er oppgitt i meldingen
-     */
-    protected function hentForsendelsefil($uri): string {
-        $fileResponse = $this->getClient()->get($uri, $this->getOptions());
-
-        $contentType = $fileResponse->getHeader('content-type');
-        // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
-        $fileName = preg_replace('/.*\"(.*)"/','$1', $fileResponse->getHeader('content-disposition')[0]);
-        file_put_contents(config('svarinn.download_path').'/'.$fileName, $fileResponse->getBody()->getContents());
-        return $fileName;
-    }
-
-    /**
-     * Kvitterer for at meldingen er mottatt
-     * @param string    $id     Meldingens ID i SvarUt
-     */
-    protected function kvitterForMottak($id): bool {
-        $uri = config('svarinn.base_uri').config('svarinn.urlSettMottatt').'/'.$id;
-
-        $result = $this->getClient()->post($uri, $this->getOptions());
-
-        if ($result->getStatusCode() == '200') return true;
-
-        return false;
-    }
-
-    /**
-     * Merker en forsendelse som feilet
-     */
-    protected function forsendelseFeilet($id, $permanent = false, $melding = null): bool {
-        $uri = config('svarinn.base_uri').config('svarinn.urlMottakFeilet').'/'.$id;
-
-        $melding = $melding == null ? 'En feil oppsto under innhenting.': $melding;
-        $body = [
-            'feilmelding' => $melding,
-            'permanent' => $permanent,
-        ];
-        $options = $this->getOptions();
-        $options['json'] = $body;
-        $result = $this->getClient()->post($uri, $options);
-        if ($result->getStatusCode() == '200') return true;
-
-        return false;
-    }
 
     /**
      * Dekrypterer fil fra SvarUt
@@ -296,12 +253,12 @@ class SvarInn2Pureservice extends Command {
      * @param  string   $fileName    Filnavnet til den krypterte fila
      * @return int      $returnValue Verdi som angir resultatkoden fra dekrypteringen
      */
-    protected function decryptFile($fileName): int {
-        if (file_exists(config('svarinn.download_path').'/'.$fileName)):
-            $dekrypt = system(
-                'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . config('svarinn.privatekey_path').
-                ' -s ' . config('svarinn.download_path').'/'.$fileName .
-                ' -t '.config('svarinn.dekrypt_path'),
+    protected function decryptFile(string $fileName, string $destPath): string|false {
+        if (Storage::exists($fileName)):
+            $dekrypt = system (
+                'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . Storage::path(config('svarinn.privatekey_path')).
+                ' -s "' . Storage::path($fileName).'"' .
+                ' -t "'. Storage::path($destPath).'"',
                 $exitCode
             );
             if ($exitCode != 0):
@@ -309,9 +266,10 @@ class SvarInn2Pureservice extends Command {
                 $this->line($this->l3.$dekrypt);
             endif;
         else:
-            $this->error($this->l3.'Fant ikke fila som skulle dekrypteres ['.config('svarinn.download_path').'/'.$fileName.']');
+            $this->error($this->l3.'Fant ikke fila som skulle dekrypteres ['.$fileName.']');
             $exitCode = 2;
+            return false;
         endif;
-        return $exitCode;
+        return $destPath.'/'.Str::afterLast($fileName, '/');
     }
 }
