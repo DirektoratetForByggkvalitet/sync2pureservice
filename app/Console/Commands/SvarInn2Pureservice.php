@@ -75,8 +75,11 @@ class SvarInn2Pureservice extends Command {
                 $i++;
 
                 $dlPath = config('svarinn.path.download').'/'.$message['id'];
+                if (Storage::directoryMissing($dlPath)) Storage::makeDirectory($dlPath);
                 $tmpPath = config('svarinn.path.tmp').'/'.$message['id'];
+                if (Storage::directoryMissing($tmpPath)) Storage::makeDirectory($tmpPath);
                 $dekryptPath = config('svarinn.path.dekrypt').'/'.$message['id'];
+                if (Storage::directoryMissing($dekryptPath)) Storage::makeDirectory($dekryptPath);
 
                 $this->info(Tools::L2.$i.'/'.$msgCount.': '.$message['tittel']);
                 $this->line($this->l3.'ID: '.$message['id']);
@@ -138,9 +141,15 @@ class SvarInn2Pureservice extends Command {
                 $filesToInclude = [];
                 if ( $fileEnding == 'zip'):
                     // Må pakke ut zip-fil til enkeltfiler
-                    $this->line(Tools::L2.'Pakker ut zip-filen \''.$decrypted.'\'');
-                    if (!Storage::directoryExists($tmpPath)) mkdir($tmpPath, 0770, true);
-                    $zip = Zip::open(Storage::path($decrypted));
+                    if (Storage::exists($decrypted)):
+                        $this->line(Tools::L2.'Pakker ut zip-filen \''.$decrypted.'\'');
+                        $zip = Zip::open(Storage::path($decrypted));
+
+                    elseif (file_exists(app_path(basename($decrypted)))):
+                        // Tar høyde for at dekrypter pakker ut til app-rot
+                        $zip = Zip::open(app_path(basename($decrypted)));
+                    endif;
+
                     $zip->extract(Storage::path($tmpPath));
                     $zip->close();
                     foreach (new \DirectoryIterator(Storage::path($tmpPath)) as $fileInfo):
@@ -248,8 +257,8 @@ class SvarInn2Pureservice extends Command {
         if (Storage::exists($fileName)):
             $dekrypt = system (
                 'java -jar ' . config('svarinn.dekrypter.jar').' -k ' . Storage::path(config('svarinn.privatekey_path')).
-                ' -s ' . Storage::path($fileName) .
-                ' -t '. Storage::path($destPath),
+                ' -s "' . Storage::path($fileName).'"' .
+                ' -t "'. Storage::path($destPath).'"',
                 $exitCode
             );
             if ($exitCode != 0):
