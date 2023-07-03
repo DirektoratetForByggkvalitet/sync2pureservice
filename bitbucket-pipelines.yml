@@ -62,6 +62,7 @@ pipelines:
             - cp .env.example .env
             - composer install --no-dev
             - ./artisan pureservice:sync-jamf
+
     jamf2ps-test:
       - step:
           name: Synkroniser mellom Jamf Pro og Pureservice
@@ -69,7 +70,8 @@ pipelines:
           script:
             - cp .env.example .env
             - composer install --no-dev
-            - ./artisan pureservice:jamf2ps
+            - ./artisan pureservice:sync-jamf
+
     svarUtMottak:
       - step: *forberedeSvarInn
       - step:

@@ -265,52 +265,44 @@ class PsAssets extends PsApi {
         endif;
     }
 
-    public function updateAssetFromJamf(array $jamfAsset, array $psAsset) {
-        $statusId = $this->calculateStatus($psAsset);
-        $uri = '/asset/'.$psAsset['id'];
-        $typeName = config('pureservice.'.$jamfAsset['type'].'.className');
-        $jamfAsset = array_merge($psAsset, $jamfAsset);
-        $jamfAsset = collect($jamfAsset)
-            ->except([
-                'usernames', 'type',
-                'modified', 'modifiedById',
-                'created', 'createdById',
-                'importedById', 'importJobId',
-                'restrictedDepartmentId',
-                'restrictedTeamId',
-                'restrictedUserId',
-                'links',
-                'isMarkedForDeletion',
-                'id',
-            ])->toArray();
-        $jamfAsset['statusId'] = $statusId;
-        $psAsset = collect($psAsset)
-            ->except([
-                'usernames', 'type',
-                'modified', 'modifiedById',
-                'created', 'createdById',
-                'importedById', 'importJobId',
-                'restrictedDepartmentId',
-                'restrictedTeamId',
-                'restrictedUserId',
-                'links',
-                'isMarkedForDeletion',
-                'id',
-            ])->toArray();
+    public function updateAssetDetail(array $updateAsset, array $data) {
 
-        $diff = array_diff_assoc($jamfAsset, $psAsset);
-        // Oppdaterer ikke i Pureservice hvis det ikke er endringer
-        if ($diff === []) return 'skipped';
-
-        $jamfAsset['imported'] = Carbon::now()->toJSON();
-        //dd($jamfAsset);
-        $body = $jamfAsset;
-        //dd($body);
-        $response = $this->apiPatch($uri, $body, 'application/json');
+        $uri = '/asset/'.$updateAsset['id'];
+        //$typeClass = config('pureservice.'.$updateAsset['type'].'.className');
+        $data['name'] = $updateAsset['name'];
+        $data['imported'] = Carbon::now()->toJSON();
+        // $updateAsset = collect($updateAsset)
+        //     ->except([
+        //         'usernames', 'type',
+        //         'modified', 'modifiedById',
+        //         'created', 'createdById',
+        //         'importedById', 'importJobId',
+        //         'links.restrictedDepartment',
+        //         'restrictedDepartmentId',
+        //         'links.restrictedTeam',
+        //         'restrictedTeamId',
+        //         'links.restrictedUser',
+        //         'restrictedUserId',
+        //         'isMarkedForDeletion',
+        //         'links.modifiedBy',
+        //         'links.createdBy',
+        //         'links.importedBy',
+        //         'links.importJob',
+        //         'links',
+        //         'imported',
+        //     ])
+        //     ->toArray();
+        // //$updateAsset['links']['type']['id'] = (string) $updateAsset['links']['type']['id'];
+        // $body = [
+        //     $typeClass => [
+        //         $updateAsset
+        //     ],
+        // ];
+        $response = $this->apiPatch($uri, $data, 'application/json');
         if ($response->successful()):
             return $response->json('assets.0');
         else:
-            dd($response->json());
+            dd([$uri, $data, $response->json()]);
             return false;
         endif;
     }
@@ -320,10 +312,10 @@ class PsAssets extends PsApi {
      * Kjører oppdatering på gitt Puserservice Asset
      *
      */
-    public function updateAsset($newPsAsset) {
-        $uri = '/asset/'.$newPsAsset['id'];
-        $typeName = config('pureservice.'.$newPsAsset['type'].'.className');
-        $newPsAsset = collect($newPsAsset)
+    public function updateAsset($psAsset) {
+        $uri = '/asset/'.$psAsset['id'];
+        $typeName = config('pureservice.'.$psAsset['type'].'.className');
+        $newPsAsset = collect($psAsset)
             ->except([
                 'usernames', 'type',
                 'modified', 'modifiedById',
