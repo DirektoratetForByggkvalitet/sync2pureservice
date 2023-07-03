@@ -183,7 +183,7 @@ class SvarInn2Pureservice extends Command {
                     $this->error($this->l3.'Feil under oppretting av sak i Pureservice');
                     if (config('svarinn.dryrun') == false) $this->svarInn->settForsendelseFeilet($message['id']);
                 endif;
-
+                $this->newLine(2);
             endforeach;
         else:
             $this->line(Tools::L2.'Ingen meldinger å hente');
