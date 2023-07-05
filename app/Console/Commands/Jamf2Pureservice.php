@@ -206,9 +206,9 @@ class Jamf2Pureservice extends Command {
                         $this->line(Tools::L3.'Fjerner brukerkobling(er)');
                         $this->removeRelationships($dev['id']);
                     endif;
-                    $newStatusId = $this->psApi->calculateStatus($dev, true);
-                    $this->psApi->changeAssetStatus($dev, $newStatusId);
                 endif;
+                $newStatusId = $this->psApi->calculateStatus($dev, true);
+                $this->psApi->changeAssetStatus($dev, $newStatusId);
                 if ($dev[$fn['jamfUrl']] != null) $dev[$fn['jamfUrl']];
                 if ($this->psApi->updateAssetDetail($dev, [
                     'statusId' => $newStatusId,
