@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{HasMany, BelongsToMany};
-use App\Services\{Pureservice, Tools};
+use App\Services\{PsApi, Pureservice, Tools};
 class Company extends Model {
     use HasFactory;
     protected $primaryKey = 'internal_id';
@@ -38,14 +38,14 @@ class Company extends Model {
         return $this->belongsToMany(Ticket::class);
     }
 
-    public function getIso6523ActorIdUpi() {
+    public function actorId() {
         return config('eformidling.address.prefix').$this->organizationNumber;
     }
 
     /**
      * Synkroniserer virksomheten i Pureservice
      */
-    public function addOrUpdatePS(Pureservice $ps) : bool {
+    public function addOrUpdatePS(PsApi $ps) : bool {
         $update = false;
         $emailId = false;
         $phoneId = false;
@@ -78,9 +78,8 @@ class Company extends Model {
                     'number' => $this->phone,
                     'type' => 2,
                 ];
-                if ($response = $ps->apiPOST($uri, $body)):
-                    $result = json_decode($response->getBody()->getContents(), true);
-                    $phoneId = $result['phonenumbers'][0]['id'];
+                if ($response = $ps->apiPost($uri, $body)):
+                    $phoneId = $response->json('phonenumbers.0.id');
                 endif;
             endif;
         endif;
@@ -95,9 +94,8 @@ class Company extends Model {
                 $body['companyemailaddresses'][] = [
                     'email' => $this->email,
                 ];
-                if ($response = $ps->apiPOST($uri, $body)):
-                    $result = json_decode($response->getBody()->getContents(), true);
-                    $emailId = $result['companyemailaddresses'][0]['id'];
+                if ($response = $ps->apiPost($uri, $body)):
+                    $emailId = $response->json('companyemailaddresses.0.id');
                 endif;
             endif;
         endif;
@@ -121,10 +119,10 @@ class Company extends Model {
             unset($body['id']);
             $postBody = ['companies' => [$body]];
             unset($body);
-            if ($response = $ps->apiPOST($uri, $postBody)):
-                $result = json_decode($response->getBody()->getContents(), true);
-                if (count($result['companies']) > 0):
-                    $this->id = $result['companies'][0]['id'];
+            if ($response = $ps->apiPost($uri, $postBody)):
+                $companies = $response->json('companies');
+                if (count($companies) > 0):
+                    $this->id = $companies[0]['id'];
                     $this->save();
                     return true;
                 endif;
@@ -166,7 +164,23 @@ class Company extends Model {
         endif; // $this->id
     }
 
+    public function createEFUser(): void {
+        if ($this->id):
+            if (!$efUser = User::firstWhere('email', $this->getEformidlingEmail())):
+                $efUser = $this->users()->create([
+                    'firstName' => 'Eformidling',
+                    'lastName' => $this->name,
+                    'email' => $this->getEformidlingEmail(),
+                ]);
+            endif;
+        endif;
+    }
+
     public function getSvarUtEmail() {
         return $this->organizationNumber.'@'.config('pureservice.user.dummydomain');
+    }
+
+    public function getEformidlingEmail() {
+        return $this->orgnizationNumber.'@'.config('pureservice.user.ef_domain');
     }
 }

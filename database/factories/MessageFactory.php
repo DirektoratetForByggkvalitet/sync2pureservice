@@ -17,9 +17,7 @@ class MessageFactory extends Factory
     public function definition(): array
     {
         return [
-            'sender' => fake()->text(50),
             'sender_id' => null,
-            'receiver' => fake()->text(50),
             'receiver_id' => null,
             'documentId' => fake()->text(50),
             'documentStandard' => fake()->text(25),
@@ -27,7 +25,7 @@ class MessageFactory extends Factory
             'conversationIdentifier' => fake()->text(50),
             'content' => '{}',
             'mainDocument' => null,
-            'attachments' => null,
+            'attachments' => [],
         ];
     }
 }

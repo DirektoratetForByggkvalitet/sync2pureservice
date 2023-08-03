@@ -14,7 +14,7 @@ class IncomingMessages extends Command
     protected string $version = '0.2';
     protected int $count = 0;
     protected Eformidling $ip;
-    protected Pureservice $ps;
+    protected PsApi $ps;
     /**
      * The name and signature of the console command.
      *
@@ -70,7 +70,7 @@ class IncomingMessages extends Command
         $bar->setFormat('verbose');
         $bar->start();
         foreach(Message::lazy() as $message):
-            $this->ps->createTicketFromDB($message);
+            $message->toPsTicket($this->ps);
             $bar->advance();
         endforeach;
         $bar->finish();

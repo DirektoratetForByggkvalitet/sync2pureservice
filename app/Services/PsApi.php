@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Services;
-use App\Models\{Ticket, TicketCommunication, User, Company};
+use App\Models\{Ticket, TicketCommunication, User, Company, Message};
 use Carbon\Carbon;
 use Illuminate\Support\{Str, Arr};
 use Illuminate\Support\Facades\Storage;
@@ -16,13 +16,6 @@ class PsApi extends API {
     public function __construct() {
         $this->cKey = 'pureservice';
         $this->setProperties();
-    }
-
-    /**
-     * Oppretter sak i Pureservice fra sak i DB
-     */
-    public function createTicketFromDB(Ticket $ticket) {
-
     }
 
     /**
@@ -84,8 +77,6 @@ class PsApi extends API {
         return $this->apiDelete('/relationship/'.$relationshipId.'/delete');
     }
 
-
-
     /**
      * Henter ned standardinnstillinger for å opprette saker i PS
      *
@@ -109,6 +100,38 @@ class PsApi extends API {
         return $this->ticketOptions;
     }
 
+    /**
+     * Oppretter sak med gitt emne og beskrivelse med oppgitt brukerId som sluttbruker
+     * @param   string  $subject        Sakens emne
+     * @param   string  $description    Beskrivelse av saken
+     * @param   array   $userId         Sluttbrukers ID
+     * @param   mixed   $visibility     Synlighetskode
+    */
+    public function createTicket(string $subject, string $description, int $userId, bool $visibility=false, bool $returnClass = true): array|false {
+        if ($this->ticketOptions == []) $this->setTicketOptions();
+        $uri = '/ticket';
+        $body = ['tickets' => [
+            [
+                'subject' => $subject,
+                'description' => $description,
+                'userId' => $userId,
+                'visibility' => $visibility ? $visibility : config('pureservice.visibility.visible'),
+                'assignedDepartmentId' => $this->ticketOptions['zoneId'],
+                'assignedTeamId' => $this->ticketOptions['teamId'],
+                'sourceId' => $this->ticketOptions['sourceId'],
+                'ticketTypeId' => $this->ticketOptions['ticketTypeId'],
+                'priorityId' => $this->ticketOptions['priorityId'],
+                'statusId' => $this->ticketOptions['statusId'],
+                'requestTypeId' => $this->ticketOptions['requestTypeId'],
+            ]
+        ]];
+
+        if ($response = $this->apiPost($uri, $body)):
+            $t = collect($response->json('tickets'));
+            return $returnClass ? $t->mapInto(Ticket::class) : $t->first();
+        endif;
+        return false;
+    }
 
 
     /**
@@ -241,6 +264,184 @@ class PsApi extends API {
         ];
         if ($result = $this->apiQuery($uri, $query)):
             if (count($result['emailaddresses']) > 0) return $result['linked']['users'][0];
+        endif;
+        return false;
+    }
+
+    public function findCompany($orgNo=null, $companyName=null): array|false {
+        $uri = '/company/';
+        $query = [
+            'include'=> 'phonenumber,emailAddress',
+        ];
+        if ($orgNo != null):
+            $query['filter'] = '(!disabled AND organizationNumber=="'.$orgNo.'")';
+            $companiesByOrgNo = $this->apiQuery($uri, $query)['companies'];
+        else:
+            $companiesByOrgNo = [];
+        endif;
+
+        if ($companyName != null):
+            $query['filter'] = '(!disabled AND name=="'.$companyName.'")';
+            $companiesByName = $this->apiQuery($uri, $query)['companies'];
+        else:
+            $companiesByName = [];
+        endif;
+        $companyByOrgNo = count($companiesByOrgNo) > 0 ? $companiesByOrgNo[0]: false;
+        $companyByName = count($companiesByName) > 0 ? $companiesByName[0]: false;
+        // Gitt at begge selskaper blir funnet, er de det samme?
+        $sameCompany = ($companyByName && $companyByOrgNo) && ($companyByName['id'] == $companyByOrgNo['id']);
+        if ($sameCompany || (!$companyByName && $companyByOrgNo)):
+            return $companyByOrgNo;
+       else:
+            return $companyByName;
+        endif;
+    }
+
+
+    /**
+     * Oppretter et firma i Pureservice, og legger til e-post og telefonnr hvis oppgitt
+     * @param string|App\Models\Company $companyName   Foretaksnavn, påkrevd
+     * @param string $orgNo         Foretakets organisasjonsnr. Viktig for at SvarInn-integrasjon skal virke
+     * @param string $email         Foretakets e-postadresse
+     * @param string $phone         Foretakets telefonnr
+     *
+     * @return mixed    array med det opprettede foretaket eller false hvis oppretting feilet
+     */
+
+    public function addCompany(string|Company $companyName, $orgNo = null, $email = false, $phone = false) : array|false {
+        $useCompanyNameAsObject = false;
+        if (is_a($companyName, 'App\Models\Company')):
+            $useCompanyNameAsObject = true;
+        endif;
+        $phoneId = $phone ? $this->findPhonenumberId($phone): null;
+        $emailId = $email ? $this->findEmailaddressId($email, true): null;
+        if ($email && $emailId == null):
+            $uri = '/companyemailaddress/';
+            $body = [
+                'email' => $email,
+            ];
+            if ($response = $this->apiPost($uri, $body)):
+                $emailId = $response->json('companyemailaddresses.0.id');
+            endif;
+        endif;
+        if ($phone && $phoneId == null):
+            $uri = '/phonenumber/';
+            $body = [];
+            $body['phonenumbers'][] = [
+                'number' => $phone,
+                'type' => 2,
+            ];
+            if ($response = $this->apiPost($uri, $body)):
+               $phoneId = $response->json('phonenumbers.0.id');
+            endif;
+        endif;
+
+        // Oppretter selve foretaket
+        $uri = '/company?include=phonenumber,emailAddress';
+        if ($useCompanyNameAsObject):
+            $body = [
+                'name' => $companyName->name,
+                'organizationNumber' => $companyName->organizationalNumber,
+                'companyNumber' => $companyName->companyNumber,
+                'website' => $companyName->website,
+                'notes' => $companyName->notes,
+            ];
+        else:
+            $body = [
+                'name' => $companyName,
+                'organizationNumber' => $orgNo
+            ];
+        endif;
+        if ($emailId != null) $body['emailAddressId'] = $emailId;
+
+        if ($phoneId != null) $body['phonenumberId'] = $phoneId;
+
+        if ($response = $this->apiPost($uri, $body)):
+            return $response->json('companies.0');
+        endif;
+
+        return false;
+    }
+
+    /**
+     * Henter ID for e-postadresse registrert i Pureservice
+     * @param string    $email          E-postadressen
+     * @param bool      $companyAddress Angir om man skal se etter en firma-adresse
+     *
+     * @return int|null    null hvis den ikke finnes, IDen dersom den finnes.
+     */
+    public function findEmailaddressId($email, $companyAddress=false): int|null {
+        $prefix = $companyAddress ? 'company' : '';
+        $uri = '/'.$prefix.'emailaddress';
+        $args = [
+            'filter'=>'email == "'.$email.'"',
+        ];
+
+        if ($result = $this->apiQuery($uri, $args)):
+            $found = count($result[$prefix.'emailaddresses']);
+            if ($found > 0):
+                return $result[$prefix.'emailaddresses.0.id'];
+            endif;
+        endif;
+        return null; // Hvis ikke funnet
+    }
+
+    /**
+     * Henter ID for telefonnummer registrert i Pureservice
+     * @param string    $phonenumber          E-postadressen
+     * @param bool      $companyAddress Angir om man skal se etter en firma-adresse
+     *
+     * @return int|null    null hvis den ikke finnes, IDen dersom den finnes.
+     */
+    public function findPhonenumberId($phonennumber): int|null {
+        //$prefix = $companyAddress ? 'company' : '';
+        $uri = '/phonennumber';
+        $args = [
+            'filter' => 'email == "'.$phonennumber.'"',
+        ];
+        if ($result = $this->apiQuery($uri, $args)):
+            $found = count($result['phonenumbers']);
+            if ($found > 0):
+                return $result['phonenumbers.0.id'];
+            endif;
+        endif;
+        return null; // Hvis ikke funnet
+    }
+
+    /**
+     * Legger til brukere som er koblet til et foretak
+     * Alle data ligger i DB
+     */
+    public function addCompanyUsers(Company $company): array|false {
+        $body = ['users' => []];
+        foreach ($company->users as $user):
+            $emailId = $this->findEmailaddressId($user->email);
+            if ($emailId == null):
+                $uri = '/emailaddress/';
+                $body = [
+                    'email' => $user->email,
+                ];
+                if ($response = $this->apiPost($uri, $body)):
+                    $emailId = $response->json('emailaddresses.0.id');
+                endif;
+            endif;
+            $record = [
+                'firstName' => $user->firstName,
+                'lastName' => $user->lastName,
+                'role' => $user->role,
+                'type' => $user->type,
+                'notificationScheme' => $user->notificationScheme,
+                'emailAddressId' => $emailId,
+                'companyId' => $company->externalId,
+            ];
+            if (config('pureservice.user.no_email_field')) $record[config('pureservice.user.no_email_field')] = 1;
+            $body['users'][] = $record;
+        endforeach;
+        // Oppretter brukerne
+        $uri = '/user/?include=emailAddress,company';
+
+        if ($response = $this->apiPost($uri, $body)):
+            return $response->json('users');
         endif;
         return false;
     }

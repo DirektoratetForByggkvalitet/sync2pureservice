@@ -530,7 +530,7 @@ class Pureservice
      *
      * @return mixed    array med det opprettede foretaket eller false hvis oppretting feilet
      */
-    public function addCompany($companyName, $orgNo = null, $email = false, $phone = false) : array|false {
+    public function addCompany(string|Company $companyName, $orgNo = null, $email = false, $phone = false) : array|false {
         $useCompanyNameAsObject = false;
         if (is_a($companyName, 'App\Models\Company')):
             $useCompanyNameAsObject = true;

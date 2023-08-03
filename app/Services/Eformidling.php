@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Services\{API, Enhetsregisteret};
 use App\Models\{Message, User, Company, Ticket};
 use Illuminate\Support\{Str, Arr};
+use Illuminate\Support\Facades\{Storage};
 use ZipArchive;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
@@ -34,24 +35,35 @@ class Eformidling extends API {
         endif;
         $this->setOptions($options);
     }
+
+    /**
+     * Finner ut hvilke brukerIDer i Pureservice som skal knyttes til sender og receiver
+     */
+    public function resolveActors(array $message): array {
+        return [
+            'sender' => $this->brreg->getCompany(
+                $this->stripIsoPrefix(
+                    Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier.value'))),
+            'recevier' => $this->brreg->getCompany(
+                $this->stripIsoPrefix(
+                    Arr::get($message, 'standardBusinessDocumentHeader.receiver.0.identifier.value'))),
+        ];
+    }
+    /**
+     * Fjerner prefiksen for orgnumre
+     */
+    public function stripIsoPrefix(string $identifier): string {
+        return Str::after($identifier, ':');
+    }
+
+
     /**
      * Ser etter innkommende meldinger
      */
     public function getIncomingMessages($filters = []) : array|false {
-        $args = '';
-        $filters['size'] = 100;
-        if (count($filters)):
-            //$args .='?';
-            $i = 1;
-            foreach($filters as $key => $value):
-                // Legger ikke til & hvis det er første argument
-                $args .= $i == 0 ? '' : '&';
-                $i++;
-                $args .= $key . '=' . $value;
-            endforeach;
-        endif;
+        $filters['size'] = isset($filters['size']) ? $filters['size'] : 100;
         $uri = 'messages/in';
-        if ($response = $this->apiGet($uri)):
+        if ($response = $this->apiQuery($uri, $filters)):
             return $response['content'];
         endif;
 
@@ -71,17 +83,18 @@ class Eformidling extends API {
     /**
      * Laster ned innkommende melding sin zip-fil
      */
-    public function downloadIncomingAsic(string $messageId, string|false $path = false): string|false {
+    public function downloadIncomingAsic(string $messageId, string|false $dlPath = false): string|false {
         $uri = 'messages/in/pop/'.$messageId;
-        $path = $path ? $path : $this->myConf('download_path') . '/'. $messageId;
+        $dlPath = $dlPath ? $dlPath : $this->myConf('download_path') . '/'. $messageId;
         if ($response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'))->toPsrResponse()):
             // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
-            $fileName = preg_replace('/.*\"(.*)"/','$1', $response->getHeader('content-disposition')[0]);
-            // Oppretter $path hvis den ikke finnes
-            if (!is_dir($path)):
-                mkdir($path, 0770, true);
-            endif;
-            file_put_contents($path.'/'.$fileName, $response->getBody()->getContents());
+            $fileMimeType = Str::before($response->getHeader('content-type'), ';');
+            $file = trim(Str::after($response->getHeader('content-disposition'), "="), '\'" ');
+            $fileName = $dlPath.'/'.$file;
+            Storage::put(
+                $fileName,
+                $response->getBody()->getContents()
+            );
             return $fileName;
         endif;
         return false;
@@ -101,35 +114,36 @@ class Eformidling extends API {
     public function storeMessage(array $message): bool {
         $conversationIdScope = $this->getMsgConversationIdScope($message);
         $documentIdentification = $this->getMsgDocumentIdentification($message);
+        $actors = $this->resolveActors($message);
         $newMessage = Message::factory()->create([
-            'sender' => '',
-            'receiver' => '',
+            'sender_id' => $actors['sender']->internal_id,
+            'receiver_id' => $actors['receiver']->internal_id,
             'documentId' => $documentIdentification['instanceIdentifier'],
             'documentStandard' => $documentIdentification['standard'],
             'conversationId' => $conversationIdScope['instanceIdentifier'],
             'conversationIdentifier' => $conversationIdScope['identifier'],
             'content' => $message,
             'mainDocument' => Arr::get($message, 'arkivmelding.hoveddokument'),
-            'attachments' => null,
+            'attachments' => [],
         ]);
-        $messageSender = '';
-        foreach (Arr::get($message, 'standardBusinessDocumentHeader.sender') as $id):
-            $idValue = Arr::get($id, 'identifier.value');
-            $messageSender .= $messageSender == '' ? $idValue : ', ' . $idValue;
-            if (Str::startsWith($idValue, '0192:') && $c = $this->brreg->getCompany(Str::after($idValue, '0192:'))):
-                $newMessage->companies()->attach($c->internal_id, ['type' => 'sender']);
-            endif;
-        endforeach;
-
-        $messageReceiver = '';
-        foreach(Arr::get($message, 'standardBusinessDocumentHeader.receiver') as $id):
-            $idValue = Arr::get($id, 'identifier.value');
-            $messageReceiver .= $messageReceiver == '' ? $idValue : ', ' . $idValue;
-            if (Str::contains($idValue, '0192:') && $c = $this->brreg->getCompany(Str::after($idValue, '0192:'))):
-                $newMessage->companies()->attach($c->internal_id, ['type' => 'receiver']);
-            endif;
-        endforeach;
         $newMessage->save();
+        // $messageSender = '';
+        // foreach (Arr::get($message, 'standardBusinessDocumentHeader.sender') as $id):
+        //     $idValue = Arr::get($id, 'identifier.value');
+        //     $messageSender .= $messageSender == '' ? $idValue : ', ' . $idValue;
+        //     if (Str::startsWith($idValue, $this->myConf('address.prefix')) && $c = $this->brreg->getCompany(Str::after($idValue, $this->myConf('address.prefix')))):
+        //         $newMessage->companies()->attach($c->internal_id, ['type' => 'sender']);
+        //     endif;
+        // endforeach;
+
+        // $messageReceiver = '';
+        // foreach(Arr::get($message, 'standardBusinessDocumentHeader.receiver') as $id):
+        //     $idValue = Arr::get($id, 'identifier.value');
+        //     $messageReceiver .= $messageReceiver == '' ? $idValue : ', ' . $idValue;
+        //     if (Str::contains($idValue, $this->myConf('address.prefix')) && $c = $this->brreg->getCompany(Str::after($idValue, $this->myConf('address.prefix')))):
+        //         $newMessage->companies()->attach($c->internal_id, ['type' => 'receiver']);
+        //     endif;
+        // endforeach;
         return true;
     }
 
@@ -149,23 +163,24 @@ class Eformidling extends API {
         // Henter inn meldingen fra DB
         $msgIdentification = $this->getMsgDocumentIdentification($message);
         $dbMessage = Message::firstWhere('messageId', $msgIdentification['instanceIdentifier']);
-        $path = $this->myConf('download_path') . '/'. $dbMessage->messageId;
-        $filesToAttach = [];
-        $fileName = $this->downloadIncomingAsic($dbMessage->messageId);
-        if (!$fileName) return false;
+        $path = $dbMessage->downloadPath();
+        $tmpPath = $dbMessage->tempPath();
+        $zipfile = $this->downloadIncomingAsic($dbMessage->messageId, $path);
+        if (!$zipfile) return false;
 
         // Vi har et filnavn, pakker den ut
         $zipFile = new ZipArchive();
-        $zipFile->open($path.'/'.$fileName, ZipArchive::RDONLY);
+        $zipFile->open(Storage::path($zipfile), ZipArchive::RDONLY);
         $zipFile->extractTo($path);
         $zipFile->close();
         // Sletter zip-filen
-        unlink($path.'/'.$fileName);
-        foreach (new \DirectoryIterator($path) as $fileInfo):
-            if($fileInfo->isDot()) continue;
-            $filesToAttach[] = $path.'/'.$fileInfo->getFilename();
+        Storage::delete($zipfile);
+        foreach (Storage::files($path) as $file):
+            // Hopper over filer med filnavn som begynner med '.'
+            if (Str::startsWith(Str::afterLast($file, '/'), '.')) continue;
+            // Legger filen til i listen over vedlegg
+            $dbMessage->attachments[] = $file;
         endforeach;
-        $dbMessage->attachments = $filesToAttach;
         $dbMessage->save();
         return true;
     }
@@ -190,7 +205,7 @@ class Eformidling extends API {
     }
 
     public function createAndSendMessage(Ticket $ticket, Company $recipient) {
-        $recipientIdentifier = '0192:'. $recipient->organizationNumber;
+        $recipientIdentifier = $this->myConf('address.prefix'). $recipient->organizationNumber;
         $mainFile = $ticket->makePdf('message', 'melding.pdf');
         $recipientCapabilities = collect($this->getCapabilities($recipient));
     }

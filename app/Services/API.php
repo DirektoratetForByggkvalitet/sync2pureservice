@@ -131,7 +131,8 @@ class API {
         return false;
     }
 
-    public function ApiQuery(string $uri,
+    public function apiQuery(
+        string $uri,
         array $query = [],
         bool $returnResponse = false,
         string|null|false $accept = null,

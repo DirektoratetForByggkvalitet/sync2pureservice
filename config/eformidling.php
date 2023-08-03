@@ -14,7 +14,10 @@ return [
         'prefix' => '0192:',
         'sender_id' => env('EF_SENDER_ID'),
     ],
-    'download_path' => env('EF_DOWNLOAD_PATH', 'dpe_download'),
+    'path' => [
+        'download' => env('EF_DOWNLOAD_PATH', 'eformidling_download'),
+        'temp' => env('EF_TEMP_PATH', 'eformidling_temp'),
+    ],
     'out' => [
         'process' => env('EF_MESSAGE_PROCESS', 'planByggOgGeodata'),
         'type' => env('EF_MESSAGE_TYPE', 'arkivmelding'),

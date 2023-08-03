@@ -241,7 +241,11 @@ class Innsynskrav2Pureservice extends Command
                 $description .= '<p>eInnsyn-ID: '.$orderId.'</p>';
 
                 // Oppretter saken
-                if ($newTicket = $this->ps->createTicket($subject, $description, $user['id'], config('pureservice.visibility.invisible'))):
+                if ($newTicket = $this->ps->createTicket(
+                        $subject,
+                        $description,
+                        $user['id'],
+                        config('pureservice.visibility.invisible'))):
                     $new_reqno = $newTicket['requestNumber'];
                     $this->line(Tools::l2().'Opprettet saken "'.$newTicket['subject'].'" med saksnr '.$new_reqno);
                     $this->reqNos_created[] = $new_reqno;

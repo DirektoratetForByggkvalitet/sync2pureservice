@@ -106,6 +106,7 @@ return [
         'role_id' => env('PURESERVICE_USER_ROLE_ID', 10),
         'no_email_field' => env('PURESERVICE_USER_NOEMAIL_FIELD', false),
         'dummydomain' => env('PURESERVICE_USER_DUMMYDOMAIN', 'svarut.pureservice.local'),
+        'ef_domain' => env('PURESERVICE_EF_DOMAIN', 'eformidling.pureservice.local'),
     ],
     'company' => [
         'categoryfield' => env('PURESERVICE_COMPANY_CATEGORY_FIELD', false),
