@@ -107,7 +107,7 @@ class PsApi extends API {
      * @param   array   $userId         Sluttbrukers ID
      * @param   mixed   $visibility     Synlighetskode
     */
-    public function createTicket(string $subject, string $description, int $userId, bool $visibility=false, bool $returnClass = true): array|false {
+    public function createTicket(string $subject, string $description, int $userId, bool $visibility=false, bool $returnClass = true): array|false|Ticket {
         if ($this->ticketOptions == []) $this->setTicketOptions();
         $uri = '/ticket';
         $body = ['tickets' => [

@@ -37,6 +37,18 @@ return [
         'skatterOgAvgifter',
         'tekniskeTjenester',
     ],
+    'process_hr' => [
+        'administrasjon' => 'administrasjon',
+        'planByggOgGeodata' => 'plan, bygg og geodata',
+        'helseSosialOgOmsorg' => 'helse, sosial og omsorg',
+        'oppvekstOgUtdanning' => 'oppvekst og utdanning',
+        'kulturIdrettOgFritid' => 'kultur, idrett og fritid',
+        'trafikkReiserOgSamferdsel' => 'trafikk, reiser og samferdsel',
+        'naturOgMiljoe' => 'natur og miljø',
+        'naeringsutvikling' => 'næringsutvikling',
+        'skatterOgAvgifter' => 'skatter og avgifter',
+        'tekniskeTjenester' => 'tekniske tjenester',
+    ],
     'ticket' => [
         'codeTemplate' => env('PURESERVICE_TICKET_NUMBER_TEMPLATE', '[Sak ID# {{RequestNumber}}]'),
         'source' => env('EF_TICKET_SOURCE', 'eForsendelse'),

@@ -216,4 +216,5 @@ class Ticket extends Model
         // Lagrer JSON for meldingshodet og lagrer i DB
         $message->renderContent();
     }
+
 }
