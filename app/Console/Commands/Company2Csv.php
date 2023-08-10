@@ -21,7 +21,7 @@ class Company2Csv extends Command
      *
      * @var string
      */
-    protected $description = 'Eksporterer databasens foretak til en CSV-filen \'companies.csv\' i storage/';
+    protected $description = 'Eksporterer databasens foretak til CSV-filen \'companies.csv\' i storage/';
 
     protected $csvFile;
     /**
