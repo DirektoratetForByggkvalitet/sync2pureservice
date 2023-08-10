@@ -89,7 +89,7 @@ class Eformidling extends API {
         if ($response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'))->toPsrResponse()):
             // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
             $fileMimeType = Str::before($response->getHeader('content-type'), ';');
-            $file = trim(Str::after($response->getHeader('content-disposition'), "="), '\'" ');
+            $file = trim(Str::after($response->getHeader('content-disposition'), "filename="), '\'" ');
             $fileName = $dlPath.'/'.$file;
             Storage::put(
                 $fileName,
@@ -127,23 +127,6 @@ class Eformidling extends API {
             'attachments' => [],
         ]);
         $newMessage->save();
-        // $messageSender = '';
-        // foreach (Arr::get($message, 'standardBusinessDocumentHeader.sender') as $id):
-        //     $idValue = Arr::get($id, 'identifier.value');
-        //     $messageSender .= $messageSender == '' ? $idValue : ', ' . $idValue;
-        //     if (Str::startsWith($idValue, $this->myConf('address.prefix')) && $c = $this->brreg->getCompany(Str::after($idValue, $this->myConf('address.prefix')))):
-        //         $newMessage->companies()->attach($c->internal_id, ['type' => 'sender']);
-        //     endif;
-        // endforeach;
-
-        // $messageReceiver = '';
-        // foreach(Arr::get($message, 'standardBusinessDocumentHeader.receiver') as $id):
-        //     $idValue = Arr::get($id, 'identifier.value');
-        //     $messageReceiver .= $messageReceiver == '' ? $idValue : ', ' . $idValue;
-        //     if (Str::contains($idValue, $this->myConf('address.prefix')) && $c = $this->brreg->getCompany(Str::after($idValue, $this->myConf('address.prefix')))):
-        //         $newMessage->companies()->attach($c->internal_id, ['type' => 'receiver']);
-        //     endif;
-        // endforeach;
         return true;
     }
 
@@ -164,17 +147,18 @@ class Eformidling extends API {
         $msgIdentification = $this->getMsgDocumentIdentification($message);
         $dbMessage = Message::firstWhere('messageId', $msgIdentification['instanceIdentifier']);
         $path = $dbMessage->downloadPath();
-        $tmpPath = $dbMessage->tempPath();
         $zipfile = $this->downloadIncomingAsic($dbMessage->messageId, $path);
         if (!$zipfile) return false;
 
-        // Vi har et filnavn, pakker den ut
-        $zipFile = new ZipArchive();
-        $zipFile->open(Storage::path($zipfile), ZipArchive::RDONLY);
-        $zipFile->extractTo($path);
-        $zipFile->close();
-        // Sletter zip-filen
-        Storage::delete($zipfile);
+        if (Str::endsWith($zipfile, '.zip')):
+            // Vi har et filnavn som slutter på .zip, pakker den ut
+            $zipArchive = new ZipArchive();
+            $zipArchive->open(Storage::path($zipfile), ZipArchive::RDONLY);
+            $zipArchive->extractTo($path);
+            $zipArchive->close();
+            // Sletter zip-filen, siden innholdet er pakket ut
+            Storage::delete($zipfile);
+        endif;
         foreach (Storage::files($path) as $file):
             // Hopper over filer med filnavn som begynner med '.'
             if (Str::startsWith(Str::afterLast($file, '/'), '.')) continue;
