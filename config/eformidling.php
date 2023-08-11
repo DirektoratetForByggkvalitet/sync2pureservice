@@ -61,5 +61,4 @@ return [
         'status_solved' => env('PURESERVICE_TICKET_SOLVED_STATUS', 'Løst'),
         'requestType' => env('PURESERVICE_TICKET_REQUEST_TYPE','Ticket'),
     ],
-
 ];

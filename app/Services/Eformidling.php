@@ -7,6 +7,7 @@ use Illuminate\Support\{Str, Arr};
 use Illuminate\Support\Facades\{Storage};
 use ZipArchive;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use cardinalby\ContentDisposition\ContentDisposition;
 
 
 class Eformidling extends API {
@@ -86,14 +87,14 @@ class Eformidling extends API {
     public function downloadIncomingAsic(string $messageId, string|false $dlPath = false): string|false {
         $uri = 'messages/in/pop/'.$messageId;
         $dlPath = $dlPath ? $dlPath : $this->myConf('download_path') . '/'. $messageId;
-        if ($response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'))->toPsrResponse()):
+        if ($response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'))):
             // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
-            $fileMimeType = Str::before($response->getHeader('content-type'), ';');
-            $file = trim(Str::after($response->getHeader('content-disposition'), "filename="), '\'" ');
-            $fileName = $dlPath.'/'.$file;
+            $fileMimeType = Str::before($response->header('content-type'), ';');
+            $cd = ContentDisposition::parse($response->header('content-disposition'));
+            $fileName = $dlPath.'/'. $cd->getFileName();
             Storage::put(
                 $fileName,
-                $response->getBody()->getContents()
+                $response->toPsrResponse()->getBody()->getContents()
             );
             return $fileName;
         endif;

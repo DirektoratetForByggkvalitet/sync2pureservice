@@ -20,7 +20,8 @@ class UserFactory extends Factory
         return [
             'firstName' => fake()->name(),
             'lastName' => fake()->name(),
-            'externalId' => null,
+            'id' => null,
+            'companyId' => null,
             'email' => fake()->unique()->safeEmail(),
             'role' => 10,
             'type' => 0,

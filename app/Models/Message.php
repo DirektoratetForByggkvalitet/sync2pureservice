@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\{Storage, Blade};
 use Illuminate\Support\{Str, Arr};
-use App\Services\{PsApi, Enhetsregisteret};
+use App\Services\{PsApi, Enhetsregisteret, Tools};
 use App\Models\{Ticket, Company, User};
 
 class Message extends Model
@@ -126,4 +126,62 @@ class Message extends Model
         endif;
         return $ticket;
     }
+
+    /**
+     * Splitter innsynskrav opp slik at hver sak får sitt eget innsynskrav
+     */
+    public function splittInnsynsKrav(PsApi|false $ps = false): array|false {
+        if (!$ps):
+            $ps = new PsApi();
+            $ps->setTicketOptions();
+        endif;
+
+        if (count($this->attachments) > 0):
+            foreach ($this->attachments as $a):
+                if (Storage::mimeType($a) == 'application/xml'):
+                    $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($a))), true);
+                    // Rydder opp i tolkingen av xml
+                    $dokumenter = collect($bestilling['dokumenter']['dokument']);
+                    unset($bestilling['dokumenter']['dokument']);
+                    $bestilling['dokumenter'] = $dokumenter;
+                    unset($dokumenter);
+                else:
+                    continue;
+                endif;
+            endforeach;
+        endif;
+        if (!isset($bestilling)):
+            return false;
+        endif;
+        // Innsynskrav kommer alltid fra Digdir, så vi må finne korrespondansepartneren fra bestillingen
+        $sender = $this->userFromKontaktinfo($bestilling, $ps);
+        $saker = $bestilling['dokumenter']->unique('saksnr');
+        foreach ($saker as $sak):
+            $saksnr = $sak['saksnr'];
+            $subject = 'Innsynskrav for sak '.$saksnr;
+            $description = Blade::render('innsynskrav', [$bestilling, $saksnr, $subject]);
+        endforeach;
+    }
+
+    protected function userFromKontaktinfo(array $bestilling, PsApi $ps): User {
+        $kontaktinfo = &$bestilling['kontaktinfo'];
+
+        $userData = [
+            'email' => $kontaktinfo['e-post'],
+        ];
+        if ($kontaktinfo['navn'] != ''):
+            $userData['firstName'] = Str::before($kontaktinfo['name'], ' ');
+            $userData['lastName'] = Str::after($kontaktinfo['navn'], ' ');
+        else:
+            $emailData = Tools::nameFromEmail($kontaktinfo['e-post']);
+            $userData['firstName'] = $emailData[0];
+            $userData['lastName'] = $emailData[1];
+        endif;
+
+        $user = User::factory()->create($userData);
+        $user->addOrUpdatePS($ps);
+
+        return $user;
+    }
+
 }

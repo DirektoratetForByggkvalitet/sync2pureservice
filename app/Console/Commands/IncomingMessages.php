@@ -69,8 +69,15 @@ class IncomingMessages extends Command
         $bar = $this->output->createProgressBar(Message::count());
         $bar->setFormat('verbose');
         $bar->start();
+        $tickets = [];
         foreach(Message::lazy() as $message):
-            $message->toPsTicket($this->ps);
+            if ($message->documentType() == 'innsynskrav'):
+                if ($new = $message->splittInnsynskrav()):
+                    array_merge($tickets, $new);
+                endif;
+            else:
+                if ($new = $message->toPsTicket($this->ps)) $tickets[] = $new;
+            endif;
             $bar->advance();
         endforeach;
         $bar->finish();

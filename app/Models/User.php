@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany};
 use Illuminate\Support\Str;
-use App\Services\{Pureservice, Tools};
+use App\Services\{PsApi, Tools};
 
 class User extends Model
 {
@@ -46,7 +46,7 @@ class User extends Model
     }
 
     /** Synker bruker med Pureservice */
-    public function addOrUpdatePS(Pureservice $ps): bool {
+    public function addOrUpdatePS(PsApi $ps): bool {
         //$psCompanyUsers = $ps->findUsersByCompanyId($this->company->externalId;);
         $update = false;
         if ($psUser = $ps->findUser($this->email)):
@@ -73,12 +73,10 @@ class User extends Model
             $body['emailaddresses'][] = [
                 'email' => $this->email,
             ];
-            if ($response = $ps->apiPOST($uri, $body)):
-                $result = json_decode($response->getBody()->getContents(), true);
-                $emailId = $result['emailaddresses'][0]['id'];
+            if ($response = $ps->apiPost($uri, $body)):
+                $emailId = $response->json('emailaddresses.0.id');
             endif;
         endif;
-
 
         $body = $this->toArray();
         if (config('pureservice.user.no_email_field')) $body[config('pureservice.user.no_email_field')] = 1;
@@ -98,10 +96,9 @@ class User extends Model
             $postBody = ['users' => []];
             $postBody['users'][] = $body;
             unset($body);
-            if ($response = $ps->apiPOST($uri, $postBody)):
-                $result = json_decode($response->getBody()->getContents(), true);
-                if (count($result['users']) > 0):
-                    $this->id = $result['users'][0]['id'];
+            if ($response = $ps->apiPost($uri, $postBody)):
+                if ($response->json('users.0')):
+                    $this->id = $response->json('users.0.id');
                     $this->save();
                     return true;
                 endif;

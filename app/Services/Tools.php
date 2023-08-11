@@ -52,4 +52,20 @@ class Tools {
             ->toDateTimeString();
     }
 
+    public static function nameFromEmail(string $email, bool $splitName = true): array|string {
+        $data = [];
+        $beforeAt = Str::before($email, '@');
+        $domain = Str::after($email, '@');
+        if (Str::contains($beforeAt, '.')):
+            // Hvis e-postadressen f.eks. er ola.nordmann@gmail.com
+            $data[0] = Str::ucfirst(Str::before($beforeAt, '.'));
+            $data[1] = Str::ucfirst(Str::after($beforeAt, '.'));
+        else:
+            $data[0] = $beforeAt;
+            $data[1] = $domain;
+        endif;
+
+        return $splitName ? $data : implode(' ', $data);
+
+    }
 }

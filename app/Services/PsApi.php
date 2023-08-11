@@ -5,6 +5,7 @@ use App\Models\{Ticket, TicketCommunication, User, Company, Message};
 use Carbon\Carbon;
 use Illuminate\Support\{Str, Arr};
 use Illuminate\Support\Facades\Storage;
+use cardinalby\ContentDisposition\ContentDisposition;
 
 /**
  * Versjon 2 av Pureservice API-klient, basert på Laravel sitt HTTP Client-bibliotek
@@ -256,19 +257,22 @@ class PsApi extends API {
      * Siden én bruker kan ha flere e-postadresser er det viktig at man søker etter e-postadresse-objekter,
      * og inkluderer brukeren, fremfor å søke etter brukeren.
      */
-    public function findUser($email): array|false {
+    public function findUser($email, bool $returnClass = false): array|false {
         $uri = '/emailaddress/';
         $query = [
             'include' => 'user',
             'filter' => 'email == "'.$email.'"',
         ];
         if ($result = $this->apiQuery($uri, $query)):
-            if (count($result['emailaddresses']) > 0) return $result['linked']['users'][0];
+            if (count($result['emailaddresses']) > 0):
+                $user = $result['linked']['users'][0];
+                return $returnClass ? collect($user)->mapInto('App\Models\User') : $user;
+            endif;
         endif;
         return false;
     }
 
-    public function findCompany($orgNo=null, $companyName=null): array|false {
+    public function findCompany(string|null $orgNo=null, string|null $companyName=null, bool $returnClass = false): Company|array|false {
         $uri = '/company/';
         $query = [
             'include'=> 'phonenumber,emailAddress',
@@ -291,10 +295,11 @@ class PsApi extends API {
         // Gitt at begge selskaper blir funnet, er de det samme?
         $sameCompany = ($companyByName && $companyByOrgNo) && ($companyByName['id'] == $companyByOrgNo['id']);
         if ($sameCompany || (!$companyByName && $companyByOrgNo)):
-            return $companyByOrgNo;
-       else:
-            return $companyByName;
+            $returnValue = &$companyByOrgNo;
+        else:
+            $returnValue = &$companyByName;
         endif;
+        return $returnClass ? collect($returnValue)->mapInto('App\Models\Company'): $returnValue;
     }
 
 
