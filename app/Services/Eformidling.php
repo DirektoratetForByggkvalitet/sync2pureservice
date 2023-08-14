@@ -91,7 +91,7 @@ class Eformidling extends API {
             // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
             $fileMimeType = Str::before($response->header('content-type'), ';');
             $cd = ContentDisposition::parse($response->header('content-disposition'));
-            $fileName = $dlPath.'/'. $cd->getFileName();
+            $fileName = $dlPath . '/' . $cd->getFileName();
             Storage::put(
                 $fileName,
                 $response->toPsrResponse()->getBody()->getContents()
@@ -187,6 +187,10 @@ class Eformidling extends API {
             endif;
         endif;
         return $types;
+    }
+
+    protected function getRecipientId (string $orgNo): string {
+        return $this->myConf('address.prefix'). $orgNo;
     }
 
     public function createAndSendMessage(Ticket $ticket, Company $recipient) {
