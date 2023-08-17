@@ -17,12 +17,11 @@ class MessageFactory extends Factory
     public function definition(): array
     {
         return [
+            'id' => uuid_create(),
             'sender_id' => null,
             'receiver_id' => null,
-            'documentId' => fake()->text(50),
             'documentStandard' => fake()->text(25),
             'conversationId' => fake()->text(50),
-            'conversationIdentifier' => fake()->text(50),
             'content' => '{}',
             'mainDocument' => null,
             'attachments' => [],

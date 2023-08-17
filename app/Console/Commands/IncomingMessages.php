@@ -41,6 +41,7 @@ class IncomingMessages extends Command
         $this->newLine(2);
 
         $this->ip = new Eformidling();
+        $this->info(Tools::l1().'Bruker '.$this->ip->getBaseUrl().' som integrasjonspunkt');
         $messages = $this->ip->getIncomingMessages();
         if (!$messages):
             $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
@@ -51,11 +52,11 @@ class IncomingMessages extends Command
         foreach ($messages as $m):
             $msgId = $this->ip->getMsgDocumentIdentification($m);
             $msg = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
+            if (!$msg) $msg = $m;
             $this->line(Tools::l1().'Behandler dokumentet \''.$msgId['instanceIdentifier'].'\'');
-            if ($this->ip->storeMessage($msg)):
+            if ($dbMessage = $this->ip->storeMessage($msg)):
                 $this->line(Tools::l2().'Dokumentet ble lagret i DB');
-            endif;
-            if ($this->ip->storeAttachments($msg)):
+                $this->ip->storeAttachments($dbMessage);
                 $this->line(Tools::l2().'Vedlegg ble lastet ned og knyttet til meldingen');
             endif;
             $this->newLine();
@@ -66,21 +67,27 @@ class IncomingMessages extends Command
         $this->ps = new PsApi();
         $this->ps->setCKey(Str::lower(class_basename($this->ip)));
         $this->ps->setTicketOptions();
-        $bar = $this->output->createProgressBar(Message::count());
-        $bar->setFormat('verbose');
-        $bar->start();
+        // $bar = $this->output->createProgressBar(Message::count());
+        // $bar->setFormat('verbose');
+        // $bar->start();
         $tickets = [];
+        $it = 0;
+        $msgCount = count(Message::all(['id']));
         foreach(Message::lazy() as $message):
+            $it++;
+            $this->line(Tools::l2().$it.'/'.$msgCount.': '. $message->documentType().' fra '.$message->sender_id);
             if ($message->documentType() == 'innsynskrav'):
+                $this->line(Tools::l3().'Splitter innsynskravet basert på saker');
                 if ($new = $message->splittInnsynskrav()):
                     array_merge($tickets, $new);
                 endif;
             else:
+                $this->line(Tools::l3().'Oppretter sak i Pureservice');
                 if ($new = $message->toPsTicket($this->ps)) $tickets[] = $new;
             endif;
-            $bar->advance();
+            // $bar->advance();
         endforeach;
-        $bar->finish();
+        // $bar->finish();
         $this->info('Ferdig. Operasjonen tok '.round((microtime(true) - $this->start), 0).' sekunder');
         return Command::SUCCESS;
     }

@@ -27,6 +27,20 @@ class Enhetsregisteret extends API {
                 'email' => null,
                 'phone' => null,
             ];
+        elseif ($regno == '987464291'):
+            /**
+             * Digitaliseringsdirektoratet sitt test-integrasjonspunkt finnes ikke i BRREG-APIet
+             */
+            $fields = [
+                'name' => 'Digitaliseringsdirektoratet testsystem',
+                'organizationNumber' => $regno,
+                'website' => null,
+                'category' => null,
+                'email' => 'ikke_svar@einnsyn.no',
+                'phone' => null,
+            ];
+        endif;
+        if (isset($fields)):
             $c = Company::factory()->make($fields);
             $c->save();
             return $c;

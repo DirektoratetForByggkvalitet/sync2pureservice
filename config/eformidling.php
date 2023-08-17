@@ -6,13 +6,24 @@ return [
         'prefix' => env('EF_IP_PREFIX', 'api'),
         'auth' => env('EF_IP_AUTH', false),
         'user' => env('EF_IP_USER'),
-        'password' => env('EF_IP_PASS'),
+        'password' => env('EF_IP_PASSWORD'),
         'accept' => null,
         'asic_accept' => 'application/vnd.etsi.asic-e+zip',
     ],
+    'testapi' => [
+        'url' => env('EF_TEST_IP_URL', 'https://qa-meldingsutveksling.difi.no/integrasjonspunkt/digdir-leikanger'),
+        'auth' => env('EF_TEST_IP_AUTH', false),
+        'user' => env('EF_TEST_IP_USER'),
+        'password' => env('EF_TEST_IP_PASSWORD'),
+        'prefix' => env('EF_TEST_IP_PREFIX', 'api'),
+    ],
     'address' => [
         'prefix' => '0192:',
-        'sender_id' => env('EF_SENDER_ID'),
+        'sender_id' => env('EF_SELF_ID'),
+        'digdir_ids' => [
+            '987464291',
+            '991825827'
+        ]
     ],
     'path' => [
         'download' => env('EF_DOWNLOAD_PATH', 'eformidling_download'),

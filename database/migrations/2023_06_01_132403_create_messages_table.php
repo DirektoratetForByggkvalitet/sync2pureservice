@@ -29,7 +29,7 @@ return new class extends Migration
             );
             $table->json('content');
             $table->string('mainDocument')->nullable();
-            $table->json('attachments')->default('{[]}');
+            $table->json('attachments')->nullable();
         });
     }
 

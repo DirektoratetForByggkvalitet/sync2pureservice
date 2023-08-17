@@ -16,6 +16,7 @@ class Eformidling extends API {
     public function __construct() {
         parent::__construct();
         $this->prefix = $this->myConf('api.prefix');
+        $this->setupClient();
         $this->brreg = new Enhetsregisteret();
     }
 
@@ -41,13 +42,15 @@ class Eformidling extends API {
      * Finner ut hvilke brukerIDer i Pureservice som skal knyttes til sender og receiver
      */
     public function resolveActors(array $message): array {
+        $sender = $this->brreg->getCompany(
+            $this->stripIsoPrefix(
+                Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier.value')));
+        $receiver = $this->brreg->getCompany(
+            $this->stripIsoPrefix(
+                Arr::get($message, 'standardBusinessDocumentHeader.receiver.0.identifier.value')));
         return [
-            'sender' => $this->brreg->getCompany(
-                $this->stripIsoPrefix(
-                    Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier.value'))),
-            'recevier' => $this->brreg->getCompany(
-                $this->stripIsoPrefix(
-                    Arr::get($message, 'standardBusinessDocumentHeader.receiver.0.identifier.value'))),
+            'sender' => $sender ? $sender : Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier.value'),
+            'receiver' => $receiver,
         ];
     }
     /**
@@ -55,6 +58,17 @@ class Eformidling extends API {
      */
     public function stripIsoPrefix(string $identifier): string {
         return Str::after($identifier, ':');
+    }
+
+    /**
+     * Legger til prefix for orgnr
+     */
+    public function addIsoPrefix(string $identifier): string {
+        // Dersom prefiksen allerede er der, bare send tilbake $identifier urørt
+        if (Str::startsWith($identifier, config('eformidling.address.prefix'))):
+            return $identifier;
+        endif;
+        return config('eformidling.address.prefix').$identifier;
     }
 
 
@@ -75,9 +89,13 @@ class Eformidling extends API {
      * Peek låser en innkommende melding og gjør den tilgjengelig for nedlasting
      */
     public function peekIncomingMessageById(string $messageId) : array|false {
-        $uri = 'messages/in/peek';
-        if ($result = $this->apiGet($uri, false, null, ['messageId' => $messageId]))
+        $uri = 'messages/in/peek?messageId='.$messageId;
+        $query = [
+            'messageId' => $messageId,
+        ];
+        if ($result = $this->apiGet($uri)):
             return $result;
+        endif;
         return false;
     }
 
@@ -89,7 +107,7 @@ class Eformidling extends API {
         $dlPath = $dlPath ? $dlPath : $this->myConf('download_path') . '/'. $messageId;
         if ($response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'))):
             // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
-            $fileMimeType = Str::before($response->header('content-type'), ';');
+            //$fileMimeType = Str::before($response->header('content-type'), ';');
             $cd = ContentDisposition::parse($response->header('content-disposition'));
             $fileName = $dlPath . '/' . $cd->getFileName();
             Storage::put(
@@ -109,65 +127,79 @@ class Eformidling extends API {
         return false;
     }
 
-    /**
-     * Lagrer meldingen i databasen
-     */
-    public function storeMessage(array $message): bool {
-        $conversationIdScope = $this->getMsgConversationIdScope($message);
-        $documentIdentification = $this->getMsgDocumentIdentification($message);
-        $actors = $this->resolveActors($message);
-        $newMessage = Message::factory()->create([
-            'sender_id' => $actors['sender']->internal_id,
-            'receiver_id' => $actors['receiver']->internal_id,
-            'documentId' => $documentIdentification['instanceIdentifier'],
-            'documentStandard' => $documentIdentification['standard'],
-            'conversationId' => $conversationIdScope['instanceIdentifier'],
-            'conversationIdentifier' => $conversationIdScope['identifier'],
-            'content' => $message,
-            'mainDocument' => Arr::get($message, 'arkivmelding.hoveddokument'),
-            'attachments' => [],
-        ]);
-        $newMessage->save();
-        return true;
-    }
-
-    public function getMsgDocumentIdentification(array $msg): string {
+    public function getMsgDocumentIdentification(array $msg): array|string {
         return Arr::get($msg, 'standardBusinessDocumentHeader.documentIdentification');
     }
 
-    public function getMsgConversationIdScope(array $msg): string {
+    public function getMsgConversationIdScope(array $msg): array|string {
         $scope = collect(Arr::get($msg, 'standardBusinessDocumentHeader.businessScope.scope'));
         return $scope->firstWhere('type', 'ConversationId');
     }
 
     /**
+     * Lagrer meldingen i databasen
+     */
+    public function storeMessage(array $message): Message {
+        $conversationIdScope = $this->getMsgConversationIdScope($message);
+        $documentIdentification = $this->getMsgDocumentIdentification($message);
+        $actors = $this->resolveActors($message);
+        //dd($actors);
+        if ($dbMessage = Message::find($documentIdentification['instanceIdentifier'])):
+            // Meldingen ligger allerede i DB.
+            return $dbMessage;
+        endif;
+        $newMessage = Message::factory()->create([
+            'id' => $documentIdentification['instanceIdentifier'],
+            'sender_id' => $actors['sender']->internal_id,
+            'receiver_id' => $actors['receiver']->internal_id,
+            'documentStandard' => $documentIdentification['standard'],
+            'conversationId' => $conversationIdScope['instanceIdentifier'],
+            'documentType' => $documentIdentification['type'],
+            'content' => $message,
+            'mainDocument' => Arr::get($message, 'arkivmelding.hoveddokument', null),
+            'attachments' => [],
+        ]);
+        $newMessage->save();
+        return $newMessage;
+    }
+
+    /**
      * Laster ned, pakker ut, og knytter vedlegg til meldingen
      */
-    public function storeAttachments(array $message): bool {
-        // Henter inn meldingen fra DB
-        $msgIdentification = $this->getMsgDocumentIdentification($message);
-        $dbMessage = Message::firstWhere('messageId', $msgIdentification['instanceIdentifier']);
-        $path = $dbMessage->downloadPath();
-        $zipfile = $this->downloadIncomingAsic($dbMessage->messageId, $path);
-        if (!$zipfile) return false;
+    public function storeAttachments(Message $dbMessage): bool {
+        if (count($dbMessage->attachments) == 0):
+            $path = $dbMessage->downloadPath();
+            $zipfile = $this->downloadIncomingAsic($dbMessage->id, $path);
+            if (!$zipfile) return false;
 
-        if (Str::endsWith($zipfile, '.zip')):
-            // Vi har et filnavn som slutter på .zip, pakker den ut
-            $zipArchive = new ZipArchive();
-            $zipArchive->open(Storage::path($zipfile), ZipArchive::RDONLY);
-            $zipArchive->extractTo($path);
-            $zipArchive->close();
-            // Sletter zip-filen, siden innholdet er pakket ut
-            Storage::delete($zipfile);
+            if (Str::endsWith($zipfile, '.zip')):
+                // Vi har et filnavn som slutter på .zip, pakker den ut
+                $zipArchive = new ZipArchive();
+                $zipArchive->open(Storage::path($zipfile), ZipArchive::RDONLY);
+                $zipArchive->extractTo(Storage::path($path));
+                $zipArchive->close();
+                // Sletter zip-filen, siden innholdet er pakket ut
+                Storage::delete($zipfile);
+                if (Storage::directoryExists($path.'/META-INF')):
+                    Storage::deleteDirectory($path.'/META-INF');
+                endif;
+            endif;
+            foreach (Storage::files($path) as $filepath):
+                // Hopper over filer med filnavn som begynner med '.'
+                $fname = Str::afterLast($filepath, '/');
+                if (Str::startsWith($fname, '.') || $fname == 'manifest.xml' || $fname == 'mimetype'):
+                    continue;
+                endif;
+
+                // Legger filen til i listen over vedlegg
+                $dbMessage->attachments[] = $filepath;
+            endforeach;
+            $dbMessage->save();
+            return true;
+        else:
+            return false;
         endif;
-        foreach (Storage::files($path) as $file):
-            // Hopper over filer med filnavn som begynner med '.'
-            if (Str::startsWith(Str::afterLast($file, '/'), '.')) continue;
-            // Legger filen til i listen over vedlegg
-            $dbMessage->attachments[] = $file;
-        endforeach;
-        $dbMessage->save();
-        return true;
+
     }
 
     // Returnerer array over meldingstyper som foretaket kan motta
@@ -187,10 +219,6 @@ class Eformidling extends API {
             endif;
         endif;
         return $types;
-    }
-
-    protected function getRecipientId (string $orgNo): string {
-        return $this->myConf('address.prefix'). $orgNo;
     }
 
     public function createAndSendMessage(Ticket $ticket, Company $recipient) {

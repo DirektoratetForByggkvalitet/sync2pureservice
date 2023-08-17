@@ -26,15 +26,27 @@ class API {
     protected false|string $auth = false;
 
     public function __construct() {
-        $this->cKey = Str::lower(class_basename($this));
-        $this->setProperties();
-        //$this->getClient();
+        $this->setCKey(Str::lower(class_basename($this)));
     }
 
-    protected function setProperties() {
-        $this->auth = $this->myConf('api.auth', false);
-        $this->prefix = $this->myConf('api.prefix', '');
-        $this->base_url = $this->myConf('api.url');
+    /**
+     * Åpner for å endre url og auth ved å oppgi en konfig-prefiks
+     * Standard prefiks er 'api' (som gir f.eks. 'eformidling.api.url')
+     * For å bruke digdir sitt test-integrasjonspunkt kan vi bruke prefix 'testapi',
+     * som de vil bruke 'eformidling.testapi' for å finne innstillingene
+     */
+    public function setProperties(string $prefix = 'api') {
+        $this->auth = $this->myConf($prefix.'.auth', false);
+        $this->prefix = $this->myConf($prefix.'.prefix', '');
+        $this->base_url = $this->myConf($prefix.'.url');
+    }
+
+    public function setBaseUrl(string $url): void {
+        $this->base_url = $url;
+    }
+
+    public function getBaseUrl(): string {
+        return $this->base_url;
     }
     /**
      * Set the value of cKey
@@ -107,10 +119,10 @@ class API {
     }
 
     public function resolveUri(string $path): string {
-        if (Str::startsWith($path, 'https://') || Str::startsWith($path, 'http://')):
+        if (Str::startsWith($path, 'https:') || Str::startsWith($path, 'http:')):
             return $path; // Returnerer samme verdi, siden det er en full URL
         else:
-            return $this->myConf('api.url') . Str::replace('//', '/', '/' . $this->prefix . '/' . $path);
+            return $this->base_url . Str::replace('//', '/', '/' . $this->prefix . '/' . $path);
         endif;
     }
 
@@ -120,14 +132,15 @@ class API {
      * @param   bool    $returnResponse Returnerer Response-objektet, fremfor kun dataene
      * @param   string  $contentType    Setter Content-Type for forespørselen
      */
-    public function apiGet(string $uri, bool $returnResponse = false, string|null|false $accept = null, array $query = [], bool $statusOnError = false): Response|array|false {
+    public function apiGet(string $uri, bool $returnResponse = false, string|null|false $accept = null, array $query = [], bool $statusOnError = false): mixed {
         $uri = $this->resolveUri($uri);
         $response = $this->prepRequest($accept)->get($uri, $query);
         if ($response->successful()):
             if ($returnResponse) return $response;
             return $response->json();
         endif;
-        if ($statusOnError) return $response->status();
+        if ($statusOnError) return
+            [$response->status(), $response->json()];
         return false;
     }
 

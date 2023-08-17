@@ -16,7 +16,6 @@ class Message extends Model
     protected $fillable = [
         'sender_id',
         'receiver_id',
-        'documentId',
         'documentStandard',
         'conversationId',
         'processIdentifier',
@@ -28,6 +27,7 @@ class Message extends Model
     protected $casts = [
         'attachments' => 'array',
         'content' => 'array',
+        'id' => 'string',
     ];
 
     public function getResponseDt() {
@@ -64,7 +64,7 @@ class Message extends Model
      * Oppgir nedlastingslokasjon for meldingen
     */
     public function downloadPath(bool $fullPath = false): string {
-        $path = config('eformidling.path.download').'/'.$this->messageId;
+        $path = config('eformidling.path.download').'/'. $this->id;
         Storage::makeDirectory($path);
         return $fullPath ? Storage::path($path) : $path;
     }
@@ -72,7 +72,7 @@ class Message extends Model
      * Oppgir temp-lokasjon for meldingen
     */
     public function tempPath(bool $fullPath = false): string {
-        $path = config('eformidling.path.temp').'/'.$this->messageId;
+        $path = config('eformidling.path.temp').'/'. $this->id;
         Storage::makeDirectory($path);
         return $fullPath ? Storage::path($path) : $path;
     }
@@ -112,12 +112,7 @@ class Message extends Model
 
         $subject = Str::ucfirst($this->documentType());
         $subject .= ' for prosessen '.$this->processIdentifier;
-        $description = '<ul>'.PHP_EOL;
-        $description .= '  <li>Opprettet: '.$this->createdDtHr().'</li>'.PHP_EOL;
-        $description .= '  <li>Forventet svardato: '.$this->expectedResponseDtHr().'</li>'.PHP_EOL;
-        $description .= '  <li>Antall vedlegg: '.count($this->attachments).'</li>'.PHP_EOL;
-        $description .= '</ul>'.PHP_EOL;
-        $description .= '<p>Se vedlegg for innholdet i forsendelsen.</p>';
+        $description = Blade::render('arkivmelding', ['subject' => $subject, 'msg' => $this], true);
 
         if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.invisible'))):
             if (count($this->attachments)):
@@ -159,7 +154,7 @@ class Message extends Model
         foreach ($saker as $sak):
             $saksnr = $sak['saksnr'];
             $subject = 'Innsynskrav for sak '.$saksnr;
-            $description = Blade::render('innsynskrav', [$bestilling, $saksnr, $subject]);
+            $description = Blade::render('innsynskrav', ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject], true);
         endforeach;
     }
 
