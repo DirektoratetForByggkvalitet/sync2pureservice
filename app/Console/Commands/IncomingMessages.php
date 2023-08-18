@@ -4,14 +4,14 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Services\{Eformidling, PsApi, Tools};
-use App\Models\Message;
+use App\Models\{Message, Company};
 use Illuminate\Support\{Str, Arr};
 
 
 class IncomingMessages extends Command
 {
     protected float $start;
-    protected string $version = '0.2';
+    protected string $version = '0.8';
     protected int $count = 0;
     protected Eformidling $ip;
     protected PsApi $ps;
@@ -51,13 +51,26 @@ class IncomingMessages extends Command
         $this->info(Tools::l1().'Behandler totalt '.$this->count.' innkommende meldinger');
         foreach ($messages as $m):
             $msgId = $this->ip->getMsgDocumentIdentification($m);
-            $msg = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
-            if (!$msg) $msg = $m;
             $this->line(Tools::l1().'Behandler dokumentet \''.$msgId['instanceIdentifier'].'\'');
+            $msg = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
+            if (!$msg):
+                if (!$dbMessage = Message::find($msgId['instanceIdentifier'])):
+                    $this->error(Tools::l2().'Meldingen er låst og kan ikke lastes ned (enda). Vent i noen minutter.');
+                    return Command::FAILURE;
+                else:
+                    $this->line(Tools::l2().'Meldingen er låst i integrasjonspunktet, men ble funnet i DB. Fortsetter.');
+                    $msg = $m;
+                    unset($dbMessage);
+                endif;
+            endif;
             if ($dbMessage = $this->ip->storeMessage($msg)):
                 $this->line(Tools::l2().'Dokumentet ble lagret i DB');
-                $this->ip->storeAttachments($dbMessage);
-                $this->line(Tools::l2().'Vedlegg ble lastet ned og knyttet til meldingen');
+                if ($attCount = $this->ip->downloadMessageAttachments($dbMessage)):
+                    $this->line(Tools::l2().$attCount .' vedlegg er lastet ned og knyttet til meldingen');
+                else:
+                    $this->error(Tools::l2().'Fikk ikke lastet ned vedlegg');
+                    return Command::FAILURE;
+                endif;
             endif;
             $this->newLine();
         endforeach;
@@ -65,8 +78,7 @@ class IncomingMessages extends Command
         $this->newLine();
         $this->info(Tools::l1().'Importerer meldinger til Pureservice');
         $this->ps = new PsApi();
-        $this->ps->setCKey(Str::lower(class_basename($this->ip)));
-        $this->ps->setTicketOptions();
+        $this->ps->setTicketOptions('eformidling');
         // $bar = $this->output->createProgressBar(Message::count());
         // $bar->setFormat('verbose');
         // $bar->start();
@@ -75,17 +87,29 @@ class IncomingMessages extends Command
         $msgCount = count(Message::all(['id']));
         foreach(Message::lazy() as $message):
             $it++;
-            $this->line(Tools::l2().$it.'/'.$msgCount.': '. $message->documentType().' fra '.$message->sender_id);
+            $sender = Company::find($message->sender_id);
+            $this->line(Tools::l2().$it.'/'.$msgCount.': '. $message->documentType().' fra '.$sender->name);
             if ($message->documentType() == 'innsynskrav'):
-                $this->line(Tools::l3().'Splitter innsynskravet basert på saker');
-                if ($new = $message->splittInnsynskrav()):
+                $this->ps->setTicketOptions('innsynskrav');
+                $this->line(Tools::l3().'Splitter innsynskravet opp basert på arkivsaker');
+                if ($new = $message->splittInnsynskrav($this->ps)):
+                    $this->line(Tools::l3().count($new).' innsynskrav ble opprettet i Pureservice');
                     array_merge($tickets, $new);
+                    unset($new);
+                else:
+                    $this->error(Tools::l3().'Klarte ikke å splitte innsynskravet');
+                    return Command::FAILURE;
                 endif;
-            else:
+             else:
                 $this->line(Tools::l3().'Oppretter sak i Pureservice');
-                if ($new = $message->toPsTicket($this->ps)) $tickets[] = $new;
+                $this->ps->setTicketOptions('eformidling');
+                if ($new = $message->toPsTicket($this->ps)):
+                    $tickets[] = $new;
+                    unset($new);
+                endif;
             endif;
             // $bar->advance();
+            $this->newLine();
         endforeach;
         // $bar->finish();
         $this->info('Ferdig. Operasjonen tok '.round((microtime(true) - $this->start), 0).' sekunder');

@@ -60,6 +60,22 @@ class Message extends Model
 
     }
 
+    public function getOpprettetDato(): string {
+        return Tools::atomTs();
+    }
+    public function getArkivertDato(): string {
+        return $this->getOpprettetDato();
+    }
+    public function getCreatedDTLocalString(): string {
+        return Carbon::now(config('app.timezone'))->toDateTimeLocalString();
+    }
+
+    public function getOpprettetAv(): string {
+        return 'sync2pureservice';
+    }
+    public function getArkivertAv(): string {
+        return $this->getOpprettetAv();
+    }
     /**
      * Oppgir nedlastingslokasjon for meldingen
     */
@@ -93,7 +109,7 @@ class Message extends Model
     public function saveToPs(PsApi|false $ps = false): Ticket|false {
         if (!$ps):
             $ps = new PsApi();
-            $ps->setTicketOptions();
+            $ps->setTicketOptions('eformidling');
         endif;
         $sender = Company::find($this->sender_id);
         // Dersom avsender ikke er oss selv
@@ -101,18 +117,19 @@ class Message extends Model
             // Legg til eller oppdater avsenders virksomhet i Pureservice
             $sender->addOrUpdatePS($ps);
             // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
-            $senderUser = $sender->users()->firstWhere('email', $sender->getEformidlingEmail())->addOrUpdatePs($ps);
+            $senderUser = $sender->getEfUser()->addOrUpdatePs($ps);
         endif;
         $receiver = Company::find($this->receiver_id);
         // Dersom mottaker ikke er oss selv (noe det vil være)
         if ($receiver->organizationNumber != config('eformidling.address.sender_id')):
             $receiver->addOrUpdatePS($ps);
-            $receiverUser = $receiver->users()->firstWhere('email', $sender->getEformidlingEmail())->addOrUpdatePs($ps);
+            $receiverUser = $receiver->getEfUser()->addOrUpdatePs($ps);
         endif;
 
         $subject = Str::ucfirst($this->documentType());
         $subject .= ' for prosessen '.$this->processIdentifier;
-        $description = Blade::render('arkivmelding', ['subject' => $subject, 'msg' => $this], true);
+        $description = Blade::render('arkivmelding', ['subject' => $subject, 'msg' => $this]);
+        //dd($description);
 
         if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.invisible'))):
             if (count($this->attachments)):
@@ -128,12 +145,12 @@ class Message extends Model
     public function splittInnsynsKrav(PsApi|false $ps = false): array|false {
         if (!$ps):
             $ps = new PsApi();
-            $ps->setTicketOptions();
+            $ps->setTicketOptions('innsynskrav');
         endif;
 
         if (count($this->attachments) > 0):
             foreach ($this->attachments as $a):
-                if (Storage::mimeType($a) == 'application/xml'):
+                if (Storage::mimeType($a) == 'text/xml'):
                     $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($a))), true);
                     // Rydder opp i tolkingen av xml
                     $dokumenter = collect($bestilling['dokumenter']['dokument']);
@@ -149,31 +166,34 @@ class Message extends Model
             return false;
         endif;
         // Innsynskrav kommer alltid fra Digdir, så vi må finne korrespondansepartneren fra bestillingen
-        $sender = $this->userFromKontaktinfo($bestilling, $ps);
+        $senderUser = $this->userFromKontaktinfo($bestilling, $ps);
         $saker = $bestilling['dokumenter']->unique('saksnr');
+        $tickets = [];
         foreach ($saker as $sak):
             $saksnr = $sak['saksnr'];
             $subject = 'Innsynskrav for sak '.$saksnr;
-            $description = Blade::render('innsynskrav', ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject], true);
+            $description = Blade::render('innsynskrav', ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject]);
+            $tickets[] = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'));
         endforeach;
+        return $tickets;
     }
 
     protected function userFromKontaktinfo(array $bestilling, PsApi $ps): User {
         $kontaktinfo = &$bestilling['kontaktinfo'];
-
-        $userData = [
-            'email' => $kontaktinfo['e-post'],
-        ];
-        if ($kontaktinfo['navn'] != ''):
-            $userData['firstName'] = Str::before($kontaktinfo['name'], ' ');
-            $userData['lastName'] = Str::after($kontaktinfo['navn'], ' ');
-        else:
-            $emailData = Tools::nameFromEmail($kontaktinfo['e-post']);
-            $userData['firstName'] = $emailData[0];
-            $userData['lastName'] = $emailData[1];
+        if (!$user = User::firstWhere('email', $kontaktinfo['e-post'])):
+            $userData = [
+                'email' => $kontaktinfo['e-post'],
+            ];
+            if ($kontaktinfo['navn'] != ''):
+                $userData['firstName'] = Str::before($kontaktinfo['navn'], ' ');
+                $userData['lastName'] = Str::after($kontaktinfo['navn'], ' ');
+            else:
+                $emailData = Tools::nameFromEmail($kontaktinfo['e-post']);
+                $userData['firstName'] = $emailData[0];
+                $userData['lastName'] = $emailData[1];
+            endif;
+            $user = User::factory()->create($userData);
         endif;
-
-        $user = User::factory()->create($userData);
         $user->addOrUpdatePS($ps);
 
         return $user;

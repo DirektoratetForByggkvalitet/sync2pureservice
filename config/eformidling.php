@@ -1,5 +1,5 @@
 <?php
-
+use Illuminate\Support\Str;
 return [
     'api' => [
         'url' => env('EF_IP_URL', ''),
@@ -24,6 +24,10 @@ return [
             '987464291',
             '991825827'
         ]
+    ],
+    'system' => [
+        'name' => env('EF_SYSTEM_NAME', 'sync2pureservice'),
+        'systemId' => env('EF_SYSTEM_ID', Str::uuid()),
     ],
     'path' => [
         'download' => env('EF_DOWNLOAD_PATH', 'eformidling_download'),
@@ -59,17 +63,5 @@ return [
         'naeringsutvikling' => 'næringsutvikling',
         'skatterOgAvgifter' => 'skatter og avgifter',
         'tekniskeTjenester' => 'tekniske tjenester',
-    ],
-    'ticket' => [
-        'codeTemplate' => env('PURESERVICE_TICKET_NUMBER_TEMPLATE', '[Sak ID# {{RequestNumber}}]'),
-        'source' => env('EF_TICKET_SOURCE', 'eForsendelse'),
-        'zone' => env('EF_TICKET_ZONE', 'Fordeling'),
-        'team' => env('EF_TICKET_TEAM', 'Postmottak'),
-        'visibility' => env('EF_TICKET_VISIBILITY', 2),
-        'ticketType' => env('EF_TICKET_TYPE', 'Henvendelse'),
-        'priority' => env('EF_TICKET_PRIORITY', 'Normal'),
-        'status' => env('EF_TICKET_STATUS', 'Ny'),
-        'status_solved' => env('PURESERVICE_TICKET_SOLVED_STATUS', 'Løst'),
-        'requestType' => env('PURESERVICE_TICKET_REQUEST_TYPE','Ticket'),
     ],
 ];

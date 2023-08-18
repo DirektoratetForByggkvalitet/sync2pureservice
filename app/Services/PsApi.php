@@ -127,9 +127,14 @@ class PsApi extends API {
             ]
         ]];
 
-        if ($response = $this->apiPost($uri, $body)):
-            $t = collect($response->json('tickets'));
-            return $returnClass ? $t->mapInto(Ticket::class) : $t->first();
+        $response = $this->apiPost($uri, $body);
+        if ($response->successful()):
+            $t = $response->json('tickets.0');
+            if ($returnClass):
+                return collect($t)->mapInto('App\Models\Ticket');
+            else:
+                return $t;
+            endif;
         endif;
         return false;
     }
@@ -385,7 +390,7 @@ class PsApi extends API {
         if ($result = $this->apiQuery($uri, $args)):
             $found = count($result[$prefix.'emailaddresses']);
             if ($found > 0):
-                return $result[$prefix.'emailaddresses.0.id'];
+                return Arr::get($result, $prefix.'emailaddresses.0.id');
             endif;
         endif;
         return null; // Hvis ikke funnet
@@ -407,7 +412,7 @@ class PsApi extends API {
         if ($result = $this->apiQuery($uri, $args)):
             $found = count($result['phonenumbers']);
             if ($found > 0):
-                return $result['phonenumbers.0.id'];
+                return Arr::get($result,'phonenumbers.0.id');
             endif;
         endif;
         return null; // Hvis ikke funnet

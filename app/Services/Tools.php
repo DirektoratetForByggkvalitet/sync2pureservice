@@ -68,4 +68,14 @@ class Tools {
         return $splitName ? $data : implode(' ', $data);
 
     }
+
+    public static function fileNameFromStoragePath(string $storagePath, bool $includeExt = true): string {
+        $filename = Str::afterLast($storagePath, '/');
+        return $includeExt ? $filename : Str::beforeLast($filename, '.');
+    }
+
+    public static function atomTs(string|int|false $ts = false): string {
+        $t = $ts ? Carbon::parse($ts)->tz(config('app.timezone')) : Carbon::now(config('app.timezone'));
+        return $t->toAtomString();
+    }
 }

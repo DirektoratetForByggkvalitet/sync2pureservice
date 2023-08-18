@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Client\{Response};
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany};
-use Illuminate\Support\Str;
+
 use App\Services\{PsApi, Tools};
 
 class User extends Model
@@ -46,7 +47,7 @@ class User extends Model
     }
 
     /** Synker bruker med Pureservice */
-    public function addOrUpdatePS(PsApi $ps): bool {
+    public function addOrUpdatePS(PsApi $ps): bool|Response {
         //$psCompanyUsers = $ps->findUsersByCompanyId($this->company->externalId;);
         $update = false;
         if ($psUser = $ps->findUser($this->email)):
@@ -87,7 +88,7 @@ class User extends Model
             // Oppdaterer brukeren i Pureservice
             $uri = '/user/'.$psUser['id'];
             $body['id'] = $psUser['id'];
-            return $ps->apiPut($uri, $body, true);
+            return $ps->apiPut($uri, $body, null, true);
         endif;
 
         if (!$psUser):

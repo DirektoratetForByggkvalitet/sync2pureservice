@@ -1,10 +1,8 @@
-
 @php
     $dokumenter = $bestilling['dokumenter']->where('saksnr', $saksnr);
 @endphp
-@endphp
 <h2>
-    Innsynskrav for {{ count($dokumenter) }} fra sak {{ $saksnr }}
+    Innsynskrav for {{ count($dokumenter) }} journalpost fra sak {{ $saksnr }}
     @if (isset($saksnavn))
         <br />{{ $saksnavn }}
     @endif
@@ -30,4 +28,4 @@
 @endforeach
 
 <p>eInnsyn-ID: {{ $bestilling['id'] }}</p>
-<p>PS! Sakens navn og navn på journalposter er tilgjengelig, da disse ikke oppgis i bestillingen</p>
+<p>PS! Sakens navn og navn pÃ¥ journalposter er tilgjengelig, da disse ikke oppgis i bestillingen</p>

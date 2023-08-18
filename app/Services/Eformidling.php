@@ -166,8 +166,10 @@ class Eformidling extends API {
     /**
      * Laster ned, pakker ut, og knytter vedlegg til meldingen
      */
-    public function storeAttachments(Message $dbMessage): bool {
+    public function downloadMessageAttachments(Message $dbMessage): int|false {
         if (count($dbMessage->attachments) == 0):
+            // Vi har ikke tidligere lastet ned vedlegg for denne meldingen
+            $dbMessage->save();
             $path = $dbMessage->downloadPath();
             $zipfile = $this->downloadIncomingAsic($dbMessage->id, $path);
             if (!$zipfile) return false;
@@ -184,6 +186,7 @@ class Eformidling extends API {
                     Storage::deleteDirectory($path.'/META-INF');
                 endif;
             endif;
+            $attachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
             foreach (Storage::files($path) as $filepath):
                 // Hopper over filer med filnavn som begynner med '.'
                 $fname = Str::afterLast($filepath, '/');
@@ -192,12 +195,13 @@ class Eformidling extends API {
                 endif;
 
                 // Legger filen til i listen over vedlegg
-                $dbMessage->attachments[] = $filepath;
+                $attachments[] = $filepath;
             endforeach;
+            $dbMessage->attachments = $attachments;
             $dbMessage->save();
-            return true;
+            return count($dbMessage->attachments);
         else:
-            return false;
+            return count($dbMessage->attachments);
         endif;
 
     }

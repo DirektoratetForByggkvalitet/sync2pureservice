@@ -153,6 +153,10 @@ class Company extends Model {
             $svarutEmail = $this->getSvarUtEmail();
             if ($svarUtUser = User::firstWhere('email', $svarutEmail)):
                 // SvarUt-brukeren finnes allerede i databasen
+                if (!$related = $this->users()->firstWhere('email', $svarutEmail)):
+                    $svarUtUser->companyId = $this->id;
+                    $svarUtUser->save();
+                endif;
             else:
                 $svarUtUser = $this->users()->create([
                     'firstName' => 'SvarUt',
@@ -160,20 +164,22 @@ class Company extends Model {
                     'email' => $svarutEmail,
                 ]);
             endif;
-            // Oppretter postmottak-bruker dersom denne finnes
+
+            $efUser = $this->getEfUser();
         endif; // $this->id
     }
 
-    public function createEFUser(): void {
+    public function getEfUser(): User {
         if ($this->id):
-            if (!$efUser = User::firstWhere('email', $this->getEformidlingEmail())):
+            if (!$efUser = $this->users()->firstWhere('email', $this->getEformidlingEmail())):
                 $efUser = $this->users()->create([
-                    'firstName' => 'Eformidling',
+                    'firstName' => 'eFormidling',
                     'lastName' => $this->name,
                     'email' => $this->getEformidlingEmail(),
                 ]);
             endif;
         endif;
+        return $efUser;
     }
 
     public function getSvarUtEmail() {
@@ -181,6 +187,6 @@ class Company extends Model {
     }
 
     public function getEformidlingEmail() {
-        return $this->orgnizationNumber.'@'.config('pureservice.user.ef_domain');
+        return $this->organizationNumber.'@'.config('pureservice.user.ef_domain');
     }
 }
