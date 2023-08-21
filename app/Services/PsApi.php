@@ -106,35 +106,36 @@ class PsApi extends API {
      * @param   string  $subject        Sakens emne
      * @param   string  $description    Beskrivelse av saken
      * @param   array   $userId         Sluttbrukers ID
-     * @param   mixed   $visibility     Synlighetskode
+     * @param   mixed   $visibility     Synlighetskode, standard = 2 (usynlig)
     */
-    public function createTicket(string $subject, string $description, int $userId, bool $visibility=false, bool $returnClass = true): array|false|Ticket {
-        if ($this->ticketOptions == []) $this->setTicketOptions();
+    public function createTicket(string $subject, string $description, int $userId, int $visibility = 2, bool $returnClass = true): array|false|Ticket {
+        //if ($this->ticketOptions == []) $this->setTicketOptions();
         $uri = '/ticket';
-        $body = ['tickets' => [
-            [
-                'subject' => $subject,
-                'description' => $description,
-                'userId' => $userId,
-                'visibility' => $visibility ? $visibility : config('pureservice.visibility.visible'),
-                'assignedDepartmentId' => $this->ticketOptions['zoneId'],
-                'assignedTeamId' => $this->ticketOptions['teamId'],
-                'sourceId' => $this->ticketOptions['sourceId'],
-                'ticketTypeId' => $this->ticketOptions['ticketTypeId'],
-                'priorityId' => $this->ticketOptions['priorityId'],
-                'statusId' => $this->ticketOptions['statusId'],
-                'requestTypeId' => $this->ticketOptions['requestTypeId'],
-            ]
-        ]];
-
-        $response = $this->apiPost($uri, $body);
+        $ticket = [
+            'subject' => $subject,
+            'description' => $description,
+            'userId' => $userId,
+            'visibility' => $visibility,
+            'assignedDepartmentId' => $this->ticketOptions['zoneId'],
+            'assignedTeamId' => $this->ticketOptions['teamId'],
+            'sourceId' => $this->ticketOptions['sourceId'],
+            'ticketTypeId' => $this->ticketOptions['ticketTypeId'],
+            'priorityId' => $this->ticketOptions['priorityId'],
+            'statusId' => $this->ticketOptions['statusId'],
+            'requestTypeId' => $this->ticketOptions['requestTypeId'],
+        ];
+        $body = ['tickets' => [$ticket]];
+        //dd($body);
+        $response = $this->apiPost($uri, $ticket);
         if ($response->successful()):
-            $t = $response->json('tickets.0');
+            $t = collect($response->json('tickets'));
             if ($returnClass):
-                return collect($t)->mapInto('App\Models\Ticket');
+                return $t->mapInto(Ticket::class)->first();
             else:
-                return $t;
+                return $t->first();
             endif;
+        // else:
+        //     return $response->json();
         endif;
         return false;
     }

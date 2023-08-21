@@ -8,10 +8,9 @@ use App\Models\{Message, Company};
 use Illuminate\Support\{Str, Arr};
 
 
-class IncomingMessages extends Command
-{
+class IncomingMessages extends Command {
     protected float $start;
-    protected string $version = '0.8';
+    protected string $version = '0.95';
     protected int $count = 0;
     protected Eformidling $ip;
     protected PsApi $ps;
@@ -51,7 +50,7 @@ class IncomingMessages extends Command
         $this->info(Tools::l1().'Behandler totalt '.$this->count.' innkommende meldinger');
         foreach ($messages as $m):
             $msgId = $this->ip->getMsgDocumentIdentification($m);
-            $this->line(Tools::l1().'Behandler dokumentet \''.$msgId['instanceIdentifier'].'\'');
+            $this->line(Tools::l1().'Behandler meldingen \''.$msgId['instanceIdentifier'].'\'');
             $msg = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
             if (!$msg):
                 if (!$dbMessage = Message::find($msgId['instanceIdentifier'])):
@@ -65,7 +64,7 @@ class IncomingMessages extends Command
             endif;
             if ($dbMessage = $this->ip->storeMessage($msg)):
                 $this->line(Tools::l2().'Dokumentet ble lagret i DB');
-                if ($attCount = $this->ip->downloadMessageAttachments($dbMessage)):
+                if ($attCount = $this->ip->downloadMessageAttachments($msgId['instanceIdentifier'])):
                     $this->line(Tools::l2().$attCount .' vedlegg er lastet ned og knyttet til meldingen');
                 else:
                     $this->error(Tools::l2().'Fikk ikke lastet ned vedlegg');
@@ -88,20 +87,23 @@ class IncomingMessages extends Command
         foreach(Message::lazy() as $message):
             $it++;
             $sender = Company::find($message->sender_id);
-            $this->line(Tools::l2().$it.'/'.$msgCount.': '. $message->documentType().' fra '.$sender->name);
+            $this->line(Tools::l1().$it.'/'.$msgCount.': '. $message->id.' - '. $message->documentType().' fra '.$sender->name);
             if ($message->documentType() == 'innsynskrav'):
                 $this->ps->setTicketOptions('innsynskrav');
-                $this->line(Tools::l3().'Splitter innsynskravet opp basert på arkivsaker');
+                $this->line(Tools::l2().'Splitter innsynskravet opp basert på arkivsaker');
                 if ($new = $message->splittInnsynskrav($this->ps)):
-                    $this->line(Tools::l3().count($new).' innsynskrav ble opprettet i Pureservice');
+                    $this->line(Tools::l2().count($new).' innsynskrav ble opprettet i Pureservice:');
+                    foreach ($new as $i):
+                        $this->line(Tools::l3().'- Sak ID '.$i->requestNumber. ' "'.$i->subject.'"');
+                    endforeach;
                     array_merge($tickets, $new);
                     unset($new);
                 else:
-                    $this->error(Tools::l3().'Klarte ikke å splitte innsynskravet');
+                    $this->error(Tools::l2().'Klarte ikke å splitte innsynskravet');
                     return Command::FAILURE;
                 endif;
              else:
-                $this->line(Tools::l3().'Oppretter sak i Pureservice');
+                $this->line(Tools::l2().'Oppretter sak i Pureservice');
                 $this->ps->setTicketOptions('eformidling');
                 if ($new = $message->toPsTicket($this->ps)):
                     $tickets[] = $new;

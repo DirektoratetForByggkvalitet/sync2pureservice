@@ -35,6 +35,7 @@ class Ticket extends Model
         'emailAddress',
         'subject',
         'description',
+        'solution',
         'eFormidling',
         'action',
         'pdf',

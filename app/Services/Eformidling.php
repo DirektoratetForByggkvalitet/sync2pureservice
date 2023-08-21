@@ -166,7 +166,8 @@ class Eformidling extends API {
     /**
      * Laster ned, pakker ut, og knytter vedlegg til meldingen
      */
-    public function downloadMessageAttachments(Message $dbMessage): int|false {
+    public function downloadMessageAttachments(string $msgId): int|false {
+        $dbMessage = Message::find($msgId);
         if (count($dbMessage->attachments) == 0):
             // Vi har ikke tidligere lastet ned vedlegg for denne meldingen
             $dbMessage->save();

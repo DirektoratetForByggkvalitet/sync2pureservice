@@ -35,6 +35,7 @@ class TicketFactory extends Factory
             'emailAddress' => fake()->safeEmail(),
             'subject' => fake()->text(75),
             'description' => fake()->text(200),
+            'solution' => null,
             'eFormidling' => false,
         ];
     }

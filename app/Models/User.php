@@ -55,7 +55,6 @@ class User extends Model
             if (
                 $this->firstName != $psUser['firstName'] ||
                 $this->lastName != $psUser['lastName'] ||
-                $this->role != $psUser['role'] ||
                 $this->type != $psUser['type'] ||
                 $this->notificationScheme != $psUser['notificationScheme'] ||
                 $psUser['companyId'] != $this->companyId
@@ -63,6 +62,7 @@ class User extends Model
                 $update = true;
             endif;
             $this->id = $psUser['id'];
+            $this->role = $psUser['role'];
             $this->companyId = $psUser['companyId'];
             $this->save();
         endif;
@@ -80,15 +80,14 @@ class User extends Model
         endif;
 
         $body = $this->toArray();
-        if (config('pureservice.user.no_email_field')) $body[config('pureservice.user.no_email_field')] = 1;
-        $body['companyId'] = $this->companyId;
         $body['emailAddressId'] = $emailId;
 
         if ($update):
             // Oppdaterer brukeren i Pureservice
             $uri = '/user/'.$psUser['id'];
-            $body['id'] = $psUser['id'];
-            return $ps->apiPut($uri, $body, null, true);
+            //$body['id'] = $psUser['id'];
+            return $ps->apiPatch($uri, $body, null, true);
+            //return $ps->apiPut($uri, $body, null, true);
         endif;
 
         if (!$psUser):

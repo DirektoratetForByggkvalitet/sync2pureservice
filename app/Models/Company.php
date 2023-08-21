@@ -110,7 +110,7 @@ class Company extends Model {
             // Oppdaterer virksomheten i Pureservice
             $uri = '/company/'.$this->id;
             $body['id'] = $this->id;
-            return $ps->apiPut($uri, $body, true);
+            return $ps->apiPut($uri, $body, null, true);
         endif;
 
         if (!$psCompany):

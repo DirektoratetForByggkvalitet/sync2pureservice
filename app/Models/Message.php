@@ -171,7 +171,7 @@ class Message extends Model
         $tickets = [];
         foreach ($saker as $sak):
             $saksnr = $sak['saksnr'];
-            $subject = 'Innsynskrav for sak '.$saksnr;
+            $subject = 'Innsynskrav for sak '. $sak['saksnr'];
             $description = Blade::render('innsynskrav', ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject]);
             $tickets[] = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'));
         endforeach;
