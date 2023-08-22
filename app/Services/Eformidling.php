@@ -139,7 +139,7 @@ class Eformidling extends API {
     /**
      * Lagrer meldingen i databasen
      */
-    public function storeMessage(array $message): Message {
+    public function storeIncomingMessage(array $message): Message {
         $conversationIdScope = $this->getMsgConversationIdScope($message);
         $documentIdentification = $this->getMsgDocumentIdentification($message);
         $actors = $this->resolveActors($message);
@@ -226,9 +226,51 @@ class Eformidling extends API {
         return $types;
     }
 
-    public function createAndSendMessage(Ticket $ticket, Company $recipient) {
-        $recipientIdentifier = $this->myConf('address.prefix'). $recipient->organizationNumber;
-        $mainFile = $ticket->makePdf('message', 'melding.pdf');
-        $recipientCapabilities = collect($this->getCapabilities($recipient));
+    /**
+     * Sender eFormidlings-meldingen til integrasjonspunktet
+     */
+    public function sendMessage(Message $message): bool {
+        if ($this->createArkivmelding($message)):
+
+        endif;
+
+        return false;
     }
+
+    public function createArkivmelding(Message $message): bool {
+        $uri = 'api/messages/out';
+        $body = $message->content;
+        $result = $this->apiPost($uri, $body);
+        if ($result->failed()):
+            return false;
+        else:
+            return true;
+        endif;
+
+        return false;
+    }
+
+    public function uploadAttachments(Message $message): bool {
+        foreach ($message->attachments as $file):
+            if (Storage::exists($file)):
+            endif;
+            return false;
+        endforeach;
+    }
+
+
+    // public function createAndSendMessage(Ticket $ticket, Company $recipient) {
+    //     if (!$sender = Company::firstWhere('organizationNumber', config('eformidling.address.sender_id'))):
+    //         $sender = Company::factory()->create([
+    //             'name' => config('eformidling.address.sender_name'),
+    //             'organizationNumber' => config('eformidling.address.sender_id'),
+    //         ]);
+    //     endif;
+    //     $message = Message::factory()->create([
+    //         'recipient_id' => $recipient->internal_id,
+    //         'sender_id' => $sender->internal_id,
+    //     ]);
+    //     $mainFile = $ticket->makePdf('message', 'melding.pdf');
+    //     $recipientCapabilities = collect($this->getCapabilities($recipient));
+    // }
 }

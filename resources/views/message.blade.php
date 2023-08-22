@@ -9,6 +9,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="description" content="DiBK e-postmal v2.3.230530" />
     {{-- Henter inn fonter hvis de trengs --}}
     @includeWhen($includeFonts, 'parts.fonts')

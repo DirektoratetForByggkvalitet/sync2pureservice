@@ -33,6 +33,9 @@
         </virksomhetsspesifikkeMetadata>
 
     @foreach ($msg->attachments as $doc)
+        @if (Str::endsWith($doc, 'arkivmelding.xml'))
+            @continue
+        @endif
         @php($docNo++)
 
         <dokumentbeskrivelse>
@@ -60,6 +63,6 @@
             </dokumentobjekt>
         </dokumentbeskrivelse>
     @endforeach
-    
+
     </basisregistrering>
 </arkivmelding>

@@ -19,7 +19,7 @@ class IncomingMessages extends Command {
      *
      * @var string
      */
-    protected $signature = 'forsendelse:inn';
+    protected $signature = 'eformidling:inn {--reset-db : Nullstiller databasen før kjøring}';
 
     /**
      * The console command description.
@@ -38,6 +38,12 @@ class IncomingMessages extends Command {
         $this->info(class_basename($this).' v'.$this->version);
         $this->line($this->description);
         $this->newLine(2);
+
+        if ($this->option('reset-db')):
+            $this->info('### NULLSTILLER DATABASEN ###');
+            $this->call('migrate:fresh', ['--force' => true]);
+            $this->newLine(2);
+        endif;
 
         $this->ip = new Eformidling();
         $this->info(Tools::l1().'Bruker '.$this->ip->getBaseUrl().' som integrasjonspunkt');
@@ -62,7 +68,7 @@ class IncomingMessages extends Command {
                     unset($dbMessage);
                 endif;
             endif;
-            if ($dbMessage = $this->ip->storeMessage($msg)):
+            if ($dbMessage = $this->ip->storeIncomingMessage($msg)):
                 $this->line(Tools::l2().'Dokumentet ble lagret i DB');
                 if ($attCount = $this->ip->downloadMessageAttachments($msgId['instanceIdentifier'])):
                     $this->line(Tools::l2().$attCount .' vedlegg er lastet ned og knyttet til meldingen');
@@ -76,6 +82,7 @@ class IncomingMessages extends Command {
 
         $this->newLine();
         $this->info(Tools::l1().'Importerer meldinger til Pureservice');
+        $this->info(Tools::l1().'Bruker Pureservice-instansen '.$this->ps->getBaseUrl().'.');
         $this->ps = new PsApi();
         $this->ps->setTicketOptions('eformidling');
         // $bar = $this->output->createProgressBar(Message::count());
@@ -89,6 +96,7 @@ class IncomingMessages extends Command {
             $sender = Company::find($message->sender_id);
             $this->line(Tools::l1().$it.'/'.$msgCount.': '. $message->id.' - '. $message->documentType().' fra '.$sender->name);
             if ($message->documentType() == 'innsynskrav'):
+                // Innsynskrav
                 $this->ps->setTicketOptions('innsynskrav');
                 $this->line(Tools::l2().'Splitter innsynskravet opp basert på arkivsaker');
                 if ($new = $message->splittInnsynskrav($this->ps)):
@@ -103,18 +111,24 @@ class IncomingMessages extends Command {
                     return Command::FAILURE;
                 endif;
              else:
+                // Alle andre typer meldinger
                 $this->line(Tools::l2().'Oppretter sak i Pureservice');
                 $this->ps->setTicketOptions('eformidling');
                 if ($new = $message->toPsTicket($this->ps)):
                     $tickets[] = $new;
-                    unset($new);
+                    $this->line(Tools::l3().'Sak ID '.$new->requestNumber. ' ble opprettet.');
+                    // unset($new);
                 endif;
             endif;
             // $bar->advance();
+            // Vi har tatt vare på meldingen. Sletter den fra eFormidling sin kø
+            // $this->ip->deleteIncomingMessage($message->id)
+
             $this->newLine();
         endforeach;
         // $bar->finish();
         $this->info('Ferdig. Operasjonen tok '.round((microtime(true) - $this->start), 0).' sekunder');
+        $this->info(count($tickets).' sak'.count($tickets) > 1 ? 'er' : ''.' ble opprettet');
         return Command::SUCCESS;
     }
 }

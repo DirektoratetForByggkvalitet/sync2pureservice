@@ -196,7 +196,11 @@ class PSUtsending extends Command {
             foreach ($t->recipientCompanies()->lazy() as $company):
                 $this->line(Tools::l3().$company->name.' - '.$company->email);
                 if ($t->eFormidling && $company->organizationNumber):
-                    $this->ef->createAndSendMessage($t, $company);
+                    $message = $t->createMessage();
+                    if ($message->documentType() == 'arkivmelding'):
+                        $message->createXmlFromTicket($t);
+                    endif;
+                    $this->ef->sendMessage($message);
                     $ticketResults['eFormidling']++;
                 elseif (Str::endsWith($company->email, '.local')):
                     // lokal adresse, hopper over

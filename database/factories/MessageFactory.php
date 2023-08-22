@@ -23,7 +23,7 @@ class MessageFactory extends Factory
             'receiver_id' => null,
             'documentStandard' => fake()->text(25),
             'conversationId' => Str::uuid(),
-            'content' => '{}',
+            'content' => [],
             'mainDocument' => null,
             'attachments' => [],
         ];

@@ -19,7 +19,8 @@ return [
     ],
     'address' => [
         'prefix' => '0192:',
-        'sender_id' => env('EF_SELF_ID'),
+        'sender_id' => env('EF_SELF_ID', '000000000'),
+        'sender_name' => env('EF_SELF_NAME', 'Avsendervirksomhet'),
         'digdir_ids' => [
             '987464291',
             '991825827'

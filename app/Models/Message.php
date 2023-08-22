@@ -10,8 +10,7 @@ use Illuminate\Support\{Str, Arr};
 use App\Services\{PsApi, Enhetsregisteret, Tools};
 use App\Models\{Ticket, Company, User};
 
-class Message extends Model
-{
+class Message extends Model {
     use HasFactory;
     protected $fillable = [
         'sender_id',
@@ -117,13 +116,13 @@ class Message extends Model
             // Legg til eller oppdater avsenders virksomhet i Pureservice
             $sender->addOrUpdatePS($ps);
             // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
-            $senderUser = $sender->getEfUser()->addOrUpdatePs($ps);
+            $senderUser = $sender->getEfUser()->addOrUpdatePs($ps, true);
         endif;
         $receiver = Company::find($this->receiver_id);
         // Dersom mottaker ikke er oss selv (noe det vil være)
         if ($receiver->organizationNumber != config('eformidling.address.sender_id')):
             $receiver->addOrUpdatePS($ps);
-            $receiverUser = $receiver->getEfUser()->addOrUpdatePs($ps);
+            $receiverUser = $receiver->getEfUser()->addOrUpdatePs($ps, true);
         endif;
 
         $subject = Str::ucfirst($this->documentType());

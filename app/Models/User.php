@@ -46,8 +46,12 @@ class User extends Model
         return $this->belongsToMany(Ticket::class);
     }
 
-    /** Synker bruker med Pureservice */
-    public function addOrUpdatePS(PsApi $ps): bool|Response {
+    /**
+     * Synker brukeren med Pureservice
+     * @param Pureservice $ps   Pureservice-instans
+     * @param bool $noEmail     Angir om brukeren skal ha noemail-feltet satt til 1
+     */
+    public function addOrUpdatePS(PsApi $ps, bool $noEmail = false): bool|Response {
         //$psCompanyUsers = $ps->findUsersByCompanyId($this->company->externalId;);
         $update = false;
         if ($psUser = $ps->findUser($this->email)):
@@ -81,6 +85,9 @@ class User extends Model
 
         $body = $this->toArray();
         $body['emailAddressId'] = $emailId;
+        if ($noEmail && config('pureservice.user.no_email_field')):
+            $body[config('pureservice.user.no_email_field')] = 1;
+        endif;
 
         if ($update):
             // Oppdaterer brukeren i Pureservice

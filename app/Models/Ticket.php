@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasOne};
 use Illuminate\Support\{Arr, Str, Collection};
 use App\Services\{Eformidling, Pureservice, PsApi};
-use Illuminate\Support\Facades\{Storage};
+use Illuminate\Support\Facades\{Storage, Blade};
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use App\Models\{Message, Company};
 //use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -47,10 +47,12 @@ class Ticket extends Model
         'internal_id',
         'eForsendelse',
         'action',
+        'pdf'
     ];
 
     protected $properties = [
         'eForsendelse' => false,
+        'pdf' => null,
     ];
 
 
@@ -174,7 +176,8 @@ class Ticket extends Model
             'includeFonts' => true,
         ];
         $pdf = PDF::loadView($view, $data);
-        $this->pdf = $this->getDownloadPath() . '/' .$filename. '.pdf';
+
+        $this->pdf = $this->pdf ? $this->pdf : $this->getDownloadPath(true) . '/' .$filename. '.pdf';
 
         if (Storage::exists($this->pdf)) Storage::delete($this->pdf);
         $pdf->save($this->pdf, config('filesystems.default'));
@@ -213,9 +216,17 @@ class Ticket extends Model
             'mainDocument' => !$this->pdf ? basename($this->pdf) : basename($this->makePdf()),
         ]);
         $message->attachments = Storage::allFiles($this->getDownloadPath());
-
         // Lagrer JSON for meldingshodet og lagrer i DB
         $message->renderContent();
+
+        if ($message->documentType() == 'arkivmelding'):
+            // Vi trenger en arkivmelding.xml-fil
+            $xmlfile = $this->tempPath().'/arkivmelding.xml';
+            if (Storage::put($xmlfile, Blade::render('xml/arkivmelding', ['ticket' => $this, 'msg' => $message]))):
+                $message->attachments[] = $xmlfile;
+            endif;
+        endif;
+
     }
 
 }
