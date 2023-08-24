@@ -4,17 +4,14 @@
     use App\Models\{Company, Ticket};
 
     $docNo = 0;
-    $receiver = Company::find($msg->receiver_id);
-    if (!isset($ticket)):
-        $ticket = Ticket::factory()->create(['eformidling' => true, 'subject' => 'Sakens tittel', 'description' => 'Beskrivelse']);
-    endif;
+    $receiver = $msg->receiver();
 @endphp
 <?xml version="1.0" encoding="utf-8"?>
 <arkivmelding xmlns="http://www.arkivverket.no/standarder/noark5/arkivmelding"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.arkivverket.no/standarder/noark5/arkivmelding/arkivmelding.xsd">
     <system>{{ config('eformidling.system.name') }}</system>
-    <meldingsId>{{ $msg->id }}</meldingsId>
+    <meldingsId>{{ $msg->messageId }}</meldingsId>
     <tidspunkt>{{ $msg->getCreatedDTLocalString() }}</tidspunkt>
     <antallFiler>{{ count($msg->attachments) }}</antallFiler>
     <basisregistrering xsi:type="registrering">

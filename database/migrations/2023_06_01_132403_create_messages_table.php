@@ -14,22 +14,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('messages', function (Blueprint $table) {
-            //$table->id();
-            $table->uuid('id')->primary();
-            $table->timestamps();
+            $table->id();
+            $table->uuid('messageId')->index();
             $table->integer('sender_id')->nullable();
             $table->integer('receiver_id')->nullable();
-            $table->string('documentStandard')->default('urn:no:difi:arkivmelding:xsd::arkivmelding');
-            $table->string('documentType')->default('arkivmelding');
-            $table->uuid('conversationId')->default(Str::uuid());
-            $table->string('processIdentifier')->default(
-                config('eformidling.process_pre').
-                config('eformidling.out.type').
-                config('eformidling.process_post')
-            );
-            $table->json('content');
+            $table->string('documentStandard')->nullable();
+            $table->string('documentType');
+            $table->uuid('conversationId')->nullable();
+            $table->string('processIdentifier')->nullable();
+            $table->json('content')->nullable();
             $table->string('mainDocument')->nullable();
             $table->json('attachments')->nullable();
+            $table->timestamps();
         });
     }
 

@@ -157,7 +157,7 @@ class API {
     /**
      * POST-forespørsel mot APIet
      */
-    public function apiPost(string $uri, array $body = null, string|null $accept = null, string|null $contentType = null, bool $returnBool = false): Response|bool {
+    public function apiPost(string $uri, mixed $body = null, string|null $accept = null, string|null $contentType = null, bool $returnBool = false): Response|bool {
         $uri = $this->resolveUri($uri);
         $response = $this->prepRequest($accept, $contentType)->post($uri, $body);
         if ($returnBool) return $response->successful();

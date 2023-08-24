@@ -16,6 +16,8 @@ return [
         'user' => env('EF_TEST_IP_USER'),
         'password' => env('EF_TEST_IP_PASSWORD'),
         'prefix' => env('EF_TEST_IP_PREFIX', 'api'),
+        'accept' => null,
+        'asic_accept' => 'application/vnd.etsi.asic-e+zip',
     ],
     'address' => [
         'prefix' => '0192:',
@@ -35,9 +37,10 @@ return [
         'temp' => env('EF_TEMP_PATH', 'eformidling_temp'),
     ],
     'out' => [
-        'process' => env('EF_MESSAGE_PROCESS', 'planByggOgGeodata'),
+        'process' => env('EF_MESSAGE_PROCESS', 'administrasjon'),
         'type' => env('EF_MESSAGE_TYPE', 'arkivmelding'),
-        'template' => env('EF_MESSAGE_VIEW', 'json.arkivmelding'),
+        'standard' => env('EF_MESSAGE_STANDARD', 'urn:no:difi:arkivmelding:xsd::arkivmelding'),
+        'template' => env('EF_MESSAGE_VIEW', 'json/arkivmelding.template.json'),
     ],
     'process_pre' => 'urn:no:difi:profile:',
     'process_post' => ':ver1.0',

@@ -200,12 +200,11 @@ class Ticket extends Model
         switch ($this->emailAddress):
             case config('pureservice.dispatch.address_ef'):
                 $this->eFormidling = true;
-                $this->action = 'normalSend';
                 break;
             default:
                 $this->eFormidling = false;
-                $this->action = 'normalSend';
         endswitch;
+        $this->action = 'normalSend';
         $this->save();
     }
 

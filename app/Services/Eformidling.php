@@ -35,7 +35,27 @@ class Eformidling extends API {
                 $this->myConf('api.password'),
             ];
         endif;
+        $this->base_url = $this->myConf('api.url');
         $this->setOptions($options);
+    }
+    /**
+     * Setter opp til å bruke Digdir sitt test-api for å sende meldinger (til oss selv)
+    */
+    public function switchToTestIp(): void {
+        config([
+            'eformidling.default.api' => config('eformidling.api'),
+            'eformidling.api' => config('eformidling.testapi'),
+        ]);
+        $this->setupClient();
+    }
+
+    public function switchToOriginalIp(): void {
+        if (config('eformidling.default.api', false)):
+            config([
+                'eformidling.api' => config('eformidling.default.api'),
+            ]);
+            $this->setupClient();
+        endif;
     }
 
     /**
@@ -227,18 +247,23 @@ class Eformidling extends API {
     }
 
     /**
-     * Sender eFormidlings-meldingen til integrasjonspunktet
+     * Sender eFormidlings-meldingen til QA-integrasjonspunktet hos Digdir
      */
-    public function sendMessage(Message $message): bool {
-        if ($this->createArkivmelding($message)):
-
+    public function sendMessageWithTest(Message $message): bool {
+        $this->switchToTestIp();
+        // Bytter om sender og mottaker, slik at
+        if ($created = $this->createArkivmelding($message)):
+            $files = $this->uploadAttachments($message);
         endif;
-
+        if ($created):
+            $this->sendMessage($message);
+        endif;
+        $this->switchToOriginalIp();
         return false;
     }
 
     public function createArkivmelding(Message $message): bool {
-        $uri = 'api/messages/out';
+        $uri = 'messages/out';
         $body = $message->content;
         $result = $this->apiPost($uri, $body);
         if ($result->failed()):
@@ -250,12 +275,31 @@ class Eformidling extends API {
         return false;
     }
 
-    public function uploadAttachments(Message $message): bool {
+    public function uploadAttachments(Message $message): array {
+        $uri = 'messages/out/'.$message->id;
+        $results = ['count' => 0];
         foreach ($message->attachments as $file):
             if (Storage::exists($file)):
+                $request = $this->prepRequest('application/json', Storage::mimeType($file));
+                $request->withHeader('Content-Disposition', ContentDisposition::create(basename($file)));
+                $request->withBody(base64_encode(file_get_contents(Storage::path($file))), Storage::mimeType($file));
+                $result = $request->put($uri);
+                $results[$file] = $result->sucessful();
+                $results['count']++;
+                //$result = $this->apiPost($uri, $stream, 'application/json', Storage::mimeType($file));
             endif;
-            return false;
+            $results[$file] = false;
         endforeach;
+        return $results;
+    }
+
+    /**
+     * Sender en opprettet melding til mottaker
+     */
+    public function sendMessage(Message $message): bool {
+        $uri = 'messages/out/'.$message->id;
+        $response = $this->apiPost($uri);
+        return $response->successful();
     }
 
 

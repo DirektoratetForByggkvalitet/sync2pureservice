@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\{Storage, Blade};
 use Illuminate\Support\{Str, Arr};
@@ -21,15 +22,22 @@ class Message extends Model {
         'content',
         'mainDocument',
         'attachments',
+        'messageId'
     ];
 
     protected $casts = [
         'attachments' => 'array',
         'content' => 'array',
-        'id' => 'string',
     ];
 
-    public function getResponseDt() {
+    public function sender(): Company|null {
+        return Company::find($this->sender_id);
+    }
+    public function receiver(): Company|null {
+        return Company::find($this->receiver_id);
+    }
+
+    public function getResponseDt(): string {
         return Carbon::now()->addDays(30)->toRfc3339String();
     }
 
@@ -37,12 +45,34 @@ class Message extends Model {
         return Arr::get($this->content, 'standardBusinessDocumentHeader.documentIdentification.type');
     }
 
-    public function renderContent(string|false $template = false) {
-        if (!$template) $template = config('eformidling.out.template');
-        $this->content = Blade::render($template, ['message' => $this]);
+    /**
+     * Oppretter innholdet (hodet) til meldingen og lagrer i $this->content
+     */
+    public function createContent(string|false $template = false) {
+
+        $content = json_decode(file_get_contents(resource_path(config('eformidling.out.template'))), true);
+        $this->save();
+        Arr::set($content, 'standardBusinessDocumentHeader.sender.0.identifier', $this->sender()->actorId());
+        Arr::set($content, 'standardBusinessDocumentHeader.receiver.0.identifier', $this->sender()->actorId());
+        Arr::set($content, 'standardBusinessDocumentHeader.documentIdentification.standard', $this->documentStandard);
+        Arr::set($content, 'standardBusinessDocumentHeader.documentIdentification.instanceIdentifier', $this->messageId);
+        Arr::set($content, 'standardBusinessDocumentHeader.documentIdentification.creationDateAndTime', $this->getOpprettetDato());
+
+        Arr::set($content, 'standardBusinessDocumentHeader.businessScope.scope.0.instanceIdentifier', $this->conversationId);
+        Arr::set($content, 'standardBusinessDocumentHeader.businessScope.scope.0.identifier', $this->processIdentifier);
+
+        // Forventet svartid
+        $svarTid = Carbon::now(config('app.timezone'))->addDays(30)->toAtomString();
+        Arr::set($content, 'standardBusinessDocumentHeader.businessScope.scope.0.scopeInformation.0.expectedResponseDateTime', $svarTid);
+        $this->content = $content;
         $this->save();
     }
 
+    /** Setter 'arkivmelding.hoveddokument' i $this->content */
+    public function setMainDocument(string|false $file = false): void {
+        if ($file) $this->mainDocument = basename($file);
+        Arr::set($this->content, 'arkivmelding.hoveddokument', $this->mainDocument);
+    }
 
     protected function createdDtHr(): string {
         if ($dt = Arr::get($this->content, 'standardBusinessDocumentHeader.documentIdentification.creationDateAndTime')):
@@ -79,7 +109,7 @@ class Message extends Model {
      * Oppgir nedlastingslokasjon for meldingen
     */
     public function downloadPath(bool $fullPath = false): string {
-        $path = config('eformidling.path.download').'/'. $this->id;
+        $path = config('eformidling.path.download').'/'. $this->messageId;
         Storage::makeDirectory($path);
         return $fullPath ? Storage::path($path) : $path;
     }
@@ -87,7 +117,7 @@ class Message extends Model {
      * Oppgir temp-lokasjon for meldingen
     */
     public function tempPath(bool $fullPath = false): string {
-        $path = config('eformidling.path.temp').'/'. $this->id;
+        $path = config('eformidling.path.temp').'/'. $this->messageId;
         Storage::makeDirectory($path);
         return $fullPath ? Storage::path($path) : $path;
     }
@@ -110,19 +140,21 @@ class Message extends Model {
             $ps = new PsApi();
             $ps->setTicketOptions('eformidling');
         endif;
-        $sender = Company::find($this->sender_id);
+        $sender = $this->sender();
         // Dersom avsender ikke er oss selv
         if ($sender->organizationNumber != config('eformidling.address.sender_id')):
             // Legg til eller oppdater avsenders virksomhet i Pureservice
             $sender->addOrUpdatePS($ps);
             // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
-            $senderUser = $sender->getEfUser()->addOrUpdatePs($ps, true);
+            $senderUser = $sender->getEfUser();
+            $senderUser->addOrUpdatePs($ps, true);
         endif;
-        $receiver = Company::find($this->receiver_id);
+        $receiver = $this->receiver();
         // Dersom mottaker ikke er oss selv (noe det vil være)
         if ($receiver->organizationNumber != config('eformidling.address.sender_id')):
             $receiver->addOrUpdatePS($ps);
-            $receiverUser = $receiver->getEfUser()->addOrUpdatePs($ps, true);
+            $receiverUser = $receiver->getEfUser();
+            $receiverUser->addOrUpdatePs($ps, true);
         endif;
 
         $subject = Str::ucfirst($this->documentType());
@@ -196,6 +228,24 @@ class Message extends Model {
         $user->addOrUpdatePS($ps);
 
         return $user;
+    }
+
+    /**
+     * Oppretter arkivmelding.xml og vedlegger den til meldingen
+     */
+    public function createXmlFromTicket(Ticket|false $t = false): bool {
+        if (!$t):
+            $t = Ticket::factory()->create(['eformidling' => true, 'subject' => 'Sakens tittel', 'description' => 'Beskrivelse']);
+        endif;
+        $file = $this->tempPath().'/arkivmelding.xml';
+        if (Storage::put($file, Blade::render('xml/arkivmelding', ['msg' => $this, 'ticket' => $t]))):
+            $att = $this->attachments;
+            $att[] = $file;
+            $this->attachments = $att;
+            $this->save();
+            return true;
+        endif;
+        return false;
     }
 
 }

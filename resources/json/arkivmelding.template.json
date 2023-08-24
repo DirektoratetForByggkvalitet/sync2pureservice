@@ -1,37 +1,37 @@
-<?php
 {
     "standardBusinessDocumentHeader" : {
       "headerVersion" : "1.0",
       "sender" : [ {
         "identifier" : {
-          "value" : "{{ $message->sender_id }}",
+          "value" : "",
           "authority" : "iso6523-actorid-upis"
         }
       } ],
       "receiver" : [ {
         "identifier" : {
-          "value" : "{{ $message->receiver_id }}",
+          "value" : "",
           "authority" : "iso6523-actorid-upis"
         }
       } ],
       "documentIdentification" : {
-        "standard" : "{{ $message->documentStandard }}",
+        "standard" : "",
         "typeVersion" : "1.0",
-        "instanceIdentifier" : "{{ $message->id }}",
-        "type" : "arkivmelding"
+        "instanceIdentifier" : "",
+        "type" : "arkivmelding",
+        "creationDateAndTime" : ""
       },
       "businessScope" : {
         "scope" : [ {
           "type" : "ConversationId",
-          "instanceIdentifier" : "{{ $message->conversationId }}",
-          "identifier" : "{{ $message->processIdentifier }}",
+          "instanceIdentifier" : "",
+          "identifier" : "",
           "scopeInformation" : [ {
-            "expectedResponseDateTime" : "{{ $message->getResponseDt() }}"
+            "expectedResponseDateTime" : ""
           } ]
         } ]
       }
     },
     "arkivmelding" : {
-      "hoveddokument" : "{{ $message->mainDocument }}"
+      "hoveddokument" : ""
     }
 }
