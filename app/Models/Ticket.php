@@ -216,7 +216,7 @@ class Ticket extends Model
         ]);
         $message->attachments = Storage::allFiles($this->getDownloadPath());
         // Lagrer JSON for meldingshodet og lagrer i DB
-        $message->renderContent();
+        $message->makeContent();
 
         if ($message->documentType() == 'arkivmelding'):
             // Vi trenger en arkivmelding.xml-fil

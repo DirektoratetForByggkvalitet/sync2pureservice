@@ -36,6 +36,10 @@ return [
         'download' => env('EF_DOWNLOAD_PATH', 'eformidling_download'),
         'temp' => env('EF_TEMP_PATH', 'eformidling_temp'),
     ],
+    'in' => [
+        'arkivmelding' => env('EF_INCOMING_TEMPLATE', 'incoming/arkivmelding'),
+        'innsynskrav' => env('DPE_INCOMING_TEMPLATE', 'incoming/innsynskrav'),
+    ],
     'out' => [
         'process' => env('EF_MESSAGE_PROCESS', 'administrasjon'),
         'type' => env('EF_MESSAGE_TYPE', 'arkivmelding'),

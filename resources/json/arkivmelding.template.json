@@ -3,14 +3,14 @@
       "headerVersion" : "1.0",
       "sender" : [ {
         "identifier" : {
-          "value" : "",
-          "authority" : "iso6523-actorid-upis"
+          "authority" : "iso6523-actorid-upis",
+          "value" : ""
         }
       } ],
       "receiver" : [ {
         "identifier" : {
-          "value" : "",
-          "authority" : "iso6523-actorid-upis"
+          "authority" : "iso6523-actorid-upis",
+          "value" : ""
         }
       } ],
       "documentIdentification" : {

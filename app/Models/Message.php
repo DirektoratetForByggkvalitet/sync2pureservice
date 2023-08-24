@@ -51,9 +51,13 @@ class Message extends Model {
     public function createContent(string|false $template = false) {
 
         $content = json_decode(file_get_contents(resource_path(config('eformidling.out.template'))), true);
-        $this->save();
-        Arr::set($content, 'standardBusinessDocumentHeader.sender.0.identifier', $this->sender()->actorId());
-        Arr::set($content, 'standardBusinessDocumentHeader.receiver.0.identifier', $this->sender()->actorId());
+
+        Arr::set($content, 'standardBusinessDocumentHeader.sender.0.identifier.value', $this->sender()->actorId());
+        //Arr::set($content, 'standardBusinessDocumentHeader.sender.0.authority', 'iso6523-actorid-upis');
+
+        Arr::set($content, 'standardBusinessDocumentHeader.receiver.0.identifier.value', $this->receiver()->actorId());
+        //Arr::set($content, 'standardBusinessDocumentHeader.receiver.0.authority', 'iso6523-actorid-upis');
+
         Arr::set($content, 'standardBusinessDocumentHeader.documentIdentification.standard', $this->documentStandard);
         Arr::set($content, 'standardBusinessDocumentHeader.documentIdentification.instanceIdentifier', $this->messageId);
         Arr::set($content, 'standardBusinessDocumentHeader.documentIdentification.creationDateAndTime', $this->getOpprettetDato());
@@ -71,7 +75,10 @@ class Message extends Model {
     /** Setter 'arkivmelding.hoveddokument' i $this->content */
     public function setMainDocument(string|false $file = false): void {
         if ($file) $this->mainDocument = basename($file);
-        Arr::set($this->content, 'arkivmelding.hoveddokument', $this->mainDocument);
+        $content = $this->content;
+        Arr::set($content, 'arkivmelding.hoveddokument', $this->mainDocument);
+        $this->content = $content;
+        $this->save();
     }
 
     protected function createdDtHr(): string {
@@ -159,7 +166,7 @@ class Message extends Model {
 
         $subject = Str::ucfirst($this->documentType());
         $subject .= ' for prosessen '.$this->processIdentifier;
-        $description = Blade::render('arkivmelding', ['subject' => $subject, 'msg' => $this]);
+        $description = Blade::render(config('eformidling.in.arkivmelding'), ['subject' => $subject, 'msg' => $this]);
         //dd($description);
 
         if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.invisible'))):
@@ -203,7 +210,7 @@ class Message extends Model {
         foreach ($saker as $sak):
             $saksnr = $sak['saksnr'];
             $subject = 'Innsynskrav for sak '. $sak['saksnr'];
-            $description = Blade::render('innsynskrav', ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject]);
+            $description = Blade::render(config('eformidling.in.innsynskrav'), ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject]);
             $tickets[] = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'));
         endforeach;
         return $tickets;
