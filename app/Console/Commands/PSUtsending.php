@@ -31,7 +31,7 @@ class PSUtsending extends Command {
      *
      * @var string
      */
-    protected $description = 'Ser etter saker som skal ha elektronisk utsendelse og/eller masseutsendelse, og håndterer dem';
+    protected $description = 'Ser etter saker som skal ha masseutsendelse, og håndterer dem';
 
     /**
      * Execute the console command.
@@ -195,18 +195,20 @@ class PSUtsending extends Command {
             $this->line(Tools::l2().'Virksomheter:');
             foreach ($t->recipientCompanies()->lazy() as $company):
                 $this->line(Tools::l3().$company->name.' - '.$company->email);
-                if ($t->eFormidling && $company->organizationNumber):
-                    $message = $t->createMessage($company);
-                    if ($message->documentType() == 'arkivmelding'):
-                        $message->createXmlFromTicket($t);
-                    endif;
-                    // Test
-                    $this->ef->sendMessageWithTest($message);
-                    $ticketResults['eFormidling']++;
-                elseif (Str::endsWith($company->email, '.local')):
+                if (Str::endsWith($company->email, '.local')):
                     // lokal adresse, hopper over
                     continue;
+                // elseif ($t->eFormidling && $company->organizationNumber):
+                //     $message = $t->createMessage($company);
+                //     if ($message->documentType() == 'arkivmelding'):
+                //         $message->createXmlFromTicket($t);
+                //     endif;
+                //     // Test
+                //     $this->ef->sendMessageWithTest($message);
+                //     $ticketResults['eFormidling']++;
                 elseif ($company->email == null):
+                    // Foretaket har ikke registrert e-postadresse, og må hoppes over
+                    continue;
                 else: // Sender per e-post
                     Mail::to($company)->send(new TicketMessage($t));
                     $ticketResults['e-post']++;
@@ -215,15 +217,6 @@ class PSUtsending extends Command {
 
             // Løser saken med en rapport
             $this->newLine();
-            // $reportAttachments = [];
-            // $reportAttachments[] = $t->makePdf();
-            // // Laster opp sendt melding og setter som koblet til løsningen
-            // $result = $this->ps->uploadAttachments($reportAttachments, $t, true);
-            // if ($result['status'] == 'OK'):
-            //     $this->line(Tools::l2().'Lastet opp meldingen som vedlegg til saken');
-            // else:
-            //     $this->error(Tools::l2().'Vedlegg ble ikke lastet opp');
-            // endif;
 
             $statusId = $this->ps->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
             $solution = Blade::render('report', ['ticket' => $t, 'results' => $ticketResults]);
@@ -255,7 +248,7 @@ class PSUtsending extends Command {
         $this->line('----------');
         $this->line('Antall saker: '.$results['saker']);
         $this->line('Antall e-post sendt: '.$results['e-post']);
-        $this->line('Antall eFormidling-forsendelser: '.$results['eFormidling']);
+        //$this->line('Antall eFormidling-forsendelser: '.$results['eFormidling']);
         $this->line('Antall manglende adresser: '.$results['ikke sendt']);
 
         return Command::SUCCESS;
