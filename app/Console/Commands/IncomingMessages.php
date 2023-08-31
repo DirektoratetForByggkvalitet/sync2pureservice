@@ -10,7 +10,7 @@ use Illuminate\Support\{Str, Arr};
 
 class IncomingMessages extends Command {
     protected float $start;
-    protected string $version = '0.95';
+    protected string $version = '1.0';
     protected int $count = 0;
     protected Eformidling $ip;
     protected PsApi $ps;

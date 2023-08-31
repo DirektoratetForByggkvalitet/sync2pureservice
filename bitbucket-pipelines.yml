@@ -2,6 +2,8 @@ definitions:
   scripts:
     - script: &resetDB
         ./artisan migrate:fresh --force
+    - script: &install
+        cp .env.example .env && composer install --no-dev
   steps:
     - step: &forberedeSvarInn
         name: Forbereder kjøring
@@ -60,7 +62,7 @@ pipelines:
           deployment: Production
           script:
             - cp .env.example .env
-            - composer install --no-dev
+            - *install
             - ./artisan pureservice:sync-jamf
 
     jamf2ps-test:
@@ -68,8 +70,7 @@ pipelines:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: Test
           script:
-            - cp .env.example .env
-            - composer install --no-dev
+            - *install
             - ./artisan pureservice:sync-jamf
 
     svarUtMottak:
@@ -85,11 +86,22 @@ pipelines:
             - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/${DEKRYPTER_VER}/dekrypter-${DEKRYPTER_VER}-dist.zip
             - unzip dekrypter-${DEKRYPTER_VER}-dist.zip && rm dekrypter-${DEKRYPTER_VER}-dist.zip
             - echo 'Setter opp og legger inn avhengigheter'
-            - cp .env.example .env
             - mv ${SVARINN_EXCEL_LOOKUP_FILE} *.pem storage/app/
-            - composer install --no-dev
+            - *install
             - echo 'Kjører svarinn2pureservice'
             - ./artisan pureservice:svarUtMottak
+
+    eFormidlingMottak:
+      - step:
+          name: Henter inn meldinger fra eFormidling (Altinn, Svarut, eInnsyn)
+          deployment: eFormidling
+          runs-on:
+            - "self.hosted"
+          script:
+            - *install
+            - *resetDB
+            - echo "Kjører sjekk på innkommende meldinger"
+            - ./artisan eformidling:inn
 
     sjekkInnsynskrav:
       - step: *forberedeSvarInn
@@ -98,7 +110,7 @@ pipelines:
           deployment: Production
           script:
             - echo 'Kjører sjekkInnsynskrav'
-            - composer install --no-dev
+            - *install
             - ./artisan pureservice:sjekkInnsynskrav
 
 
@@ -107,8 +119,7 @@ pipelines:
           name: 'Importerer offentlige instanser fra BRREG inn i Pureservice'
           deployment: Production
           script:
-            - cp .env.example .env
-            - composer install --no-dev
+            - *install
             - *resetDB
             - ./artisan pureservice:offentlige2ps
 
@@ -133,7 +144,7 @@ pipelines:
           deployment: Production
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
           script:
-            - composer install --no-dev
+            - *install
             - *resetDB
             - ./artisan pureservice:utsending
 
@@ -142,7 +153,7 @@ pipelines:
           deployment: Test
           name: 'TEST: Ser etter masseutsendelser i PS og sørger for å sende dem'
           script:
-            - composer install --no-dev
+            - *install
             - *resetDB
             - ./artisan pureservice:utsending
 
@@ -150,6 +161,6 @@ pipelines:
       - step:
           name: Splitter et innsynskrav gitt med requestNumber
           script:
-            - composer install --no-dev
+            - *install
             - ./artisan pureservice:splittInnsynskrav ${requestNumber}
 
