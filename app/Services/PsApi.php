@@ -20,6 +20,33 @@ class PsApi extends API {
     }
 
     /**
+     * Universell funksjon som henter ut et objekt fra Pureservice basert på IDnr
+     * @param string $entity    Objektnavnet, f.eks. 'status'
+     * @param int $id           ID-nr for objektet
+     */
+    public function getEntityById(string $entity, int $id): array|null {
+        $entity = Str::lower($entity);
+        $entities = Str::plural($entity);
+        $uri = '/'.$entity.'/'.$id;
+        $query = [
+            'filter' => '!disabled',
+        ];
+        if ($result = $this->apiQuery($uri, $query)):
+            if (count($result[$entities])) return $result[$entities][0];
+        endif;
+        return null;
+    }
+    /**
+     * Universell funksjon for å hente et objekts navn basert på ID
+     * @param string $entity    Objektnavnet, f.eks. 'status'
+     * @param int $id           ID-nr for objektet
+     * @param string $nameField Hvilket felt som skal hentes som navnefelt, standard = 'name'
+     */
+    public function getEntityNameById(string $entity, int $id, string $nameField = 'name'): string {
+        $result = $this->getEntityById($entity, $id);
+        return isset($result[$nameField]) ? $result[$nameField] : 'Ukjent';
+    }
+    /**
      * Universell funksjon for å hente ID på et objekt oppgitt med navn
      * @param string    $entity     Objektnavnet, f.eks. 'status', '
      * @param string    $name       Navnet på enheten som skal finnes
@@ -52,7 +79,7 @@ class PsApi extends API {
      *
      * @return mixed    assoc_array for enheten eller null
      */
-    public function getEntityByName($entity, $name, $useKey = false) {
+    public function getEntityByName(string $entity, string $name, bool $useKey = false): array|null {
         $entity = Str::lower($entity);
         $uri = '/'.$entity.'/';
         $query = [];
@@ -67,6 +94,7 @@ class PsApi extends API {
         endif;
         return null; // Hvis ikke funnet
     }
+
 
     /**
      * Sletter en relasjon i Pureservice

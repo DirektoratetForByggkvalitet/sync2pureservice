@@ -5,6 +5,7 @@
 
     $docNo = 0;
     $receiver = $msg->receiver();
+    $ticketStatus = $ticket->getStatus();
 @endphp
 <?xml version="1.0" encoding="utf-8"?>
 <arkivmelding xmlns="http://www.arkivverket.no/standarder/noark5/arkivmelding"
@@ -16,6 +17,8 @@
     <antallFiler>{{ count($msg->attachments) }}</antallFiler>
     <mappe xsi:type="saksmappe">
         <systemID>{{ config('eformidling.system.systemId') }}</systemID>
+        <saksdato>{{ $msg->getCreatedDTLocalString() }}</saksdato>
+        <saksstatus>{{ $ticketStatus }}</saksstatus>
         <opprettetDato>{{ $msg->getOpprettetDato() }}</opprettetDato>
         <opprettetAv>{{ $msg->getOpprettetAv() }}</opprettetAv>
         <basisregistrering xsi:type="journalpost">
@@ -24,8 +27,11 @@
             <opprettetAv>{{ $msg->getOpprettetAv() }}</opprettetAv>
             <arkivertDato>{{ $msg->getArkivertDato() }}</arkivertDato>
             <arkivertAv>{{ $msg->getArkivertAv() }}</arkivertAv>
-            <referanseArkivdel>Pureservice</referanseArkivdel>
+            <referanseArkivdel>Fagsystem Pureservice</referanseArkivdel>
             <tittel>{{ $ticket->subject }}</tittel>
+            <offentligTittel>{{ $ticket->subject }}</offentligTittel>
+            <journalposttype>{{ $ticket->getType() }}</journalposttype>
+            <journalstatus>{{ $ticketStatus }}</journalstatus>
             <beskrivelse>
                 {{ $ticket->description }}
             </beskrivelse>
@@ -41,21 +47,23 @@
 
             <dokumentbeskrivelse>
                 <dokumenttype>{{ Storage::mimeType($doc) }}</dokumenttype>
-                <dokumentstatus>Dokumentet er ferdigstilt</dokumentstatus>
+                <dokumentstatus>{{ config('eformidling.arkivmelding.documentStatus') }}</dokumentstatus>
                 <tittel>{{ Tools::fileNameFromStoragePath($doc, true) }}</tittel>
                 <opprettetDato>{{ Tools::atomTs(Storage::lastModified($doc)) }}</opprettetDato>
                 <opprettetAv>{{ $msg->getOpprettetAv() }}</opprettetAv>
-                <tilknyttetRegistreringSom>@if (basename($doc) == $msg->mainDocument)
-                    Hoveddokument
+                <tilknyttetRegistreringSom>
+                @if (basename($doc) == $msg->mainDocument)
+                    {{ config('eformidling.arkivmelding.mainDocument') }}
                 @else
-                    Vedlegg
-                @endif</tilknyttetRegistreringSom>
+                    {{ config('eformidling.arkivmelding.mainDocument') }}
+                @endif
+                </tilknyttetRegistreringSom>
                 <dokumentnummer>{{ $docNo }}</dokumentnummer>
                 <tilknyttetDato>{{ $msg->getOpprettetDato() }}</tilknyttetDato>
                 <tilknyttetAv>{{ $msg->getOpprettetAv() }}</tilknyttetAv>
                 <dokumentobjekt>
                     <versjonsnummer>1</versjonsnummer>
-                    <variantformat>Produksjonsformat</variantformat>
+                    <variantformat>{{ config('eformidling.arkivmelding.documentVariant') }}</variantformat>
                     <opprettetDato>{{ Tools::atomTs(Storage::lastModified($doc)) }}</opprettetDato>
                     <opprettetAv>{{ $msg->getOpprettetAv() }}</opprettetAv>
                     <referanseDokumentfil>{{ Tools::fileNameFromStoragePath($doc) }}</referanseDokumentfil>

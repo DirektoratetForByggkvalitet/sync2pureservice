@@ -228,4 +228,25 @@ class Ticket extends Model
 
     }
 
+    /**
+     * Returnerer status på saken fra Pureservice
+     */
+    public function getStatus(PsApi|null $ps = null): string {
+        if ($this->statusId):
+            if (!$ps) $ps = new PsApi();
+            return $ps->getEntityNameById('status', $this->statusId, 'userDisplayName');
+        endif;
+        return "Ukjent";
+    }
+
+    /**
+     * Returnerer sakstype på saken fra Pureservice
+     */
+    public function getType(PsApi|null $ps = null): string {
+        if ($this->ticketTypeId):
+            if (!$ps) $ps = new PsApi();
+            return $ps->getEntityNameById('tickettype', $this->ticketTypeId);
+        endif;
+        return "Ukjent";
+    }
 }

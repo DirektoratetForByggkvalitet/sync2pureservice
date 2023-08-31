@@ -72,4 +72,10 @@ return [
         'skatterOgAvgifter' => 'skatter og avgifter',
         'tekniskeTjenester' => 'tekniske tjenester',
     ],
+    'arkivmelding' => [
+        'documentStatus' => 'Dokumentet er ferdigstilt',
+        'documentVariant' => 'Produksjonsformat',
+        'mainDocument' => 'Hoveddokument',
+        'attachment' => 'Vedlegg',
+    ],
 ];
