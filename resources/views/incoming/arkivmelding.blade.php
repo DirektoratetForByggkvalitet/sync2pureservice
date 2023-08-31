@@ -1,6 +1,14 @@
+@php
+    use Illuminate\Support\{Arr};
+@endphp
 <h2>{{ $subject }}</h2>
 <ul>
+@if (isset($arkivmelding))
+    <li>Saksdato: {{ Arr::get($arkivmelding, 'mappe.saksdato', 'Ikke oppgitt') }}</li>
+    <li>Saksansvarlig: {{ Arr::get($arkivmelding, 'mappe.saksansvarlig', 'Ikke oppgitt') }}
+@else
     <li>Opprettet: {{ $msg->createdDtHr() }}</li>
+@endif
     <li>Forventet svardato: {{ $msg->expectedResponseDtHr() }}</li>
     <li>Hoveddokument: {{ $msg->mainDocument }}</li>
     <li>Antall dokumenter: {{ count($msg->attachments) }}</li>

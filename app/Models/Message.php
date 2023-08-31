@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\{Storage, Blade};
-use Illuminate\Support\{Str, Arr};
+use Illuminate\Support\{Str, Arr, Collection};
 use App\Services\{PsApi, Enhetsregisteret, Tools};
 use App\Models\{Ticket, Company, User};
 
@@ -164,11 +164,15 @@ class Message extends Model {
             $receiverUser->addOrUpdatePs($ps, true);
         endif;
 
-        $subject = Str::ucfirst($this->documentType());
-        $subject .= ' for prosessen '.$this->processIdentifier;
-        $description = Blade::render(config('eformidling.in.arkivmelding'), ['subject' => $subject, 'msg' => $this]);
+        if (Str::lower($this->documentType()) == 'arkivmelding' && $arkivmelding = $this->readXml()):
+            $subject = Arr::get($arkivmelding, 'mappe.tittel', 'Ukjent emne');
+            $description = Blade::render(config('eformidling.in.arkivmelding'), ['subject' => $subject, 'msg' => $this, 'arkivmelding' => $arkivmelding]);
+        else:
+            $subject = Str::ucfirst($this->documentType());
+            $subject .= ' for prosessen '.$this->processIdentifier;
+            $description = Blade::render(config('eformidling.in.arkivmelding'), ['subject' => $subject, 'msg' => $this]);
         //dd($description);
-
+        endif;
         if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.invisible'))):
             if (count($this->attachments)):
                 $attachmentReport = $ps->uploadAttachments($this->attachments, $ticket);
@@ -255,4 +259,15 @@ class Message extends Model {
         return false;
     }
 
+    /**
+     * Leser inn arkivmelding.xml
+     */
+    public function readXml(): array|false {
+        $xmlfile = $this->downloadPath().'/arkivmelding.xml';
+        if (Storage::fileExists($xmlfile)):
+            $xmlData = json_decode(json_encode(simplexml_load_file(Storage::path($xmlfile))), true);
+            return $xmlData;
+        endif;
+        return false;
+    }
 }
