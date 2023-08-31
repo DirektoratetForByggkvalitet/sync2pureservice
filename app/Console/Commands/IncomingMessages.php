@@ -123,6 +123,7 @@ class IncomingMessages extends Command {
             // $bar->advance();
             // Vi har tatt vare på meldingen. Sletter den fra eFormidling sin kø
             // $this->ip->deleteIncomingMessage($message->id)
+            // $this->line(Tools::l3().'Meldingen har blitt slettet fra integrasjonspunktet');
 
             $this->newLine();
         endforeach;
