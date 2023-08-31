@@ -109,11 +109,11 @@ class Eformidling extends API {
      * Peek låser en innkommende melding og gjør den tilgjengelig for nedlasting
      */
     public function peekIncomingMessageById(string $messageId) : array|false {
-        $uri = 'messages/in/peek?messageId='.$messageId;
+        $uri = 'messages/in/peek';
         $query = [
             'messageId' => $messageId,
         ];
-        if ($result = $this->apiGet($uri)):
+        if ($result = $this->apiQuery($uri, $query)):
             return $result;
         endif;
         return false;
@@ -169,7 +169,7 @@ class Eformidling extends API {
             return $dbMessage;
         endif;
         $newMessage = Message::factory()->create([
-            'id' => $documentIdentification['instanceIdentifier'],
+            'messageId' => $documentIdentification['instanceIdentifier'],
             'sender_id' => $actors['sender']->internal_id,
             'receiver_id' => $actors['receiver']->internal_id,
             'documentStandard' => $documentIdentification['standard'],
@@ -187,7 +187,7 @@ class Eformidling extends API {
      * Laster ned, pakker ut, og knytter vedlegg til meldingen
      */
     public function downloadMessageAttachments(string $msgId): int|false {
-        $dbMessage = Message::find($msgId);
+        $dbMessage = Message::firstWhere('messageId', $msgId);
         if (count($dbMessage->attachments) == 0):
             // Vi har ikke tidligere lastet ned vedlegg for denne meldingen
             $dbMessage->save();

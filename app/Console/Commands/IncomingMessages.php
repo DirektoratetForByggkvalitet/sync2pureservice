@@ -108,7 +108,8 @@ class IncomingMessages extends Command {
                     unset($new);
                 else:
                     $this->error(Tools::l2().'Klarte ikke å splitte innsynskravet');
-                    return Command::FAILURE;
+                    $this->newLine();
+                    continue;
                 endif;
              else:
                 // Alle andre typer meldinger
@@ -118,12 +119,19 @@ class IncomingMessages extends Command {
                     $tickets[] = $new;
                     $this->line(Tools::l3().'Sak ID '.$new->requestNumber. ' ble opprettet.');
                     // unset($new);
+                else:
+                    $this->error(Tools::l2().'Klarte ikke å opprette sak i Pureservice');
+                    $this->newLine();
+                    continue;
                 endif;
             endif;
             // $bar->advance();
             // Vi har tatt vare på meldingen. Sletter den fra eFormidling sin kø
-            // $this->ip->deleteIncomingMessage($message->id)
-            // $this->line(Tools::l3().'Meldingen har blitt slettet fra integrasjonspunktet');
+            if ($this->ip->deleteIncomingMessage($message->messageId)):
+                $this->line(Tools::l3().'Meldingen har blitt slettet fra integrasjonspunktet');
+            else:
+                $this->line(Tools::l3().'Meldingen ble IKKE slettet fra integrasjonspunktet, og vil bli behandlet igjen senere.');
+            endif;
 
             $this->newLine();
         endforeach;
