@@ -19,7 +19,7 @@
     @endphp
     <li>
         <strong>Dokumentnr: {{ $dok['dokumentnr'] }}</strong><br/>
-        Navn: {{ $metadata['dokumentnavn'] }}
+        Navn: {{ $metadata['dokumentnavn'] }}<br/>
         Sekvensnr: {{ $dok['journalnr'] }}<br/>
         Saksbehandler: {{ $dok['saksbehandler'] }}
     </li>
