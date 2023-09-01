@@ -57,33 +57,34 @@ class IncomingMessages extends Command {
         foreach ($messages as $m):
             $msgId = $this->ip->getMsgDocumentIdentification($m);
             $this->line(Tools::l1().'Behandler meldingen \''.$msgId['instanceIdentifier'].'\'');
-            $msg = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
-            if (!$msg):
-                if (!$dbMessage = Message::find($msgId['instanceIdentifier'])):
-                    $this->error(Tools::l2().'Meldingen er låst og kan ikke lastes ned (enda). Vent i noen minutter.');
-                    return Command::FAILURE;
-                else:
-                    $this->line(Tools::l2().'Meldingen er låst i integrasjonspunktet, men ble funnet i DB. Fortsetter.');
-                    $msg = $m;
-                    unset($dbMessage);
-                endif;
+            $lock_successful = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
+            if ($lock_successful):
+                $this->line(Tools::l2().'Meldingen har blitt låst og er klar for nedlasting.');
+            else:
+                $this->line(Tools::l2().'Meldingen er allerede låst. Fortsetter med nedlasting.');
             endif;
-            if ($dbMessage = $this->ip->storeIncomingMessage($msg)):
-                $this->line(Tools::l2().'Dokumentet ble lagret i DB');
-                if ($attCount = $this->ip->downloadMessageAttachments($msgId['instanceIdentifier'])):
-                    $this->line(Tools::l2().$attCount .' vedlegg er lastet ned og knyttet til meldingen');
-                else:
-                    $this->error(Tools::l2().'Fikk ikke lastet ned vedlegg');
-                    return Command::FAILURE;
+            if ($dbMessage = Message::firstWhere('messageId', $msgId['instanceIdentifier'])):
+                $this->line(Tools::l2().'Meldingen er allerede lagret i databasen');
+            elseif ($dbMessage = $this->ip->storeIncomingMessage($m)):
+                $this->line(Tools::l2().'Meldingen ble lagret i DB');
+            endif;
+            if (count($dbMessage->attachments) == 0):
+                $asicResponse = $this->ip->downloadIncomingAsic($msgId['instanceIdentifier'], $dbMessage->downloadPath(), true);
+                if ($asicResponse->failed()):
+                    dd($asicResponse->body());
                 endif;
+                $dbMessage->syncChanges();
+                $this->line(Tools::l2().count($dbMessage->attachments) .' vedlegg ble lastet ned og knyttet til meldingen');
+            else:
+                $this->line(Tools::l2().count($dbMessage->attachments).' vedlegg er allerede lastet ned. Fortsetter...');
             endif;
             $this->newLine();
         endforeach;
 
         $this->newLine();
         $this->info(Tools::l1().'Importerer meldinger til Pureservice');
-        $this->info(Tools::l1().'Bruker Pureservice-instansen '.$this->ps->getBaseUrl().'.');
         $this->ps = new PsApi();
+        $this->info(Tools::l1().'Bruker Pureservice-instansen '.$this->ps->getBaseUrl().'.');
         $this->ps->setTicketOptions('eformidling');
         // $bar = $this->output->createProgressBar(Message::count());
         // $bar->setFormat('verbose');

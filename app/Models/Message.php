@@ -22,7 +22,8 @@ class Message extends Model {
         'content',
         'mainDocument',
         'attachments',
-        'messageId'
+        'messageId',
+        //'has_lock',
     ];
 
     protected $casts = [
@@ -197,20 +198,18 @@ class Message extends Model {
             $ps->setTicketOptions('innsynskrav');
         endif;
 
-        if (count($this->attachments) > 0):
-            foreach ($this->attachments as $a):
-                if (Storage::mimeType($a) == 'text/xml'):
-                    $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($a))), true);
-                    // Rydder opp i tolkingen av xml
-                    $dokumenter = collect($bestilling['dokumenter']['dokument']);
-                    unset($bestilling['dokumenter']['dokument']);
-                    $bestilling['dokumenter'] = $dokumenter;
-                    unset($dokumenter);
-                else:
-                    continue;
-                endif;
-            endforeach;
-        endif;
+        foreach ($this->attachments as $a):
+            if (basename($a) == 'order.xml' ):
+                $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($a))), true);
+                // Rydder opp i tolkingen av xml
+                $dokumenter = collect($bestilling['dokumenter']['dokument']);
+                unset($bestilling['dokumenter']['dokument']);
+                $bestilling['dokumenter'] = $dokumenter;
+                unset($dokumenter);
+            else:
+                continue;
+            endif;
+        endforeach;
         if (!isset($bestilling)):
             return false;
         endif;

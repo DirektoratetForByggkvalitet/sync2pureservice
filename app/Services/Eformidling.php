@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\{Storage};
 use ZipArchive;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use cardinalby\ContentDisposition\ContentDisposition;
-
+use Illuminate\Http\Client\Response;
+use PhpParser\Node\Stmt\While_;
 
 class Eformidling extends API {
     protected Enhetsregisteret $brreg;
@@ -73,6 +74,7 @@ class Eformidling extends API {
             'receiver' => $receiver,
         ];
     }
+
     /**
      * Fjerner prefiksen for orgnumre
      */
@@ -107,22 +109,24 @@ class Eformidling extends API {
 
     /**
      * Peek låser en innkommende melding og gjør den tilgjengelig for nedlasting
+     * @return bool Angir om forespørselen var vellykket eller ikke
      */
-    public function peekIncomingMessageById(string $messageId) : array|false {
+    public function peekIncomingMessageById(string $messageId) : bool {
         $uri = 'messages/in/peek?messageId='.$messageId;
-        if ($result = $this->apiGet($uri)):
-            return $result != null ? $result : false;
-        endif;
-        return false;
+        $result = $this->apiGet($uri, true);
+        return $result->successful();
     }
 
     /**
      * Laster ned innkommende melding sin zip-fil
      */
-    public function downloadIncomingAsic(string $messageId, string|false $dlPath = false): string|false {
+    public function downloadIncomingAsic(string $messageId, string|false $dlPath = false, bool $returnResponse = false): Response|string|false {
+        $dbMessage = Message::firstWhere('messageId', $messageId);
+        $dbAttachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
         $uri = 'messages/in/pop/'.$messageId;
         $dlPath = $dlPath ? $dlPath : $this->myConf('download_path') . '/'. $messageId;
-        if ($response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'))):
+        $response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'));
+        if ($response->successful()):
             // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
             //$fileMimeType = Str::before($response->header('content-type'), ';');
             $cd = ContentDisposition::parse($response->header('content-disposition'));
@@ -131,9 +135,35 @@ class Eformidling extends API {
                 $fileName,
                 $response->toPsrResponse()->getBody()->getContents()
             );
-            return $fileName;
+
+            // Pakker ut zip-filen
+            $path = $dbMessage->downloadPath();
+            if (Str::endsWith($fileName, '.zip')):
+                // Vi har et filnavn som slutter på .zip, pakker den ut
+                $zipArchive = new ZipArchive();
+                $zipArchive->open(Storage::path($fileName), ZipArchive::RDONLY);
+                $zipArchive->extractTo(Storage::path($path));
+                $zipArchive->close();
+                // Sletter zip-filen, siden innholdet er pakket ut
+                Storage::delete($fileName);
+                if (Storage::directoryExists($path.'/META-INF')):
+                    Storage::deleteDirectory($path.'/META-INF');
+                endif;
+            endif;
+            foreach (Storage::files($path) as $filepath):
+                // Hopper over filer med filnavn som begynner med '.'
+                $fname = basename($filepath);
+                if (Str::startsWith($fname, '.') || $fname == 'manifest.xml' || $fname == 'mimetype' || $fname == basename($fileName)):
+                    continue;
+                endif;
+                // Legger filen til i listen over vedlegg
+                $dbAttachments[] = $filepath;
+            endforeach;
+            $dbMessage->attachments = $dbAttachments;
+            $dbMessage->save();
         endif;
-        return false;
+        if ($returnResponse) return $response;
+        return isset($fileName) ? $fileName : false;
     }
 
     public function deleteIncomingMessage(string $messageId): bool {
@@ -174,7 +204,6 @@ class Eformidling extends API {
             'documentType' => $documentIdentification['type'],
             'content' => $message,
             'mainDocument' => Arr::get($message, 'arkivmelding.hoveddokument', null),
-            'attachments' => [],
         ]);
         $newMessage->save();
         return $newMessage;
@@ -183,46 +212,56 @@ class Eformidling extends API {
     /**
      * Laster ned, pakker ut, og knytter vedlegg til meldingen
      */
-    public function downloadMessageAttachments(string $msgId): int|false {
-        $dbMessage = Message::firstWhere('messageId', $msgId);
-        $dbAttachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
-        if (count($dbAttachments) == 0):
-            // Vi har ikke tidligere lastet ned vedlegg for denne meldingen
-            $dbMessage->save();
-            $path = $dbMessage->downloadPath();
-            $zipfile = $this->downloadIncomingAsic($dbMessage->id, $path);
-            if (!$zipfile) return false;
+    // public function processAsic(string $msgId): int|false {
+    //     $dbMessage = Message::firstWhere('messageId', $msgId);
+    //     $dbAttachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
+    //     if (count($dbAttachments) == 0):
+    //         // Vi har ikke tidligere lastet ned vedlegg for denne meldingen
+    //         $path = $dbMessage->downloadPath();
+    //         $wait = true;
+    //         $try = 0;
+    //         $max_tries = 5;
+    //         $zipfile = false;
+    //         while ($wait && $try >= $max_tries):
+    //             $try++;
+    //             if ($zipfile = $this->downloadIncomingAsic($dbMessage->id, $path)):
+    //                 $wait = false;
+    //             else:
+    //                 sleep(3);
+    //             endif;
+    //         endwhile;
+    //         if (!$zipfile) return false;
 
-            if (Str::endsWith($zipfile, '.zip')):
-                // Vi har et filnavn som slutter på .zip, pakker den ut
-                $zipArchive = new ZipArchive();
-                $zipArchive->open(Storage::path($zipfile), ZipArchive::RDONLY);
-                $zipArchive->extractTo(Storage::path($path));
-                $zipArchive->close();
-                // Sletter zip-filen, siden innholdet er pakket ut
-                Storage::delete($zipfile);
-                if (Storage::directoryExists($path.'/META-INF')):
-                    Storage::deleteDirectory($path.'/META-INF');
-                endif;
-            endif;
-            foreach (Storage::files($path) as $filepath):
-                // Hopper over filer med filnavn som begynner med '.'
-                $fname = Str::afterLast($filepath, '/');
-                if (Str::startsWith($fname, '.') || $fname == 'manifest.xml' || $fname == 'mimetype'):
-                    continue;
-                endif;
+    //         if (Str::endsWith($zipfile, '.zip')):
+    //             // Vi har et filnavn som slutter på .zip, pakker den ut
+    //             $zipArchive = new ZipArchive();
+    //             $zipArchive->open(Storage::path($zipfile), ZipArchive::RDONLY);
+    //             $zipArchive->extractTo(Storage::path($path));
+    //             $zipArchive->close();
+    //             // Sletter zip-filen, siden innholdet er pakket ut
+    //             Storage::delete($zipfile);
+    //             if (Storage::directoryExists($path.'/META-INF')):
+    //                 Storage::deleteDirectory($path.'/META-INF');
+    //             endif;
+    //         endif;
+    //         foreach (Storage::files($path) as $filepath):
+    //             // Hopper over filer med filnavn som begynner med '.'
+    //             $fname = Str::afterLast($filepath, '/');
+    //             if (Str::startsWith($fname, '.') || $fname == 'manifest.xml' || $fname == 'mimetype'):
+    //                 continue;
+    //             endif;
 
-                // Legger filen til i listen over vedlegg
-                $dbAttachments[] = $filepath;
-            endforeach;
-            $dbMessage->attachments = $dbAttachments;
-            $dbMessage->save();
-            return count($dbMessage->attachments);
-        else:
-            return count($dbMessage->attachments);
-        endif;
+    //             // Legger filen til i listen over vedlegg
+    //             $dbAttachments[] = $filepath;
+    //         endforeach;
+    //         $dbMessage->attachments = $dbAttachments;
+    //         $dbMessage->save();
+    //         return count($dbMessage->attachments);
+    //     else:
+    //         return count($dbMessage->attachments);
+    //     endif;
 
-    }
+    // }
 
     // Returnerer array over meldingstyper som foretaket kan motta
     public function getCapabilities(Company $org, $filter = true) : array {
