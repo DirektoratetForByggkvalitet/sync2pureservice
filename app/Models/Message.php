@@ -29,6 +29,13 @@ class Message extends Model {
         'attachments' => 'array',
         'content' => 'array',
     ];
+    /**
+     * Standardverdier ved oppretting
+     */
+    protected $attributes = [
+        'attachment' => [],
+        'content' => [],
+    ];
 
     public function sender(): Company|null {
         return Company::find($this->sender_id);

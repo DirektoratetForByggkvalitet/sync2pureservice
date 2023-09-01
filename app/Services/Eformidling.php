@@ -185,7 +185,8 @@ class Eformidling extends API {
      */
     public function downloadMessageAttachments(string $msgId): int|false {
         $dbMessage = Message::firstWhere('messageId', $msgId);
-        if (count($dbMessage->attachments) == 0):
+        $dbAttachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
+        if (count($dbAttachments) == 0):
             // Vi har ikke tidligere lastet ned vedlegg for denne meldingen
             $dbMessage->save();
             $path = $dbMessage->downloadPath();
@@ -204,7 +205,6 @@ class Eformidling extends API {
                     Storage::deleteDirectory($path.'/META-INF');
                 endif;
             endif;
-            $attachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
             foreach (Storage::files($path) as $filepath):
                 // Hopper over filer med filnavn som begynner med '.'
                 $fname = Str::afterLast($filepath, '/');
@@ -213,9 +213,9 @@ class Eformidling extends API {
                 endif;
 
                 // Legger filen til i listen over vedlegg
-                $attachments[] = $filepath;
+                $dbAttachments[] = $filepath;
             endforeach;
-            $dbMessage->attachments = $attachments;
+            $dbMessage->attachments = $dbAttachments;
             $dbMessage->save();
             return count($dbMessage->attachments);
         else:
