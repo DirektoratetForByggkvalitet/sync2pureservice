@@ -57,6 +57,13 @@ class IncomingMessages extends Command {
         foreach ($messages as $m):
             $msgId = $this->ip->getMsgDocumentIdentification($m);
             $this->line(Tools::l1().'Behandler meldingen \''.$msgId['instanceIdentifier'].'\'');
+
+            // Hopper over kvitteringsmeldinger fra eInnsyn, for nå.
+            if ($this->ip->getMessageDocumentType($m) == 'einnsyn_kvittering'):
+                $this->line(Tools::l2().'eInnsynskvittering, hopper over');
+                $this->newLine();
+                continue;
+            endif;
             $lock_successful = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
             if ($lock_successful):
                 $this->line(Tools::l2().'Meldingen har blitt låst og er klar for nedlasting.');
@@ -69,15 +76,19 @@ class IncomingMessages extends Command {
                 $this->line(Tools::l2().'Meldingen ble lagret i DB');
             endif;
             $dbMessage->assureAttachments();
+            $dbMessage->syncChanges();
             if ($dbMessage->attachments == []):
                 $asicResponse = $this->ip->downloadIncomingAsic($msgId['instanceIdentifier'], $dbMessage->downloadPath(), true);
                 if ($asicResponse->failed()):
                     dd($asicResponse->body());
                 endif;
                 $dbMessage->syncChanges();
-                $this->line(Tools::l2().count($dbMessage->attachments) .' vedlegg ble lastet ned og knyttet til meldingen');
+                dd($dbMessage);
+                $tmp = $dbMessage->attachments;
+                $this->line(Tools::l2().count($tmp) .' vedlegg ble lastet ned og knyttet til meldingen');
             else:
-                $this->line(Tools::l2().count($dbMessage->attachments).' vedlegg er allerede lastet ned. Fortsetter...');
+                $tmp = $dbMessage->attachments;
+                $this->line(Tools::l2().count($tmp).' vedlegg er allerede lastet ned. Fortsetter...');
             endif;
             $this->newLine();
         endforeach;
@@ -139,7 +150,7 @@ class IncomingMessages extends Command {
         endforeach;
         // $bar->finish();
         $this->info('Ferdig. Operasjonen tok '.round((microtime(true) - $this->start), 0).' sekunder');
-        $this->info(count($tickets).' sak'.count($tickets) > 1 ? 'er' : ''.' ble opprettet');
+        //$this->info(count($tickets).' sak'.count($tickets) > 1 ? 'er' : ''.' ble opprettet');
         return Command::SUCCESS;
     }
 }

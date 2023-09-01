@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('processIdentifier')->nullable();
             $table->json('content')->nullable();
             $table->string('mainDocument')->nullable();
+            $table->longText('emailtext')->nullable();
             $table->json('attachments')->nullable()->default('[]');
             $table->timestamps();
         });

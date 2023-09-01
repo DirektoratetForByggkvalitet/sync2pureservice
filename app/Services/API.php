@@ -141,7 +141,7 @@ class API {
         endif;
         if ($statusOnError) return
             [$response->status(), $response->json()];
-        return false;
+        return $returnResponse ? $response : false;
     }
 
     public function apiQuery(

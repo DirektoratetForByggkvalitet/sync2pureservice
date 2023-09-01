@@ -98,13 +98,20 @@ class Eformidling extends API {
      * Ser etter innkommende meldinger
      */
     public function getIncomingMessages($filters = []) : array|false {
-        $filters['size'] = isset($filters['size']) ? $filters['size'] : 100;
+        $filters['size'] = isset($filters['size']) ? $filters['size'] : 500;
         $uri = 'messages/in';
         if ($response = $this->apiQuery($uri, $filters)):
             return $response['content'];
         endif;
 
         return false;
+    }
+
+    /**
+     * Returnerer dokumenttypen fra en rå melding
+     */
+    public function getMessageDocumentType(array $message): string {
+        return Arr::get($message, 'standardBusinessDocumentHeader.documentIdentification.type');
     }
 
     /**
@@ -117,6 +124,11 @@ class Eformidling extends API {
         return $result->successful();
     }
 
+    public function peekIncomingMessage(): array {
+        $uri = 'messages/in/peek';
+        return $this->apiGet($uri);
+    }
+
     /**
      * Laster ned innkommende melding sin zip-fil
      */
@@ -125,6 +137,7 @@ class Eformidling extends API {
         $dbAttachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
         $uri = 'messages/in/pop/'.$messageId;
         $dlPath = $dlPath ? $dlPath : $this->myConf('download_path') . '/'. $messageId;
+        $lock = $this->peekIncomingMessageById($messageId);
         $response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'));
         if ($response->successful()):
             // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'

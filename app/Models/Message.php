@@ -23,12 +23,17 @@ class Message extends Model {
         'mainDocument',
         'attachments',
         'messageId',
+        'emailtext',
         //'has_lock',
     ];
 
     protected $casts = [
         'attachments' => 'array',
         'content' => 'array',
+    ];
+
+    protected $hidden = [
+        'emailtext',
     ];
     /**
      * Standardverdier ved oppretting
@@ -197,7 +202,7 @@ class Message extends Model {
             $ps = new PsApi();
             $ps->setTicketOptions('innsynskrav');
         endif;
-
+        $emailtext = [];
         foreach ($this->attachments as $a):
             if (basename($a) == 'order.xml' ):
                 $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($a))), true);
@@ -206,6 +211,9 @@ class Message extends Model {
                 unset($bestilling['dokumenter']['dokument']);
                 $bestilling['dokumenter'] = $dokumenter;
                 unset($dokumenter);
+            elseif (basename($a) == 'emailtext'):
+                // Leser inn e-posttekst fra eInnsyn
+                $docMetadata = $this->processEmailText(Storage::get($a));
             else:
                 continue;
             endif;
@@ -220,7 +228,7 @@ class Message extends Model {
         foreach ($saker as $sak):
             $saksnr = $sak['saksnr'];
             $subject = 'Innsynskrav for sak '. $sak['saksnr'];
-            $description = Blade::render(config('eformidling.in.innsynskrav'), ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject]);
+            $description = Blade::render(config('eformidling.in.innsynskrav'), ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject, 'docMetadata' => $docMetadata]);
             $tickets[] = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'));
         endforeach;
         return $tickets;
@@ -232,7 +240,7 @@ class Message extends Model {
             $userData = [
                 'email' => $kontaktinfo['e-post'],
             ];
-            if ($kontaktinfo['navn'] != ''):
+            if ($kontaktinfo['navn'] != '' && $kontaktinfo['navn'] != ' ' && !is_array($kontaktinfo['navn'])):
                 $userData['firstName'] = Str::before($kontaktinfo['navn'], ' ');
                 $userData['lastName'] = Str::after($kontaktinfo['navn'], ' ');
             else:
@@ -241,6 +249,7 @@ class Message extends Model {
                 $userData['lastName'] = $emailData[1];
             endif;
             $user = User::factory()->create($userData);
+            $user->save();
         endif;
         $user->addOrUpdatePS($ps);
 
@@ -283,5 +292,29 @@ class Message extends Model {
     public function assureAttachments(): void {
         $tmp = is_array($this->attachments) ? $this->attachments : [];
         $this->save();
+    }
+
+    public function processEmailText(string $text): Collection {
+        $dokText = Str::after($text, 'Dokumenter:');
+        $dokArray = explode('--------------------------------------'.PHP_EOL, $dokText);
+        $dokumenter = [];
+        $template = [
+            'saksnr' => '',
+            'dokumentnr' => '',
+            'sekvensnr' => '',
+            'saksnavn' => '',
+            'dokumentnavn' => '',
+        ];
+        foreach ($dokArray as $dok):
+            $dokument = $template;
+            $dokument['saksnr'] = trim(Str::before(Str::after($dok, 'Saksnr: '), ' | Dok nr'));
+            $dokument['dokumentnr'] = trim(Str::before(Str::after($dok, 'Dok nr. : '), ' | Sekvensnr'));
+            $dokument['sekvensnr'] = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), PHP_EOL));
+            $dokument['saksnavn'] = trim(Str::before(Str::after($dok, 'Sak: '), PHP_EOL));
+            $dokument['dokumentnavn'] = trim(Str::before(Str::after($dok, 'Dokument: '), PHP_EOL));
+            $dokumenter[] = $dokument;
+        endforeach;
+
+        return collect($dokumenter);
     }
 }
