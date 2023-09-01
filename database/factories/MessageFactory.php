@@ -20,9 +20,9 @@ class MessageFactory extends Factory
         return [
             'sender_id' => null,
             'receiver_id' => null,
-            'content' => [],
+            'content' => '[]',
             'mainDocument' => null,
-            'attachments' => [],
+            'attachments' => '[]',
             'processIdentifier' => config('eformidling.process_pre').config('eformidling.out.type').config('eformidling.process_post'),
             'conversationId' => Str::orderedUuid()->toString(),
             'messageId' => Str::orderedUuid()->toString(),

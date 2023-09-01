@@ -32,10 +32,10 @@ class Message extends Model {
     /**
      * Standardverdier ved oppretting
      */
-    protected $attributes = [
-        'attachment' => [],
-        'content' => [],
-    ];
+    // protected $attributes = [
+    //     'attachment' => '[]',
+    //     'content' => '[]',
+    // ];
 
     public function sender(): Company|null {
         return Company::find($this->sender_id);
