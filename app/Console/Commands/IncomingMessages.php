@@ -68,6 +68,7 @@ class IncomingMessages extends Command {
             elseif ($dbMessage = $this->ip->storeIncomingMessage($m)):
                 $this->line(Tools::l2().'Meldingen ble lagret i DB');
             endif;
+            $dbMessage->assureAttachments();
             if (count($dbMessage->attachments) == 0):
                 $asicResponse = $this->ip->downloadIncomingAsic($msgId['instanceIdentifier'], $dbMessage->downloadPath(), true);
                 if ($asicResponse->failed()):

@@ -276,4 +276,12 @@ class Message extends Model {
         endif;
         return false;
     }
+
+    /**
+     * Sørger for at $this->attachments faktisk er et array
+     */
+    public function assureAttachments(): void {
+        $tmp = is_array($this->attachments) ? $this->attachments : [];
+        $this->save();
+    }
 }
