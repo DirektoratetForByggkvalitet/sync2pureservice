@@ -69,7 +69,7 @@ class IncomingMessages extends Command {
                 $this->line(Tools::l2().'Meldingen ble lagret i DB');
             endif;
             $dbMessage->assureAttachments();
-            if (count($dbMessage->attachments) == 0):
+            if ($dbMessage->attachments == []):
                 $asicResponse = $this->ip->downloadIncomingAsic($msgId['instanceIdentifier'], $dbMessage->downloadPath(), true);
                 if ($asicResponse->failed()):
                     dd($asicResponse->body());
