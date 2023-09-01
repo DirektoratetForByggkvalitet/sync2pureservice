@@ -109,12 +109,9 @@ class Eformidling extends API {
      * Peek låser en innkommende melding og gjør den tilgjengelig for nedlasting
      */
     public function peekIncomingMessageById(string $messageId) : array|false {
-        $uri = 'messages/in/peek';
-        $query = [
-            'messageId' => $messageId,
-        ];
-        if ($result = $this->apiQuery($uri, $query)):
-            return $result;
+        $uri = 'messages/in/peek?messageId='.$messageId;
+        if ($result = $this->apiGet($uri)):
+            return $result != null ? $result : false;
         endif;
         return false;
     }
