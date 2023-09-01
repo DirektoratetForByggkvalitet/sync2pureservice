@@ -3,7 +3,7 @@ definitions:
     - script: &resetDB
         ./artisan migrate:fresh --force
     - script: &install
-        cp .env.example .env && composer install --no-dev
+        cp .env.example .env && composer install
   steps:
     - step: &forberedeSvarInn
         name: Forbereder kjøring
