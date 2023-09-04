@@ -119,8 +119,9 @@ class Eformidling extends API {
      * @return Illuminate\Http\Client\Response Angir om forespørselen var vellykket eller ikke
      */
     public function peekIncomingMessageById(string $messageId) : Response {
-        $uri = 'messages/in/peek?messageId='.$messageId;
-        $result = $this->apiGet($uri, true);
+        $uri = 'messages/in/peek';
+        $params = ['messageId' => $messageId];
+        $result = $this->apiQuery($uri, $params, true);
         return $result;
     }
 
