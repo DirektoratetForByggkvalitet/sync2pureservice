@@ -53,10 +53,11 @@ class IncomingMessages extends Command {
             return Command::SUCCESS;
         endif;
         $messagesToSkip = $messages->lazy()->whereIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering']);
+
         $this->info(Tools::l1().'Av totalt '.$messages->count().' innkommende meldinger er '.$messagesToSkip->count().' einnsynskvitteringer som vi hopper over.');
 
         // Avslutter dersom alle meldinger skal hoppes over.
-        if ($messages->count == $messagesToSkip->count()):
+        if ($messages->count() == $messagesToSkip->count()):
             $this->newLine();
             $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
             return Command::SUCCESS;
