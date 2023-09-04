@@ -137,10 +137,6 @@ class Eformidling extends API {
         $dbAttachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
         $uri = 'messages/in/pop/'.$messageId;
         $dlPath = $dlPath ? $dlPath : $this->myConf('download_path') . '/'. $messageId;
-        $lockResponse = $this->peekIncomingMessageById($messageId);
-        if ($lockResponse->failed()):
-            dd($lockResponse->body());
-        endif;
 
         $response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'));
         if ($response->successful()):
