@@ -11,7 +11,6 @@ use Illuminate\Support\{Str, Arr};
 class IncomingMessages extends Command {
     protected float $start;
     protected string $version = '1.0';
-    protected int $count = 0;
     protected Eformidling $ip;
     protected PsApi $ps;
     /**
@@ -49,12 +48,20 @@ class IncomingMessages extends Command {
         $this->info(Tools::l1().'Bruker '.$this->ip->getBaseUrl().' som integrasjonspunkt');
         $messages = $this->ip->getIncomingMessages();
         if (!$messages):
+            $this->newLine();
             $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
             return Command::SUCCESS;
         endif;
-        $this->count = $messages->count();
         $messagesToSkip = $messages->lazy()->whereIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering']);
-        $this->info(Tools::l1().'Av totalt '.$this->count.' innkommende meldinger er '.$messagesToSkip->count().' einnsynskvitteringer som vi hopper over.');
+        $this->info(Tools::l1().'Av totalt '.$messages->count().' innkommende meldinger er '.$messagesToSkip->count().' einnsynskvitteringer som vi hopper over.');
+
+        // Avslutter dersom alle meldinger skal hoppes over.
+        if ($messages->count == $messagesToSkip->count()):
+            $this->newLine();
+            $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
+            return Command::SUCCESS;
+        endif;
+
         foreach ($messages->lazy()->whereNotIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering']) as $m):
             $msgId = $this->ip->getMsgDocumentIdentification($m);
             $this->line(Tools::l1().'Behandler meldingen \''.$msgId['instanceIdentifier'].'\'');
@@ -141,7 +148,9 @@ class IncomingMessages extends Command {
             if ($this->ip->deleteIncomingMessage($message->messageId)):
                 $this->line(Tools::l3().'Meldingen har blitt slettet fra integrasjonspunktet');
             else:
-                $this->line(Tools::l3().'Meldingen ble IKKE slettet fra integrasjonspunktet, og vil bli behandlet igjen senere.');
+                $this->error(Tools::l3().'Meldingen ble IKKE slettet fra integrasjonspunktet.');
+                $this->line(Tools::l3().'Enten er den allerede slettet, eller så oppsto det en feil under sletting.');
+                $this->line(Tools::l3().'Hvis det oppsto en feil KAN meldingen bli behandlet igjen neste gang vi sjekker.');
             endif;
 
             $this->newLine();
