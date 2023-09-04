@@ -3,7 +3,7 @@
 namespace App\Services;
 use App\Services\{API, Enhetsregisteret};
 use App\Models\{Message, User, Company, Ticket};
-use Illuminate\Support\{Str, Arr};
+use Illuminate\Support\{Str, Arr, Collection};
 use Illuminate\Support\Facades\{Storage};
 use ZipArchive;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -97,14 +97,26 @@ class Eformidling extends API {
     /**
      * Ser etter innkommende meldinger
      */
-    public function getIncomingMessages($filters = []) : array|false {
-        $filters['size'] = isset($filters['size']) ? $filters['size'] : 500;
+    public function getIncomingMessages() : Collection|false {
+        $params = [
+            'size' => 100,
+            'page' => 0,
+        ];
         $uri = 'messages/in';
-        if ($response = $this->apiQuery($uri, $filters)):
-            return $response['content'];
-        endif;
-
-        return false;
+        $messages = collect([]);
+        $last = false;
+        while ($last == false):
+            if ($response = $this->apiQuery($uri, $params)):
+                $result = $response['content'];
+                $params['page']++;
+                $last = $response['last'];
+                // Legger til resultatene
+                foreach ($result as $msg):
+                    $messages->push($msg);
+                endforeach;
+            endif;
+        endwhile;
+        return count($messages) ? $messages : false;
     }
 
     /**

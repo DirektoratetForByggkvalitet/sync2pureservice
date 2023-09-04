@@ -52,9 +52,10 @@ class IncomingMessages extends Command {
             $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
             return Command::SUCCESS;
         endif;
-        $this->count = count($messages);
-        $this->info(Tools::l1().'Behandler totalt '.$this->count.' innkommende meldinger');
-        foreach ($messages as $m):
+        $this->count = $messages->count();
+        $messagesToSkip = $messages->lazy()->whereIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering']);
+        $this->info(Tools::l1().'Av totalt '.$this->count.' innkommende meldinger er '.$messagesToSkip->count().' einnsynskvitteringer som vi hopper over.');
+        foreach ($messages->lazy()->whereNotIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering']) as $m):
             $msgId = $this->ip->getMsgDocumentIdentification($m);
             $this->line(Tools::l1().'Behandler meldingen \''.$msgId['instanceIdentifier'].'\'');
 
@@ -88,9 +89,10 @@ class IncomingMessages extends Command {
             endif;
             $this->newLine();
         endforeach;
+        unset($messages, $messagesToSkip, $dbMessage);
 
         $this->newLine();
-        $this->info(Tools::l1().'Importerer meldinger til Pureservice');
+        $this->info(Tools::l1().'Oppretter meldinger som saker i Pureservice');
         $this->ps = new PsApi();
         $this->info(Tools::l1().'Bruker Pureservice-instansen '.$this->ps->getBaseUrl().'.');
         $this->ps->setTicketOptions('eformidling');
