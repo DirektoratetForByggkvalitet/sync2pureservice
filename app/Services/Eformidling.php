@@ -116,12 +116,12 @@ class Eformidling extends API {
 
     /**
      * Peek låser en innkommende melding og gjør den tilgjengelig for nedlasting
-     * @return bool Angir om forespørselen var vellykket eller ikke
+     * @return Illuminate\Http\Client\Response Angir om forespørselen var vellykket eller ikke
      */
-    public function peekIncomingMessageById(string $messageId) : bool {
+    public function peekIncomingMessageById(string $messageId) : Response {
         $uri = 'messages/in/peek?messageId='.$messageId;
         $result = $this->apiGet($uri, true);
-        return $result->successful();
+        return $result;
     }
 
     public function peekIncomingMessage(): array {
@@ -137,7 +137,11 @@ class Eformidling extends API {
         $dbAttachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
         $uri = 'messages/in/pop/'.$messageId;
         $dlPath = $dlPath ? $dlPath : $this->myConf('download_path') . '/'. $messageId;
-        $lock = $this->peekIncomingMessageById($messageId);
+        $lockResponse = $this->peekIncomingMessageById($messageId);
+        if ($lockResponse->failed()):
+            dd($lockResponse->body());
+        endif;
+
         $response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'));
         if ($response->successful()):
             // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
