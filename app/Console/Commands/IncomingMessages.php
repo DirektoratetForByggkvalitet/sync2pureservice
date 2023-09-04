@@ -64,10 +64,11 @@ class IncomingMessages extends Command {
                 $this->newLine();
                 continue;
             endif;
-            $lock_successful = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
-            if ($lock_successful):
+            $lock = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
+            if ($lock->successful()):
                 $this->line(Tools::l2().'Meldingen har blitt låst og er klar for nedlasting.');
             else:
+                dd($lock->body());
                 $this->line(Tools::l2().'Meldingen er allerede låst. Fortsetter med nedlasting.');
             endif;
             if ($dbMessage = Message::firstWhere('messageId', $msgId['instanceIdentifier'])):
