@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Support\{Str, Arr};
 use Illuminate\Support\Facades\Storage;
 use cardinalby\ContentDisposition\ContentDisposition;
+use Illuminate\Http\Client\Response;
 
 /**
  * Versjon 2 av Pureservice API-klient, basert på Laravel sitt HTTP Client-bibliotek
@@ -168,11 +169,29 @@ class PsApi extends API {
         return false;
     }
 
+    /**
+     * Henter inn en sak fra Pureservice som en Ticket::class
+     */
+    public function getTicketFromPureservice(int $id, $useRequestNumber = true): Ticket|false {
+        $uri = 'ticket/'.$id.'/';
+        if ($useRequestNumber):
+            $uri .= 'requestNumber/';
+        endif;
+        $response = $this->apiGet($uri, true);
+        if ($response->successful()):
+            $ticket = collect($response->json('tickets'));
+            return $ticket->mapInto(Ticket::class)->first();
+        else:
+            return false;
+        endif;
+    }
+
 
     /**
      * Laster opp vedlegg til en sak i Pureservice
      * @param array         $attachments    Array over filstier relative til storage/app som skal lastes opp
      * @param App\Models\Ticket   $ticket   Saken som skal ha vedlegget
+     * @param array         $communication  Vedleggene skal koblet til en kommunikasjon
      *
      * @return assoc_array  Rapport på status og antall filer/opplastinger
      */
@@ -181,6 +200,7 @@ class PsApi extends API {
         $attachmentCount = count($attachments);
         $uploadCount = 0;
         $status = 'OK';
+        $uploads = [];
         foreach ($attachments as $file):
             if (Storage::exists($file)):
                 $filename = basename($file);
@@ -195,19 +215,21 @@ class PsApi extends API {
                 ];
                 if ($connectToSolution) $body['isPartOfCurrentSolution'] = true;
                 // Sender med Content-Type satt til korrekt type
-                if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'))):
-                    $uploadCount++;
+                $result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'));
+                if ($result->successful()):
+                    $uploads[] = $result->json('attachments.0');
                 else:
-                    $status = 'Error ';
+                    $status = 'Feil med '.$file;
                 endif;
             else:
-                $status = 'Error for '.$file;
+                $status = 'Filen \''.$file.'\' ble ikke funnet';
             endif;
         endforeach;
         return [
             'status' => $status,
             'fileCount' => $attachmentCount,
-            'uploadCount' => $uploadCount,
+            'uploadCount' => count($uploads),
+            'uploads' => $uploads,
         ];
     }
 
@@ -485,4 +507,65 @@ class PsApi extends API {
         return false;
     }
 
+    /**
+     * Legger til en innkommende kommunikasjon på saken
+     */
+    public function addInboundCommunicationToTicket(Ticket $ticket, int $senderId, array|false $attachments = false): Response {
+        $uri = 'communication/?include=sender';
+        $body = [];
+        $tempId = Str::uuid()->toString();
+        $body['communications'] = [
+            [
+                'direction' => config('pureservice.comms.direction.in'),
+                'type' => config('pureservice.comms.standard'),
+                'subject' => $ticket->subject,
+                'ticketId' => $ticket->id,
+                'text' => $ticket->description,
+                'links' => [
+                    'sender' => [
+                        'temporaryId' => $tempId,
+                    ],
+                ],
+            ],
+        ];
+        $body['linked'] = [
+            'communicationrecipients' => [
+                [
+                    'userId' => $senderId,
+                    'temporaryId' => $tempId,
+                    'type' => 'sender',
+                ]
+            ]
+        ];
+        if (is_array($attachments)):
+            // if (isset($attachments['id'])) $attachments = [$attachments];
+            // $body['communications'][0]['links']['attachments'] = [
+            //     'ids' => data_get($attachments, '*.id'),
+            //     'type' => 'attachment',
+            // ];
+            $body['linked']['attachments'] = [];
+            foreach ($attachments as $file):
+                if (Storage::exists($file)):
+                    $filename = basename($file);
+                    $attTempId = Str::uuid()->toString();
+                    $body['communications'][0]['links']['attachments'][] = [
+                        'temporaryId' => $attTempId,
+                        'type' => 'attachment',
+                    ];
+                    $body['linked']['attachments'][] = [
+                        'name' => Str::beforeLast($filename, '.'),
+                        'fileName' => $filename,
+                        'size' => $this->human_filesize(Storage::size($file)),
+                        'contentType' => Storage::mimeType($file),
+                        'ticketId' => $ticket->id,
+                        'isVisible' => true,
+                        'temporaryId' => $attTempId,
+                        'bytes' => base64_encode(Storage::get($file)),
+                    ];
+                endif;
+            endforeach;
+        endif;
+        // dd(json_encode($body, JSON_PRETTY_PRINT));
+        return $this->apiPost($uri, $body, null, config('pureservice.api.accept'));
+    }
 }
