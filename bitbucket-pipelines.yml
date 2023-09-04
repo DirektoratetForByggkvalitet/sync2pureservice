@@ -33,7 +33,6 @@ definitions:
               AZURE_TENANT_ID: $AZURE_SP_TENANT
               CLI_COMMAND: az storage blob download --auth-mode login --file ${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
 
-
 # Setter maksimum kjøretid for et steg
 options:
   max-time: 60
@@ -60,6 +59,8 @@ pipelines:
       - step:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: Production
+          caches:
+            - composer
           script:
             - cp .env.example .env
             - *install
@@ -78,6 +79,8 @@ pipelines:
       - step:
           name: Sjekker SvarUtMottak
           deployment: Production
+          caches:
+            - composer
           runs-on:
             - "self.hosted"
           script:
@@ -95,6 +98,8 @@ pipelines:
       - step:
           name: Henter inn meldinger fra eFormidling (Altinn, Svarut, eInnsyn)
           deployment: eFormidling
+          caches:
+            - composer
           runs-on:
             - "self.hosted"
           script:
@@ -107,7 +112,9 @@ pipelines:
       - step: *forberedeSvarInn
       - step:
           name: Sjekker innsynskrav
-          deployment: Production
+          deployment: eFormidling
+          caches:
+            - composer
           script:
             - echo 'Kjører sjekkInnsynskrav'
             - *install
@@ -118,6 +125,8 @@ pipelines:
       - step:
           name: 'Importerer offentlige instanser fra BRREG inn i Pureservice'
           deployment: Production
+          caches:
+            - composer
           script:
             - *install
             - *resetDB
@@ -143,6 +152,8 @@ pipelines:
       - step:
           deployment: Production
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
+          caches:
+            - composer
           script:
             - *install
             - *resetDB
@@ -152,6 +163,8 @@ pipelines:
       - step:
           deployment: Test
           name: 'TEST: Ser etter masseutsendelser i PS og sørger for å sende dem'
+          caches:
+            - composer
           script:
             - *install
             - *resetDB
@@ -160,6 +173,8 @@ pipelines:
     splittInnsynskrav:
       - step:
           name: Splitter et innsynskrav gitt med requestNumber
+          caches:
+            - composer
           script:
             - *install
             - ./artisan pureservice:splittInnsynskrav ${requestNumber}
