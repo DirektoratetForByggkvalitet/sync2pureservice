@@ -66,7 +66,7 @@ class IncomingMessages extends Command {
             endif;
             $lock = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
             if ($lock->successful()):
-                $this->line(Tools::l2().'Meldingen har blitt låst og er klar for nedlasting.');
+                $this->line(Tools::l2().'Meldingen \''. $lock->json('standardBusinessDocumentHeader.documentIdentification.instanceIdentifier', 'Finner ikke meldings-ID') .' har blitt låst og er klar for nedlasting.');
                 //dd($lock->body());
             else:
                 //dd($lock->body());
@@ -85,7 +85,7 @@ class IncomingMessages extends Command {
                     dd($asicResponse->body());
                 endif;
                 $dbMessage->syncChanges();
-                dd($dbMessage);
+                //dd($dbMessage);
                 $tmp = $dbMessage->attachments;
                 $this->line(Tools::l2().count($tmp) .' vedlegg ble lastet ned og knyttet til meldingen');
             else:

@@ -37,4 +37,3 @@
 </p>
 
 <p>eInnsyn-ID: {{ $bestilling['id'] }}</p>
-<p>PS! Navn på sak og journalposter er ikke tilgjengelige, da disse ikke er oppgitt i innsynskravet</p>
