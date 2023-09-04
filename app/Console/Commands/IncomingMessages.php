@@ -80,16 +80,10 @@ class IncomingMessages extends Command {
             $dbMessage->assureAttachments();
             $dbMessage->syncChanges();
             if ($dbMessage->attachments == []):
-                $asicResponse = $this->ip->downloadIncomingAsic($msgId['instanceIdentifier'], $dbMessage->downloadPath(), true);
-                if ($asicResponse->failed()):
-                    dd($asicResponse->body());
-                endif;
-                $dbMessage->syncChanges();
-                //dd($dbMessage);
-                $tmp = $dbMessage->attachments;
-                $this->line(Tools::l2().count($tmp) .' vedlegg ble lastet ned og knyttet til meldingen');
+                $downloadedFiles = $this->ip->downloadIncomingAsic($msgId['instanceIdentifier'], $dbMessage->downloadPath());
+                $this->line(Tools::l2().count($downloadedFiles).' vedlegg ble lastet ned og knyttet til meldingen');
             else:
-                $tmp = $dbMessage->attachments;
+                $tmp = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
                 $this->line(Tools::l2().count($tmp).' vedlegg er allerede lastet ned. Fortsetter...');
             endif;
             $this->newLine();

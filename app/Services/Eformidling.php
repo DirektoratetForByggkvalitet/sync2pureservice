@@ -133,7 +133,7 @@ class Eformidling extends API {
     /**
      * Laster ned innkommende melding sin zip-fil
      */
-    public function downloadIncomingAsic(string $messageId, string|false $dlPath = false, bool $returnResponse = false): Response|string|false {
+    public function downloadIncomingAsic(string $messageId, string|false $dlPath = false, bool $returnResponse = false): Response|array|false {
         $dbMessage = Message::firstWhere('messageId', $messageId);
         $dbAttachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
         $uri = 'messages/in/pop/'.$messageId;
@@ -177,7 +177,7 @@ class Eformidling extends API {
             $dbMessage->save();
         endif;
         if ($returnResponse) return $response;
-        return isset($fileName) ? $fileName : false;
+        return $dbAttachments;
     }
 
     public function deleteIncomingMessage(string $messageId): bool {
