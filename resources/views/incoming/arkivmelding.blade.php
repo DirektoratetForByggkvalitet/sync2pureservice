@@ -7,9 +7,9 @@
     <li>Saksdato: {{ Arr::get($arkivmelding, 'mappe.saksdato', 'Ikke oppgitt') }}</li>
     <li>Saksansvarlig: {{ Arr::get($arkivmelding, 'mappe.saksansvarlig', 'Ikke oppgitt') }}
 @else
-    <li>Opprettet: {{ $msg->createdDtHr() }}</li>
+    <li>Opprettet: {{ $msg->getCreatedDtHr() }}</li>
 @endif
-    <li>Forventet svardato: {{ $msg->expectedResponseDtHr() }}</li>
+    <li>Forventet svardato: {{ $msg->getExpectedResponseDtHr() }}</li>
     <li>Hoveddokument: {{ $msg->mainDocument }}</li>
     <li>Antall dokumenter: {{ count($msg->attachments) }}</li>
 </ul>

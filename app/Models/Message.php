@@ -94,14 +94,14 @@ class Message extends Model {
         $this->save();
     }
 
-    protected function createdDtHr(): string {
+    public function getCreatedDtHr(): string {
         if ($dt = Arr::get($this->content, 'standardBusinessDocumentHeader.documentIdentification.creationDateAndTime')):
             return Carbon::parse($dt)->locale('nb')->isoFormat('LLLL');
         endif;
         return 'ikke oppgitt';
     }
 
-    protected function expectedResponseDtHr(): string {
+    public function getExpectedResponseDtHr(): string {
         if ($dt = Arr::get($this->content, 'standardBusinessDocumentHeader.businessScope.scope.0.scopeInformation.0.expectedResponseDateTime')):
             return Carbon::parse($dt)->locale('nb')->isoFormat('LLLL');
         endif;
