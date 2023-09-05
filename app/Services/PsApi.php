@@ -485,4 +485,21 @@ class PsApi extends API {
         return false;
     }
 
+    public function createInternalNote(string $message, int $ticketId, string|null $subject = null): bool {
+        $uri = '/communication/';
+        $body = ['communications' => [
+            [
+                'text' => $message,
+                'subject' => $subject,
+                'type' => config('pureservice.comms.internal'),
+                'direction' => config('pureservice.comms.direction.internal'),
+                'ticketId' => $ticketId,
+             ]
+        ]];
+        if ($res = $this->apiPOST($uri, $body)) return true;
+
+        return false;
+    }
+
+
 }

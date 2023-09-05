@@ -215,7 +215,8 @@ class Message extends Model {
                 unset($dokumenter);
             elseif (basename($a) == 'emailtext'):
                 // Leser inn e-posttekst fra eInnsyn
-                $docMetadata = $this->processEmailText(Storage::get($a));
+                $emailtext = Storage::get($a);
+                $docMetadata = $this->processEmailText($emailtext);
             else:
                 continue;
             endif;
@@ -235,7 +236,11 @@ class Message extends Model {
             $saksnr = $sak['saksnr'];
             $subject = 'Innsynskrav for sak '. $sak['saksnr'];
             $description = Blade::render(config('eformidling.in.innsynskrav'), ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject, 'docMetadata' => $docMetadata]);
-            $tickets[] = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'));
+            $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'));
+            if (isset($emailtext)):
+                $ps->createInternalNote($emailtext, $ticket['id'], 'Opprinnelig bestilling');
+            endif;
+            $tickets[] = $ticket;
         endforeach;
         return $tickets;
     }
