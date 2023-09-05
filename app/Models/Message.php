@@ -180,7 +180,10 @@ class Message extends Model {
         endif;
 
         if (Str::lower($this->documentType()) == 'arkivmelding' && $arkivmelding = $this->readXml()):
-            $subject = Arr::get($arkivmelding, 'mappe.tittel', 'Ukjent emne');
+            $subject = Arr::get($arkivmelding, 'mappe.tittel', Arr::get($arkivmelding, 'mappe.basisregistrering.tittel', ''));
+            if ($subject == ''):
+                $subject = 'Emne ikke oppgitt';
+            endif;
             $description = Blade::render(config('eformidling.in.arkivmelding'), ['subject' => $subject, 'msg' => $this, 'arkivmelding' => $arkivmelding]);
         else:
             $subject = Str::ucfirst($this->documentType());
@@ -228,6 +231,11 @@ class Message extends Model {
         endif;
         // Innsynskrav kommer alltid fra Digdir, så vi må finne korrespondansepartneren fra bestillingen
         $senderUser = $this->userFromKontaktinfo($bestilling, $ps);
+        if (!$senderUser->id):
+            $senderUser->addOrUpdatePS($ps);
+            $senderUser->syncChanges();
+        endif;
+        //dd($senderUser);
         $bDokumenter = $bestilling['dokumenter'];
         $saker = $bestilling['dokumenter']->unique('saksnr');
         if (isset($saker['saksnr'])):
@@ -235,8 +243,10 @@ class Message extends Model {
             $tmp = [];
             $tmp[] = $bestilling['dokumenter']->all();
             $saker = collect($tmp);
+            $bestilling['dokumenter'] = $saker;
             unset($tmp);
         endif;
+        //dd($saker->all());
         $tickets = [];
         foreach ($saker as $sak):
             $saksnr = $sak['saksnr'];

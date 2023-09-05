@@ -35,7 +35,8 @@ class User extends Model
         'created_at',
         'updated_at',
         'internal_id',
-        'email'
+        'email',
+        'id'
     ];
 
     public function company(): BelongsTo {
@@ -51,7 +52,7 @@ class User extends Model
      * @param Pureservice $ps   Pureservice-instans
      * @param bool $noEmail     Angir om brukeren skal ha noemail-feltet satt til 1
      */
-    public function addOrUpdatePS(PsApi $ps, bool $noEmail = false): bool|Response {
+    public function addOrUpdatePS(PsApi $ps, bool $noEmail = false): bool|array {
         //$psCompanyUsers = $ps->findUsersByCompanyId($this->company->externalId;);
         $update = false;
         if ($psUser = $ps->findUser($this->email)):
@@ -71,20 +72,20 @@ class User extends Model
             $this->save();
         endif;
 
-        $emailId = $this->email ? $ps->findEmailaddressId($this->email): null;
-        if ($this->email && $emailId == null):
-            $uri = '/emailaddress/';
-            $body = ['emailaddresses' => []];
-            $body['emailaddresses'][] = [
-                'email' => $this->email,
-            ];
-            if ($response = $ps->apiPost($uri, $body)):
-                $emailId = $response->json('emailaddresses.0.id');
-            endif;
-        endif;
+        $emailId = $this->email ? $ps->findOrCreateEmailaddressId($this->email): null;
+        // if ($this->email && $emailId == null):
+        //     $uri = '/emailaddress/';
+        //     $body = ['emailaddresses' => []];
+        //     $body['emailaddresses'][] = [
+        //         'email' => $this->email,
+        //     ];
+        //     if ($response = $ps->apiPost($uri, $body)):
+        //         $emailId = $response->json('emailaddresses.0.id');
+        //     endif;
+        // endif;
 
         $body = $this->toArray();
-        $body['emailAddressId'] = $emailId;
+        $body['emailaddressId'] = $emailId;
         if ($noEmail && config('pureservice.user.no_email_field')):
             $body[config('pureservice.user.no_email_field')] = 1;
         endif;
@@ -102,13 +103,14 @@ class User extends Model
             $uri = '/user';
             $postBody = ['users' => []];
             $postBody['users'][] = $body;
-            unset($body);
-            if ($response = $ps->apiPost($uri, $postBody)):
-                if ($response->json('users.0')):
+            //unset($body);
+            $response = $ps->apiPost($uri, $body, config('pureservice.api.contentType'));
+            if ($response->successful() && $response->json('users.0')):
                     $this->id = $response->json('users.0.id');
                     $this->save();
-                    return true;
-                endif;
+                return true;
+            else:
+                return $response->json();
             endif;
         endif;
     return false;

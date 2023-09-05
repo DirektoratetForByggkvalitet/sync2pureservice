@@ -1,5 +1,10 @@
 @php
     use Illuminate\Support\{Arr};
+
+    $dlPath = $msg->downloadPath();
+    $attachmentCount = collect($msg->attachments)->filter(function (string $value, int $key) {
+        return basename($value) != 'arkivmelding.xml';
+    })->count();
 @endphp
 <h2>{{ $subject }}</h2>
 <ul>
@@ -11,7 +16,7 @@
 @endif
     <li>Forventet svardato: {{ $msg->getExpectedResponseDtHr() }}</li>
     <li>Hoveddokument: {{ $msg->mainDocument }}</li>
-    <li>Antall dokumenter: {{ count($msg->attachments) }}</li>
+    <li>Antall dokumenter: {{ $attachmentCount }}</li>
 </ul>
 <p>Se vedleggene til saken for innholdet i forsendelsen.</p>
 <p>Meldings-ID: {{ $msg->messageId }}</p>

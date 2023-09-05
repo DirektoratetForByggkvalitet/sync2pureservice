@@ -304,6 +304,7 @@ class PsApi extends API {
         ];
         if ($result = $this->apiQuery($uri, $query)):
             if (count($result['emailaddresses']) > 0):
+                if (!isset($result['linked'])) return false;
                 $user = $result['linked']['users'][0];
                 return $returnClass ? collect($user)->mapInto('App\Models\User') : $user;
             endif;
@@ -430,6 +431,34 @@ class PsApi extends API {
         return null; // Hvis ikke funnet
     }
 
+    public function findOrCreateEmailaddressId($email, $companyAddress=false): int|null {
+        $prefix = $companyAddress ? 'company' : '';
+        $uri = '/'.$prefix.'emailaddress';
+        $args = [
+            'filter'=>'email == "'.$email.'"',
+        ];
+        $search = $this->apiQuery($uri, $args, true);
+        if ($search->successful() && count($search->json($prefix.'emailaddresses')) > 0):
+            return $search->json($prefix.'emailaddresses.0.id');
+        else:
+            $body = [
+                $prefix.'emailaddresses' => [
+                    [
+                        'email' => $email,
+                    ],
+                ],
+            ];
+            $response = $this->apiPost($uri, $body, null, $this->myConf('api.contentType'));
+            if ($response->successful()):
+                return $response->json($prefix.'emailaddresses.0.id');
+            else: // debug
+                dd($response->json());
+            endif;
+        endif;
+
+        return null;
+    }
+
     /**
      * Henter ID for telefonnummer registrert i Pureservice
      * @param string    $phonenumber          E-postadressen
@@ -459,16 +488,7 @@ class PsApi extends API {
     public function addCompanyUsers(Company $company): array|false {
         $body = ['users' => []];
         foreach ($company->users as $user):
-            $emailId = $this->findEmailaddressId($user->email);
-            if ($emailId == null):
-                $uri = '/emailaddress/';
-                $body = [
-                    'email' => $user->email,
-                ];
-                if ($response = $this->apiPost($uri, $body)):
-                    $emailId = $response->json('emailaddresses.0.id');
-                endif;
-            endif;
+            $emailId = $this->findOrCreateEmailaddressId($user->email);
             $record = [
                 'firstName' => $user->firstName,
                 'lastName' => $user->lastName,
@@ -484,8 +504,9 @@ class PsApi extends API {
         // Oppretter brukerne
         $uri = '/user/?include=emailAddress,company';
 
-        if ($response = $this->apiPost($uri, $body)):
-            return $response->json('users');
+        $response = $this->apiPost($uri, $body);
+        if ($response->successful()):
+            return $response->json('users.0');
         endif;
         return false;
     }
@@ -543,6 +564,9 @@ class PsApi extends API {
             // ];
             $body['linked']['attachments'] = [];
             foreach ($attachments as $file):
+                if (basename($file) == 'arkivmelding.xml'):
+                    continue;
+                endif;
                 if (Storage::exists($file)):
                     $filename = basename($file);
                     $attTempId = Str::uuid()->toString();
