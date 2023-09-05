@@ -190,9 +190,9 @@ class Message extends Model {
         endif;
         if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.invisible'))):
             if (count($this->attachments)):
-                $attachmentReport = $ps->uploadAttachments($this->attachments, $ticket);
+                // $attachmentReport = $ps->uploadAttachments($this->attachments, $ticket);
                 // Oppretter en kommunikasjon med vedleggene som vedlegg
-                $ps->addInboundCommunicationToTicket($ticket, $senderUser->id, $attachmentReport['uploads']);
+                $ps->addInboundCommunicationToTicket($ticket, $senderUser->id, $this->attachments);
             endif;
         endif;
         return $ticket;
