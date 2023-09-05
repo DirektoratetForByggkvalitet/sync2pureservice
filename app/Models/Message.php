@@ -168,6 +168,7 @@ class Message extends Model {
             // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
             $senderUser = $sender->getEfUser();
             $senderUser->addOrUpdatePs($ps, true);
+            $senderUser->syncChanges();
         endif;
         $receiver = $this->receiver();
         // Dersom mottaker ikke er oss selv (noe det vil være)
@@ -175,6 +176,7 @@ class Message extends Model {
             $receiver->addOrUpdatePS($ps);
             $receiverUser = $receiver->getEfUser();
             $receiverUser->addOrUpdatePs($ps, true);
+            $receiverUser->syncChanges();
         endif;
 
         if (Str::lower($this->documentType()) == 'arkivmelding' && $arkivmelding = $this->readXml()):
