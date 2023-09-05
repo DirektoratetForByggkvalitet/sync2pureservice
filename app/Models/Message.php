@@ -224,6 +224,10 @@ class Message extends Model {
         // Innsynskrav kommer alltid fra Digdir, så vi må finne korrespondansepartneren fra bestillingen
         $senderUser = $this->userFromKontaktinfo($bestilling, $ps);
         $saker = $bestilling['dokumenter']->unique('saksnr');
+        if (isset($saker['saksnr'])):
+            // Det er bare ett dokument for én sak
+            $saker = $bestilling['dokumenter'];
+        endif;
         $tickets = [];
         foreach ($saker as $sak):
             $saksnr = $sak['saksnr'];
