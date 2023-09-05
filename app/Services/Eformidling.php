@@ -66,11 +66,24 @@ class Eformidling extends API {
         $sender = $this->brreg->getCompany(
             $this->stripIsoPrefix(
                 Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier.value')));
+        if (!$sender):
+            // Avsender slås ikke opp i BRREG
+            $sender = Company::factory()->create([
+                'organizationNumber' => $this->stripIsoPrefix(
+                    Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier.value')
+                ),
+                'name' => 'Virksomhet ikke i BRREG',
+                'email' => null,
+                'phone' => null,
+                'website' => null,
+            ]);
+            $sender->save();
+        endif;
         $receiver = $this->brreg->getCompany(
             $this->stripIsoPrefix(
                 Arr::get($message, 'standardBusinessDocumentHeader.receiver.0.identifier.value')));
         return [
-            'sender' => $sender ? $sender : Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier.value'),
+            'sender' => $sender ? $sender : $this->stripIsoPrefix(Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier.value')),
             'receiver' => $receiver,
         ];
     }

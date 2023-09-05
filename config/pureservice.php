@@ -9,6 +9,7 @@ return [
         'token' => env('PURESERVICE_APIKEY', null),
         'auth' => 'token',
         'accept' => 'application/vnd.api+json',
+        'contentType' => 'application/vnd.api+json',
         'dlPath' => env('PURESERVICE_TMP_PATH', 'pureservice'),
     ],
     'computer' => [

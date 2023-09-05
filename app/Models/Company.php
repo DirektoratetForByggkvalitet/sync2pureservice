@@ -149,21 +149,21 @@ class Company extends Model {
                 endif;
             endif; // $this->email
 
-            // Oppretter SvarUt-bruker for virksomheten
-            $svarutEmail = $this->getSvarUtEmail();
-            if ($svarUtUser = User::firstWhere('email', $svarutEmail)):
-                // SvarUt-brukeren finnes allerede i databasen
-                if (!$related = $this->users()->firstWhere('email', $svarutEmail)):
-                    $svarUtUser->companyId = $this->id;
-                    $svarUtUser->save();
-                endif;
-            else:
-                $svarUtUser = $this->users()->create([
-                    'firstName' => 'SvarUt',
-                    'lastName' => $this->name,
-                    'email' => $svarutEmail,
-                ]);
-            endif;
+            // // Oppretter SvarUt-bruker for virksomheten
+            // $svarutEmail = $this->getSvarUtEmail();
+            // if ($svarUtUser = User::firstWhere('email', $svarutEmail)):
+            //     // SvarUt-brukeren finnes allerede i databasen
+            //     if (!$related = $this->users()->firstWhere('email', $svarutEmail)):
+            //         $svarUtUser->companyId = $this->id;
+            //         $svarUtUser->save();
+            //     endif;
+            // else:
+            //     $svarUtUser = $this->users()->create([
+            //         'firstName' => 'SvarUt',
+            //         'lastName' => $this->name,
+            //         'email' => $svarutEmail,
+            //     ]);
+            // endif;
 
             $efUser = $this->getEfUser();
         endif; // $this->id
@@ -177,6 +177,7 @@ class Company extends Model {
                     'lastName' => $this->name,
                     'email' => $this->getEformidlingEmail(),
                 ]);
+                $efUser->save();
             endif;
         endif;
         return $efUser;

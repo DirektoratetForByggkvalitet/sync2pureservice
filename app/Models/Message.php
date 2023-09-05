@@ -94,14 +94,14 @@ class Message extends Model {
         $this->save();
     }
 
-    protected function createdDtHr(): string {
+    public function getCreatedDtHr(): string {
         if ($dt = Arr::get($this->content, 'standardBusinessDocumentHeader.documentIdentification.creationDateAndTime')):
             return Carbon::parse($dt)->locale('nb')->isoFormat('LLLL');
         endif;
         return 'ikke oppgitt';
     }
 
-    protected function expectedResponseDtHr(): string {
+    public function getExpectedResponseDtHr(): string {
         if ($dt = Arr::get($this->content, 'standardBusinessDocumentHeader.businessScope.scope.0.scopeInformation.0.expectedResponseDateTime')):
             return Carbon::parse($dt)->locale('nb')->isoFormat('LLLL');
         endif;
@@ -168,6 +168,7 @@ class Message extends Model {
             // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
             $senderUser = $sender->getEfUser();
             $senderUser->addOrUpdatePs($ps, true);
+            $senderUser->syncChanges();
         endif;
         $receiver = $this->receiver();
         // Dersom mottaker ikke er oss selv (noe det vil være)
@@ -175,10 +176,14 @@ class Message extends Model {
             $receiver->addOrUpdatePS($ps);
             $receiverUser = $receiver->getEfUser();
             $receiverUser->addOrUpdatePs($ps, true);
+            $receiverUser->syncChanges();
         endif;
 
         if (Str::lower($this->documentType()) == 'arkivmelding' && $arkivmelding = $this->readXml()):
-            $subject = Arr::get($arkivmelding, 'mappe.tittel', 'Ukjent emne');
+            $subject = Arr::get($arkivmelding, 'mappe.tittel', Arr::get($arkivmelding, 'mappe.basisregistrering.tittel', ''));
+            if ($subject == ''):
+                $subject = 'Emne ikke oppgitt';
+            endif;
             $description = Blade::render(config('eformidling.in.arkivmelding'), ['subject' => $subject, 'msg' => $this, 'arkivmelding' => $arkivmelding]);
         else:
             $subject = Str::ucfirst($this->documentType());
@@ -188,9 +193,15 @@ class Message extends Model {
         endif;
         if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.invisible'))):
             if (count($this->attachments)):
+<<<<<<< HEAD
                 $attachmentReport = $ps->uploadAttachments($this->attachments, $ticket);
                 // Oppretter en kommunikasjon med vedleggene som vedlegg
                 $this->ps->addInboundCommunicationToTicket($ticket, $senderUser->id, $attachmentReport['uploads']);
+=======
+                // $attachmentReport = $ps->uploadAttachments($this->attachments, $ticket);
+                // Oppretter en kommunikasjon med vedleggene som vedlegg
+                $ps->addInboundCommunicationToTicket($ticket, $senderUser->id, $this->attachments);
+>>>>>>> prod
             endif;
         endif;
         return $ticket;
@@ -215,7 +226,8 @@ class Message extends Model {
                 unset($dokumenter);
             elseif (basename($a) == 'emailtext'):
                 // Leser inn e-posttekst fra eInnsyn
-                $docMetadata = $this->processEmailText(Storage::get($a));
+                $emailtext = Storage::get($a);
+                $docMetadata = $this->processEmailText($emailtext);
             else:
                 continue;
             endif;
@@ -225,13 +237,32 @@ class Message extends Model {
         endif;
         // Innsynskrav kommer alltid fra Digdir, så vi må finne korrespondansepartneren fra bestillingen
         $senderUser = $this->userFromKontaktinfo($bestilling, $ps);
+        if (!$senderUser->id):
+            $senderUser->addOrUpdatePS($ps);
+            $senderUser->syncChanges();
+        endif;
+        //dd($senderUser);
+        $bDokumenter = $bestilling['dokumenter'];
         $saker = $bestilling['dokumenter']->unique('saksnr');
+        if (isset($saker['saksnr'])):
+            // Det er bare ett dokument for én sak
+            $tmp = [];
+            $tmp[] = $bestilling['dokumenter']->all();
+            $saker = collect($tmp);
+            $bestilling['dokumenter'] = $saker;
+            unset($tmp);
+        endif;
+        //dd($saker->all());
         $tickets = [];
         foreach ($saker as $sak):
             $saksnr = $sak['saksnr'];
             $subject = 'Innsynskrav for sak '. $sak['saksnr'];
             $description = Blade::render(config('eformidling.in.innsynskrav'), ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject, 'docMetadata' => $docMetadata]);
-            $tickets[] = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'));
+            $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'));
+            if (isset($emailtext)):
+                $ps->createInternalNote($emailtext, $ticket['id'], 'Opprinnelig bestilling');
+            endif;
+            $tickets[] = $ticket;
         endforeach;
         return $tickets;
     }
@@ -240,13 +271,13 @@ class Message extends Model {
         $kontaktinfo = &$bestilling['kontaktinfo'];
         if (!$user = User::firstWhere('email', $kontaktinfo['e-post'])):
             $userData = [
-                'email' => $kontaktinfo['e-post'],
+                'email' => trim($kontaktinfo['e-post']),
             ];
             if ($kontaktinfo['navn'] != '' && $kontaktinfo['navn'] != ' ' && !is_array($kontaktinfo['navn'])):
                 $userData['firstName'] = Str::before($kontaktinfo['navn'], ' ');
                 $userData['lastName'] = Str::after($kontaktinfo['navn'], ' ');
             else:
-                $emailData = Tools::nameFromEmail($kontaktinfo['e-post']);
+                $emailData = Tools::nameFromEmail(trim($kontaktinfo['e-post']));
                 $userData['firstName'] = $emailData[0];
                 $userData['lastName'] = $emailData[1];
             endif;
@@ -254,6 +285,7 @@ class Message extends Model {
             $user->save();
         endif;
         $user->addOrUpdatePS($ps);
+        $user->syncChanges();
 
         return $user;
     }
