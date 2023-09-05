@@ -226,7 +226,7 @@ class Message extends Model {
         $saker = $bestilling['dokumenter']->unique('saksnr');
         if (isset($saker['saksnr'])):
             // Det er bare ett dokument for én sak
-            $saker = $bestilling['dokumenter'];
+            $saker = collect($bestilling['dokumenter']->all());
         endif;
         $tickets = [];
         foreach ($saker as $sak):
