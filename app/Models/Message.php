@@ -256,7 +256,7 @@ class Message extends Model {
             $user->save();
         endif;
         $user->addOrUpdatePS($ps);
-        $user->syncUpdates();
+        $user->syncChanges();
 
         return $user;
     }
