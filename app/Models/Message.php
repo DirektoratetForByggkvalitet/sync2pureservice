@@ -242,13 +242,13 @@ class Message extends Model {
         $kontaktinfo = &$bestilling['kontaktinfo'];
         if (!$user = User::firstWhere('email', $kontaktinfo['e-post'])):
             $userData = [
-                'email' => $kontaktinfo['e-post'],
+                'email' => trim($kontaktinfo['e-post']),
             ];
             if ($kontaktinfo['navn'] != '' && $kontaktinfo['navn'] != ' ' && !is_array($kontaktinfo['navn'])):
                 $userData['firstName'] = Str::before($kontaktinfo['navn'], ' ');
                 $userData['lastName'] = Str::after($kontaktinfo['navn'], ' ');
             else:
-                $emailData = Tools::nameFromEmail($kontaktinfo['e-post']);
+                $emailData = Tools::nameFromEmail(trim($kontaktinfo['e-post']));
                 $userData['firstName'] = $emailData[0];
                 $userData['lastName'] = $emailData[1];
             endif;
@@ -256,6 +256,7 @@ class Message extends Model {
             $user->save();
         endif;
         $user->addOrUpdatePS($ps);
+        $user->syncUpdates();
 
         return $user;
     }
