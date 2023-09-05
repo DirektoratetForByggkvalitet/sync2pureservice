@@ -63,7 +63,7 @@ I dette tilfellet vil vi jevnlig kjøre en Pipeline som sjekker etter innsynskra
 | DPE_AUDIT_TYPE | Innsynskrav | Sakstypen som skal brukes for innsynskrav |
 | DPE_TEAM_NAME | Postmottak | Navn på Pureservice-teamet som skal få innsynskrav |
 
-Kommandoen som kjøres i dette tilfellet vil være `./artisan innsynskrav:hent`
+Kommandoen som kjøres i dette tilfellet vil være `./artisan forsendelse:hent`
 
 Denne funksjonaliteten er ikke foreløpig planlagt.
 
