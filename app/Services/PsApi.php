@@ -174,6 +174,7 @@ class PsApi extends API {
      * Laster opp vedlegg til en sak i Pureservice
      * @param array         $attachments    Array over filstier relative til storage/app som skal lastes opp
      * @param App\Models\Ticket   $ticket   Saken som skal ha vedlegget
+     * @param array         $communication  Vedleggene skal koblet til en kommunikasjon
      *
      * @return assoc_array  Rapport på status og antall filer/opplastinger
      */
@@ -182,6 +183,7 @@ class PsApi extends API {
         $attachmentCount = count($attachments);
         $uploadCount = 0;
         $status = 'OK';
+        $uploads = [];
         foreach ($attachments as $file):
             if (Storage::exists($file)):
                 $filename = basename($file);
@@ -196,19 +198,21 @@ class PsApi extends API {
                 ];
                 if ($connectToSolution) $body['isPartOfCurrentSolution'] = true;
                 // Sender med Content-Type satt til korrekt type
-                if ($result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'))):
-                    $uploadCount++;
+                $result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'));
+                if ($result->successful()):
+                    $uploads[] = $result->json('attachments.0');
                 else:
-                    $status = 'Error ';
+                    $status = 'Feil med '.$file;
                 endif;
             else:
-                $status = 'Error for '.$file;
+                $status = 'Filen \''.$file.'\' ble ikke funnet';
             endif;
         endforeach;
         return [
             'status' => $status,
             'fileCount' => $attachmentCount,
-            'uploadCount' => $uploadCount,
+            'uploadCount' => count($uploads),
+            'uploads' => $uploads,
         ];
     }
 
