@@ -528,8 +528,6 @@ class PsApi extends API {
         return false;
     }
 
-<<<<<<< HEAD
-=======
     public function createInternalNote(string $message, int $ticketId, string|null $subject = null): bool {
         $uri = '/communication/';
         $body = ['communications' => [
@@ -545,7 +543,6 @@ class PsApi extends API {
 
         return false;
     }
->>>>>>> prod
     /**
      * Legger til en innkommende kommunikasjon på saken
      */
@@ -584,12 +581,9 @@ class PsApi extends API {
             // ];
             $body['linked']['attachments'] = [];
             foreach ($attachments as $file):
-<<<<<<< HEAD
-=======
                 if (basename($file) == 'arkivmelding.xml'):
                     continue;
                 endif;
->>>>>>> prod
                 if (Storage::exists($file)):
                     $filename = basename($file);
                     $attTempId = Str::uuid()->toString();
@@ -613,8 +607,4 @@ class PsApi extends API {
         // dd(json_encode($body, JSON_PRETTY_PRINT));
         return $this->apiPost($uri, $body, null, config('pureservice.api.accept'));
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> prod
 }
