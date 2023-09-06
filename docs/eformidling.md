@@ -22,7 +22,7 @@ En eFormidlings-melding er i all hovedsak basert på metadata i JSON- og XML-for
 Når en forsendelse blir funnet på integrasjonspunktet vil sync2pureservice laste ned vedleggene og bruke metadataene til å opprette avsenders virksomhet og en egen eFormidling-avsender i Pureservice. Deretter oppretter sync2pureservice en sak der metadataene brukes til å lage en beskrivelse, og laster opp vedleggene til saken. Saken fordeles til valgt sone og team, og er klar for behandling i Pureservice.
 ## Utgående meldinger ##
 
-Vi arbeider aktivt for å etablere en metodikk for sending av meldinger fra Pureservice til eFormidling, men dette er noe som vil ta litt tid å få på plass.
+Vi arbeider aktivt for å etablere en metodikk for sending av meldinger fra Pureservice til eFormidling, men dette er noe som vil ta litt tid å få på plass. Dette vil bli inkludert som en del av [masseutsending-funksjonen](utsendelse.md).
 
 # Oppsett #
 
