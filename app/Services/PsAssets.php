@@ -335,19 +335,11 @@ class PsAssets extends PsApi {
         //     ]
         // ];
         $body = $newPsAsset->toArray();
-        dd($uri, $body);
+        // dd($uri, $body);
         $response = $this->apiPatch($uri, $body);
         if ($response->failed()) dd($response->json());
         return $response->successful() ? $response->json('assets.0'): false;
     }
-
-    public function compareAndUpdateAsset(array $jamfAsset, array $psAsset): int|false {
-        $jamfAsset['id'] = $psAsset['id'];
-        $jamfAsset['statusId'] = $psAsset['statusId'];
-        $jamfAsset['statusId'] = $this->calculateStatus($jamfAsset);
-        return $this->updateAsset($jamfAsset);
-    }
-
 
     // Oppdaterer statusId for psAsset-array
     public function changeAssetStatus(array &$psAsset, int $statusId): void {
