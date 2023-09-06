@@ -78,12 +78,17 @@ return [
         'out' => 2,
         'internal' => 1,
         'standard' => 2,
+        'description' => 7,
         'solution' => 50,
         'custom' => 9,
         'direction' => [
             'in' => 1,
             'out' => 2,
             'internal' => 3,
+        ],
+        'visibility' => [
+            'off' => 0,
+            'on' => 1,
         ],
     ],
     'visibility' => [

@@ -195,7 +195,7 @@ class Message extends Model {
             if (count($this->attachments)):
                 // $attachmentReport = $ps->uploadAttachments($this->attachments, $ticket);
                 // Oppretter en kommunikasjon med vedleggene som vedlegg
-                $ps->addInboundCommunicationToTicket($ticket, $senderUser->id, $this->attachments);
+                $ps->addInboundCommunicationToTicket($ticket, $senderUser->id, $this->attachments, config('pureservice.comms.description'));
             endif;
         endif;
         return $ticket;

@@ -69,7 +69,6 @@ class PsApi extends API {
             if (count($result[$entities])) return $result[$entities][0]['id'];
         endif;
         return null; // Hvis ikke funnet
-
     }
 
     /**
@@ -546,17 +545,28 @@ class PsApi extends API {
     /**
      * Legger til en innkommende kommunikasjon på saken
      */
-    public function addInboundCommunicationToTicket(Ticket $ticket, int $senderId, array|false $attachments = false): Response {
+    public function addInboundCommunicationToTicket
+        (
+            Ticket $ticket,
+            int $senderId,
+            array|false $attachments = false,
+            int|null $type = null,
+            int|null $visibility = 0
+        ): Response
+    {
         $uri = 'communication/?include=sender';
         $body = [];
         $tempId = Str::uuid()->toString();
+        // Standardmelding (2) dersom ikke annet blir spesifisert
+        $type = $type ? $type : config('pureservice.comms.standard');
         $body['communications'] = [
             [
                 'direction' => config('pureservice.comms.direction.in'),
-                'type' => config('pureservice.comms.standard'),
+                'type' => $type,
                 'subject' => $ticket->subject,
                 'ticketId' => $ticket->id,
                 'text' => $ticket->description,
+                'visibility' => $visibility,
                 'links' => [
                     'sender' => [
                         'temporaryId' => $tempId,

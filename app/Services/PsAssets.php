@@ -2,6 +2,7 @@
 
 namespace App\Services;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class PsAssets extends PsApi {
     public bool $up = false;
@@ -81,9 +82,9 @@ class PsAssets extends PsApi {
 
     /**
      * Henter alle datamaskin- og mobilenhet-ressurser fra Pureservice
-     * @return  assoc_array     Array over ressursene
+     * @return  Illuminate\Support\Collection     Collection over ressursene
      */
-    public function getAllAssets(): array {
+    public function getAllAssets(): Collection {
         $totalAssets = [];
         foreach (['computer', 'mobile'] as $type):
             $uri = '/asset/';
@@ -97,7 +98,7 @@ class PsAssets extends PsApi {
                 $totalAssets[] = $asset;
             endforeach;
         endforeach;
-        return $totalAssets;
+        return collect($totalAssets);
     }
 
     public function getAssetByUniqueId(string $uniqueId, string $type = 'computer'): array|false {
@@ -176,7 +177,7 @@ class PsAssets extends PsApi {
     public function calculateStatus($psAsset, $notDeployed=false) {
         $type = $psAsset['type'];
         $fn = config('pureservice.'.$type.'.properties');
-        $status = $psAsset['links']['status']['id'];
+        $status = $psAsset['statusId'];;
         $active_statuses = [
             $this->statuses[$type]['active_deployed'],
             $this->statuses[$type]['active_inStorage'],
@@ -328,19 +329,44 @@ class PsAssets extends PsApi {
                 'isMarkedForDeletion',
                 'id',
             ]);
-        $body = [
-            $typeName => [
-                $newPsAsset->toArray(),
-            ]
-        ];
+        // $body = [
+        //     $typeName => [
+        //         $newPsAsset->toArray(),
+        //     ]
+        // ];
+        $body = $newPsAsset->toArray();
+        dd($uri, $body);
         $response = $this->apiPatch($uri, $body);
+        if ($response->failed()) dd($response->json());
         return $response->successful() ? $response->json('assets.0'): false;
     }
+
+    public function compareAndUpdateAsset(array $jamfAsset, array $psAsset): int|false {
+        $jamfAsset['id'] = $psAsset['id'];
+        $jamfAsset['statusId'] = $psAsset['statusId'];
+        $jamfAsset['statusId'] = $this->calculateStatus($jamfAsset);
+        return $this->updateAsset($jamfAsset);
+    }
+
 
     // Oppdaterer statusId for psAsset-array
     public function changeAssetStatus(array &$psAsset, int $statusId): void {
         $psAsset['statusId'] = $statusId;
         $psAsset['links']['status']['id'] = $statusId;
+    }
+
+    public function getRelatedUsernames($assetId) {
+        $relations_full = $this->getAssetRelationships($assetId);
+
+        if (count($relations_full['relationships']) == 0) return [];
+
+        $linkedUsers = &$relations_full['linked']['users'];
+        $linkedEmails = collect($relations_full['linked']['emailaddresses']);
+        $usernames = [];
+        foreach($linkedUsers as $user):
+            $usernames[] = $linkedEmails->firstWhere('id', $user['emailAddressId'])['email'];
+        endforeach;
+        return $usernames;
     }
 
 }

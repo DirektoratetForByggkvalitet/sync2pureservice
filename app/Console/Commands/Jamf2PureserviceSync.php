@@ -3,8 +3,10 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{JamfPro, Pureservice};
+use App\Services\{JamfPro, PsAssets, Tools};
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class Jamf2PureserviceSync extends Command
 {
@@ -18,9 +20,9 @@ class Jamf2PureserviceSync extends Command
     protected $version = '1.1.0';
 
     protected JamfPro $jpsApi;
-    protected Pureservice $psApi;
-    protected $jamfDevices;
-    protected $psDevices;
+    protected PsAssets $psApi;
+    protected Collection $jamfDevices;
+    protected Collection $psDevices;
     protected $l1 = '';
     protected $l2 = '> ';
     protected $l3 = '  ';
@@ -46,7 +48,7 @@ class Jamf2PureserviceSync extends Command
         $this->line('');
 
         $this->line($this->l2.'Logger inn på Pureservice');
-        $this->psApi = new Pureservice(true);
+        $this->psApi = new PsAssets(true);
         if ($this->psApi->up):
             $this->line($this->l3.'Pureservice er tilkoblet og svarer normalt');
         else:
@@ -67,13 +69,18 @@ class Jamf2PureserviceSync extends Command
 
         $this->info($this->ts().$this->l1.'Henter enheter fra Pureservice');
         $time1 = microtime(true);
-        $this->psDevices = collect($this->psApi->getAllAssets());
-        $this->psCount = count($this->psDevices);
+        $this->psDevices = Cache::remember('psDevs', '3600', function () {
+            return $this->psApi->getAllAssets();
+        });
+        $this->psCount = $this->psDevices->count();
         $this->line($this->l3.$this->psCount.' enheter totalt ('.round((microtime(true) - $time1), 2).' sek)');
 
         $time1 = microtime(true);
         $this->info($this->ts().$this->l1.'Henter enheter fra Jamf Pro');
-        $this->jamfDevices = collect($this->getJamfAssetsAsPsAssets());
+        $this->jamfDevices = Cache::remember('jamfDevs', '3600', function () {
+            return $this->getJamfAssetsAsPsAssets();
+        });
+        $this->jamfCount = $this->jamfDevices->count();
         $this->line($this->l3.$this->jamfCount.' enheter totalt ('.round((microtime(true) - $time1), 2).' sek)');
         unset($time1);
 
@@ -88,11 +95,10 @@ class Jamf2PureserviceSync extends Command
             $this->line($this->l2.$itemno.'/'.$this->jamfCount.' '.$jamfDev[$fn['serial']].' - '.$jamfDev[$fn['name']]);
             $psDev = $this->psDevices->firstWhere('links.unique.id', $jamfDev[$fn['serial']]);
             $typeName = config('pureservice.'.$jamfDev['type'].'.displayName').'en';
-
             if ($psDev != null):
                 $psDevId = $psDev['id'];
                 $this->line($this->l3.$typeName.' finnes i Pureservice fra før. Oppdaterer med data fra Jamf Pro...');
-                if ($ok = $this->psApi->updateAsset($jamfDev, $psDev)):
+                if ($ok = $this->psApi->compareAndUpdateAsset($jamfDev, $psDev)):
                     $this->line($this->l3.'  Oppdaterte '.$typeName.' i Pureservice');
                 else:
                     $this->error($this->l3.'  Det oppsto en feil under oppdatering...');
@@ -190,7 +196,7 @@ class Jamf2PureserviceSync extends Command
     }
 
     protected function removeRelationships($assetId) {
-        $relationships = $this->psApi->getRelationships($assetId)['relationships'];
+        $relationships = $this->psApi->getAssetRelationships($assetId)['relationships'];
         foreach ($relationships as $rel):
             $uri = '/relationship/'.$rel['id'].'/delete';
             $this->psApi->apiDelete($uri);
@@ -198,7 +204,7 @@ class Jamf2PureserviceSync extends Command
         return true;
     }
 
-    public function getJamfAssetsAsPsAssets() {
+    public function getJamfAssetsAsPsAssets(): Collection {
         $psAssets = [];
         $computers = $this->jpsApi->getJamfComputers();
         $this->line($this->l3.count($computers).' datamaskiner');
@@ -279,7 +285,6 @@ class Jamf2PureserviceSync extends Command
             unset($psAsset);
         endforeach;
         unset($devices);
-        $this->jamfCount = count($psAssets);
-        return $psAssets;
+        return collect($psAssets);
     }
 }
