@@ -20,6 +20,6 @@
     <li>Hoveddokument: {{ $msg->mainDocument }}</li>
     <li>Antall dokumenter: {{ $attachmentCount }}</li>
 </ul>
-<p>Se vedleggene til saken for innholdet i forsendelsen.</p>
+<p>Selve innholdet i forsendelsen ligger som vedlegg til saken.</p>
 <p>Meldings-ID: {{ $msg->messageId }}</p>
 

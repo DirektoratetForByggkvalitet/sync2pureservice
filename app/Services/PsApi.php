@@ -4,7 +4,7 @@ namespace App\Services;
 use App\Models\{Ticket, TicketCommunication, User, Company, Message};
 use Carbon\Carbon;
 use Illuminate\Support\{Str, Arr};
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\{Storage, Blade};
 use cardinalby\ContentDisposition\ContentDisposition;
 use Illuminate\Http\Client\Response;
 
@@ -559,37 +559,34 @@ class PsApi extends API {
         $tempId = Str::uuid()->toString();
         // Standardmelding (2) dersom ikke annet blir spesifisert
         $type = $type ? $type : config('pureservice.comms.standard');
-        $body['communications'] = [
-            [
-                'direction' => config('pureservice.comms.direction.in'),
-                'type' => $type,
-                'subject' => $ticket->subject,
-                'ticketId' => $ticket->id,
-                'text' => $ticket->description,
-                'visibility' => $visibility,
-                'links' => [
-                    'sender' => [
-                        'temporaryId' => $tempId,
-                    ],
+        $body['communications'] = [];
+        $body['linked'] = [];
+        $communication =             [
+            'direction' => config('pureservice.comms.direction.in'),
+            'type' => $type,
+            'subject' => $ticket->subject,
+            'ticketId' => $ticket->id,
+            'text' => $ticket->description,
+            'visibility' => $visibility,
+            'links' => [
+                'sender' => [
+                    'temporaryId' => $tempId,
                 ],
             ],
         ];
-        $body['linked'] = [
-            'communicationrecipients' => [
-                [
-                    'userId' => $senderId,
-                    'temporaryId' => $tempId,
-                    'type' => 'sender',
-                ]
+        $body['linked']['communicationrecipients'] = [
+            [
+                'userId' => $senderId,
+                'temporaryId' => $tempId,
+                'type' => 'sender',
             ]
         ];
         if (is_array($attachments)):
-            // if (isset($attachments['id'])) $attachments = [$attachments];
-            // $body['communications'][0]['links']['attachments'] = [
-            //     'ids' => data_get($attachments, '*.id'),
-            //     'type' => 'attachment',
-            // ];
+            $subject = 'Vedlegg til innkommende forsendelse';
+            $communication['subject'] = $subject;
+            $communication['text'] = Blade::render('incoming/vedlegg', ['subject' => $subject, 'attachments' => $attachments]);
             $body['linked']['attachments'] = [];
+            $communication['links']['attachments'] = [];
             foreach ($attachments as $file):
                 if (basename($file) == 'arkivmelding.xml'):
                     continue;
@@ -597,7 +594,7 @@ class PsApi extends API {
                 if (Storage::exists($file)):
                     $filename = basename($file);
                     $attTempId = Str::uuid()->toString();
-                    $body['communications'][0]['links']['attachments'][] = [
+                    $communication['links']['attachments'][] = [
                         'temporaryId' => $attTempId,
                         'type' => 'attachment',
                     ];
@@ -615,6 +612,7 @@ class PsApi extends API {
             endforeach;
         endif;
         // dd(json_encode($body, JSON_PRETTY_PRINT));
+        $body['communications'][] = $communication;
         return $this->apiPost($uri, $body, null, config('pureservice.api.accept'));
     }
 }
