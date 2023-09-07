@@ -40,8 +40,8 @@ options:
 image: dibk/sync2pureservice:latest
 
 pipelines:
-  branches:
-    prod:
+  custom:
+    buildImage:
       - step:
           name: Bygger et docker-image for kjøring av sync2pureservice
           image: atlassian/default-image:4
@@ -54,7 +54,6 @@ pipelines:
             - curl -L https://depot.dev/install-cli.sh | DEPOT_INSTALL_DIR=/usr/local/bin sh
             - depot bake --project ${DEPOT_PID} -f docker-bake.hcl --push
 
-  custom:
     jamf2pureservice:
       - step:
           name: Synkroniser mellom Jamf Pro og Pureservice
