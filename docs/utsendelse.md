@@ -23,7 +23,7 @@ Det å lage en masseutsendelse vil være veldig likt det å opprette en vanlig s
 1. Opprett en sak med en beskrivelse og tittel. Saken kobles til en sluttbruker som er opprettet for masseutsendelser.
 2. Sett klassifisering slik den skal være (sakstype og kategorier)
 3. Koble saken til mottakerlisten(e) som skal brukes for utsending.
-4. Skriv den utgående meldingen som en selvopprettet kommunikasjonstype ("Til utsending"). Legg eventuelle vedlegg.
+4. Skriv den utgående meldingen som en selvopprettet kommunikasjonstype ("Til utsending"). Legg eventuelle vedlegg til i saken.
 
 
 ## Oppsett i Pureservice ##

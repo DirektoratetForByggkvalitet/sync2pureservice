@@ -113,7 +113,7 @@ class IncomingMessages extends Command {
         foreach(Message::lazy() as $message):
             $it++;
             $sender = Company::find($message->sender_id);
-            $this->line(Tools::l1().$it.'/'.$msgCount.': '. $message->id.' - '. $message->documentType().' fra '.$sender->name);
+            $this->line(Tools::l1().$it.'/'.$msgCount.': '. $message->id.' - '. $message->documentType().' fra '.$sender->name.' - '.$sender->organizationNumber);
             if ($message->documentType() == 'innsynskrav'):
                 // Innsynskrav
                 $this->ps->setTicketOptions('innsynskrav');
