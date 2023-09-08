@@ -7,12 +7,12 @@
  return [
     'api' => [
         'url' => 'https://data.brreg.no',
-        'prefix' => '/enhetsregisteret/api/enheter',
+        'prefix' => '/enhetsregisteret/api/',
     ],
     'search' => [
-        'alleKommuner' => '?organisasjonsform=KOMM&size=400',
-        'alleFylkeskommuner' => '?organisasjonsform=FYLK&size=100',
-        'alleStatlige' => '?organisasjonsform=STAT&size=50',
+        'alleKommuner' => 'enheter?organisasjonsform=KOMM&size=400',
+        'alleFylkeskommuner' => 'enheter?organisasjonsform=FYLK&size=100',
+        'alleStatlige' => 'enheter?organisasjonsform=STAT&size=50',
     ],
-    'underliggende' => '?overordnetEnhet=[ORGNR]&size=1000',
+    'underliggende' => 'enheter?overordnetEnhet=[ORGNR]&size=1000',
  ];

@@ -351,9 +351,9 @@ class PsApi extends API {
         // Gitt at begge selskaper blir funnet, er de det samme?
         $sameCompany = ($companyByName && $companyByOrgNo) && ($companyByName['id'] == $companyByOrgNo['id']);
         if ($sameCompany || (!$companyByName && $companyByOrgNo)):
-            $returnValue = &$companyByOrgNo;
+            $returnValue = $companyByOrgNo;
         else:
-            $returnValue = &$companyByName;
+            $returnValue = $companyByName;
         endif;
         return $returnClass ? collect($returnValue)->mapInto('App\Models\Company'): $returnValue;
     }

@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use App\Services\{Eformidling, PsApi, Tools};
 use App\Models\{Message, Company};
 use Illuminate\Support\{Str, Arr};
-
+use Illuminate\Support\Facades\{Storage};
 
 class IncomingMessages extends Command {
     protected float $start;
@@ -75,7 +75,7 @@ class IncomingMessages extends Command {
             endif;
             $lock = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
             if ($lock->successful()):
-                $this->line(Tools::l2().'Meldingen \''. $lock->json('standardBusinessDocumentHeader.documentIdentification.instanceIdentifier', 'Finner ikke meldings-ID') .' har blitt låst og er klar for nedlasting.');
+                $this->line(Tools::l2().'Meldingen \''. $lock->json('standardBusinessDocumentHeader.documentIdentification.instanceIdentifier', '[Finner ikke meldings-ID]') .'\' har blitt låst og er klar for nedlasting.');
                 //dd($lock->body());
             else:
                 //dd($lock->body());
@@ -95,13 +95,36 @@ class IncomingMessages extends Command {
                 $tmp = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
                 $this->line(Tools::l2().count($tmp).' vedlegg er allerede lastet ned. Fortsetter...');
             endif;
+            // Sjekker om meldingen mangler korrekt avsender
+            $sender = $dbMessage->sender();
+            if ($sender->name == 'Virksomhet ikke i BRREG'):
+                $this->line(Tools::L2.'Prøver å korrigere feil med forsendelsens avsender: '.$sender->name.' - '.$sender->organizationNumber);
+                $dlPath = $dbMessage->downloadPath();
+                $xmlfil = $dlPath.'/arkivmelding.xml';
+                if (Storage::exists($xmlfil)):
+                    // arkivmelding.xml vil inneholde avsenders navn
+                    $arkivmelding = json_decode(json_encode(simplexml_load_file(Storage::path($xmlfil))), true);
+                    if ($kparter = Arr::get($arkivmelding, 'mappe.basisregistrering.korrespondansepart', null)):
+                        // Avklarer avsender, også hvis det bare er én korrespondansepart
+                        $avsender = isset($kparter['korrespondanseparttype']) ? $kparter : collect($kparter)->firstWhere('korrespondanseparttype', 'Avsender');
+                        $this->ps = new PsApi();
+                        if ($psSender = $this->ps->findCompany(null, $avsender['korrespondansepartNavn'])):
+                            $this->line(Tools::L3.'Fant avsender: '.$psSender['name']);
+                            foreach (['id', 'name', 'organizationNumber', 'website'] as $f):
+                                $sender->$f = $psSender[$f];
+                            endforeach;
+                            $sender->save();
+                        endif;
+                    endif;
+                endif;
+            endif;
             $this->newLine();
         endforeach;
         unset($messages, $messagesToSkip, $dbMessage);
 
         $this->newLine();
         $this->info(Tools::l1().'Oppretter meldinger som saker i Pureservice');
-        $this->ps = new PsApi();
+        if (!isset($this->ps)) $this->ps = new PsApi();
         $this->info(Tools::l1().'Bruker Pureservice-instansen '.$this->ps->getBaseUrl().'.');
         $this->ps->setTicketOptions('eformidling');
         // $bar = $this->output->createProgressBar(Message::count());
@@ -113,7 +136,11 @@ class IncomingMessages extends Command {
         foreach(Message::lazy() as $message):
             $it++;
             $sender = Company::find($message->sender_id);
-            $this->line(Tools::l1().$it.'/'.$msgCount.': '. $message->id.' - '. $message->documentType().' fra '.$sender->name.' - '.$sender->organizationNumber);
+            $this->line(Tools::l1().$it.'/'.$msgCount.': '. $message->messageId.' - '. $message->documentType().' fra '.$sender->name.' - '.$sender->organizationNumber);
+            if ($sender->name == 'Virksomhet ikke i BRREG'):
+                $this->error(Tools::L2.'Hopper over denne meldingen inntil løsning for mottak er ferdigstilt.');
+                continue;
+            endif;
             if ($message->documentType() == 'innsynskrav'):
                 // Innsynskrav
                 $this->ps->setTicketOptions('innsynskrav');
