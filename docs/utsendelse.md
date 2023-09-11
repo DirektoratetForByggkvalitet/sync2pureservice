@@ -47,7 +47,15 @@ Ved enveis utsendelse kan man også velge mellom utsending via e-post eller gjen
 
 Miljøvariablene over kommer i tillegg til [de som brukes for selve mottakerlistene](mailingliste.md).
 
-### Oppsett for utsendelse av e-post ###
+### Mottakerlister ###
+Mottakerlistene til utsendelsene må opprettes som Assets i Pureservice. Her er et raskt oppsett:
+
+1. Opprett en ressurstype, kall den f.eks. "Mottakerliste". Den trenger ikke noen felter annet enn navn og unikt navn, men vi legger på et felt der vi kan spesifisere en saksbehandler som listeanvarlig.
+2. Under ressurstypens relasjoner må man sette navn på relasjonene som også legges inn i miljøvariablene
+
+[Mer om dette her](mailingliste.md)
+
+## Oppsett for utsendelse av e-post fra sync2pureservice ##
 
 Laravel støtter flere mulige oppsett for utsending av e-post. [Mer om dette her](https://laravel.com/docs/10.x/mail).
 
@@ -68,11 +76,3 @@ Sync2pureservice er satt opp med e-postmetoden 'failover', der vi prioriterer 's
 | MICROSOFT_GRAPH_CLIENT_ID | | App-ID for en Microsoft Graph-klient definert i Azure AD |
 | MICROSOFT_GRAPH_CLIENT_SECRET | | Hemmelighet (passord) for Microsoft Graph-klienten |
 | MICROSOFT_GRAPH_TENANT_ID | | Tenant-ID for Azure AD |
-
-### Mottakerlister ###
-Mottakerlistene til utsendelsene må opprettes som Assets i Pureservice. Her er et raskt oppsett:
-
-1. Opprett en ressurstype, kall den f.eks. "Mottakerliste". Den trenger ikke noen felter annet enn navn og unikt navn, men vi legger på et felt der vi kan spesifisere en saksbehandler som listeanvarlig.
-2. Under ressurstypens relasjoner må man sette navn på relasjonene som også legges inn i miljøvariablene
-
-[Mer om dette her](mailingliste.md)
