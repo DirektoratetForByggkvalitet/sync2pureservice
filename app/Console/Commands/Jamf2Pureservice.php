@@ -155,11 +155,12 @@ class Jamf2Pureservice extends Command {
             if (count($jamfDev['usernames']) > 0):
                 $doLink = true;
                 if ($psDev):
-                    $psUsernames = $this->psApi->getAssetRelatedUsernames($psDevId);
-                    if ($psUsernames === $jamfDev['usernames']):
+                    $psUsernames = array_unique($this->psApi->getAssetRelatedUsernames($psDevId));
+                    $jamfDev['usernames'] = array_unique($jamfDev['usernames']);
+                    if ($jamfDev['usernames'] === $psUsernames):
                         $doLink = false;
                     else:
-                        // Fjerner eksisterende brukerkoblinger
+                        // Fjerner eksisterende brukerkoblinger før ny kobling
                         $this->line(Tools::L3.'Fjerner brukerkoblinger til enheten');
                         $this->removeRelationships($psDevId);
                     endif;
