@@ -32,7 +32,8 @@ definitions:
               AZURE_PASSWORD: $AZURE_SP_SECRET
               AZURE_TENANT_ID: $AZURE_SP_TENANT
               CLI_COMMAND: az storage blob download --auth-mode login --file ${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
-
+  caches:
+    laravel: storage/framework/cache
 # Setter maksimum kjøretid for et steg
 options:
   max-time: 60
@@ -60,6 +61,7 @@ pipelines:
           deployment: jamf2pureservice
           caches:
             - composer
+            - laravel
           script:
             - cp .env.example .env
             - *install
