@@ -41,8 +41,8 @@ Ved enveis utsendelse kan man også velge mellom utsending via e-post eller gjen
 | PURESERVICE_DISPATCH_EMAIL | ut@e-post.pureservice.local | Sluttbruker som angir at forsendelsen skal ut med e-post |
 | PURESERVICE_DISPATCH_EF | ut@eformidling.pureservice.local | Sluttbruker som brukes til å angi masseutsending med eFormidling som medium |
 | PURESERVICE_DISPATCH_COMMTYPE_NAME | Utsendelse - innhold | Navnet på kommunikasjonstypen som skal brukes til utsendelsesteksten |
-| PURESERVICE_DISPATCH_STATUS | Til ekspedering | Navnet på statusen som skal settes på saken for å utløse utsending (scenario 1) |
-| PURESERVICE_121_STATUS | Klar til splitt | Navnet på statusen som skal settes på saken for å utløse oppretting av nye saker (scenario 2) |
+| PURESERVICE_DISPATCH_STATUS | Til ekspedering | Navnet på statusen som skal settes på saken for å utløse utsending (**scenario 1**) |
+| PURESERVICE_121_STATUS | Klar til splitt | Navnet på statusen som skal settes på saken for å utløse oppretting av nye saker (**scenario 2**) |
 | PURESERVICE_DISPATCH_SOLVED_STATUS | Løst | Status som settes på saken når utsendingen er ferdig |
 
 Miljøvariablene over kommer i tillegg til [de som brukes for selve mottakerlistene](mailingliste.md).
