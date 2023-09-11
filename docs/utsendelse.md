@@ -1,4 +1,4 @@
-# Pureservice Utsendelse? #
+# Pureservice Utsendelse #
 
 Kort fortalt jobber denne funksjonen for å gjøre det mulig å sende ut masseutsendelser fra Pureservice.
 
@@ -6,6 +6,8 @@ Pureservice Utsendelse kan understøtte to forskjellige scenarier for masseutsen
 
 1. Utsendelse der vi sender en e-post til mange adressater uten å be om direkte svar.
 2. Utsendelse der vi ber om tilbakemelding fra adressatene, og oppretter én sak per adressat.
+
+*For øyeblikket er det kun masseutsending med scenario 1 som fungerer.*
 
 ## Hovedfunksjonen ##
 
@@ -32,7 +34,7 @@ Det å lage en masseutsendelse vil være veldig likt det å opprette en vanlig s
 
 For at en sak skal behandles som en masseutsendelse trenger man i utgangspunktet bare å opprette noen fiktive sluttbrukere i Pureservice, en kommunikasjonstype og noen statuser.
 
-Sluttbrukerne brukes til å angi om sync2pureservice skal foretrekke e-post eller eFormidling som kanal for utsending av innholdet. 
+Sluttbrukerne brukes til å angi om sync2pureservice skal foretrekke e-post eller eFormidling som kanal for utsending av innholdet. *Utsending vie eFormidling er fortsatt under utvikling, og kan ikke brukes enda.*
 
 Ved enveis utsendelse kan man også velge mellom utsending via e-post eller gjennom eFormidling. Dette er dog ikke klart enda.
 
