@@ -55,7 +55,7 @@ Det er en rekke miljøvariabler som må settes for at eFormidling skal fungere i
 | DPE_TICKET_PRIORITY | Høy | Prioritet for innsynkravet. Det er lurt å kombinere dette med tjenestenivå på sakstypen Innsynskrav |
 | DPE_TICKET_VISIBILITY | 1 | Synlighet for sakens sluttbruker. 0 = synlig, 1 = synlig uten kvittering, 2 = ikke synlig |
 
-## eFormidling (SvarUt/DPF, DPO, DPV) ##
+## eFormidling (EF = DPF + DPO + DPV) ##
 
 | Variabel | Standardverdi | Kommentar |
 |----|----|----|
@@ -67,4 +67,3 @@ Det er en rekke miljøvariabler som må settes for at eFormidling skal fungere i
 | EF_TICKET_TYPE | verdien fra PURESERVICE_TICKET_TYPE | Sakstypen som skal brukes for eFormidling-meldinger |
 | EF_TICKET_VISIBILITY | 2 | Synlighet for sakens sluttbruker. 0 = synlig, 1 = synlig uten kvittering, 2 = ikke synlig. Det gir egentlig kun mening å la denne stå som standard, siden Pureservice ikke kan sende e-post tilbake til avsenderen uansett |
 
-(WIP)
