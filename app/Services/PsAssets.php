@@ -107,9 +107,9 @@ class PsAssets extends PsApi {
         $query = [
             'filter' => 'uniqueId == "'.$uniqueId.'" AND typeId == '.$typeId,
         ];
-        $result = $this->ApiQuery($uri, $query);
-        if (count($result['assets'])):
-            $asset = $result['assets'][0];
+        $response = $this->ApiQuery($uri, $query, true);
+        if ($response->successful()):
+            $asset = $response->json('assets.0');
             $asset['type'] = $type;
             $asset['usernames'] = $this->getAssetRelatedUsernames($asset['id']);
             return $asset;
