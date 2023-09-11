@@ -62,6 +62,8 @@ pipelines:
           caches:
             - composer
             - laravel
+          runs-on:
+            - "self.hosted"
           script:
             - cp .env.example .env
             - *install
