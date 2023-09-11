@@ -538,7 +538,7 @@ class PsApi extends API {
                 'ticketId' => $ticketId,
              ]
         ]];
-        if ($res = $this->apiPOST($uri, $body)) return true;
+        if ($res = $this->apiPost($uri, $body)) return true;
 
         return false;
     }
