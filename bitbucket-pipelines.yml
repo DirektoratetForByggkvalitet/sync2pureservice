@@ -57,7 +57,7 @@ pipelines:
     jamf2pureservice:
       - step:
           name: Synkroniser mellom Jamf Pro og Pureservice
-          deployment: Production
+          deployment: jamf2pureservice
           caches:
             - composer
           script:

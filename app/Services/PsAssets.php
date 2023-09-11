@@ -303,7 +303,7 @@ class PsAssets extends PsApi {
         if ($response->successful()):
             return $response->json('assets.0');
         else:
-            dd([$uri, $data, $response->json()]);
+            //dd([$uri, $data, $response->json()]);
             return false;
         endif;
     }
