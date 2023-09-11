@@ -3,10 +3,17 @@
 Vi har bygd en kommandolinje-basert Laravel-applikasjon for å utvide funksjonaliteten i Pureservice:
 
 - [jamf2pureservice](docs/jamf2pureservice.md) - synkroniserer maskiner og mobilenheter i Jamf Pro med ressurser i Pureservice
-- [svarinn2pureservice](docs/svarinn2pureservice.md) - fungerer som SvarUt-mottak for Pureservice
 - [eFormidling](docs/eformidling.md) - Henter inn meldinger gjennom integrasjonspunkt fra Altinn, eInnsyn og SvarUt inn i Pureservice
+- [svarinn2pureservice](docs/svarinn2pureservice.md) - fungerer som SvarUt-mottak for Pureservice (erstattes av eFormidling)
 - [offentlige2ps](docs/offentlige2ps.md) - importerer kommuner og statlige instanser inn som firma og sluttbrukere i Pureservice
-- [utsendelse](docs/utsendelse.md) - håndterer masseutsendelser fra Pureservice
+- [utsendelse](docs/utsendelse.md) - Håndterer masseutsendelser fra Pureservice
+
+## Under utvikling
+
+Vi jobber fortsatt med utvikling av sync2pureservice. Følgende er under utvikling:
+
+- Utsendelse via eFormidling: Foreløpig fungerer det kun med utsendelse gjennom e-post
+- Masseutsendelse som oppretter enkeltsaker i Pureservice (scenario 2)
 
 ## Kjøring i Bitbucket Pipelines
 

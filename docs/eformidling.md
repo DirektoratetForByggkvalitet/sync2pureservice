@@ -13,9 +13,9 @@ Hovedfunksjonen til integrasjonspunktet er å kryptere og dekryptere forsendelse
 * DPE - eInnsyn (publisering og innsynskrav)
 * DPF - SvarUt sending og mottakstjeneste
 
-Integrasjonspunktet vil automatisk ta imot innkommende meldinger og lagre dem i sin database (vi anbefaler å sette opp en database utenfor selve integrasjonspunktet for økt sikkerhet), slik at de er klare for henting gjennom [eFormidling 2-APIet](https://docs.digdir.no/docs/eFormidling/Utvikling/integrasjonspunkt_eformidling2_api). Utgående meldinger tas imot med samme API, og pakkes og sendes videre til eFormidling sin backend for videre levering.
+Det er en stor fordel at man aktiverer så mange som mulig av kanalene i integrasjonspunktet, slik at man slipper å ha flere forskjellige løsninger for innkommende forsendelser. eFormidling-integrasjonen erstatter f.eks. både svarinn2pureservice-funksjonen og innsynskrav-funksjonen til sync2pureservice.
 
-
+Integrasjonspunktet vil automatisk ta imot innkommende meldinger fra de aktiverte tjenestene og lagre dem i sin database (vi anbefaler å sette opp en database utenfor selve integrasjonspunktet for økt sikkerhet), slik at de er klare for henting gjennom [eFormidling 2-APIet](https://docs.digdir.no/docs/eFormidling/Utvikling/integrasjonspunkt_eformidling2_api). Utgående meldinger tas imot med samme API, og pakkes og sendes videre til eFormidling sin backend for videre levering.
 
 ## Innkommende meldinger ##
 
@@ -24,9 +24,11 @@ Funksjonaliteten rundt innkommende eFormidling-meldinger er basert på én tjene
 
 En melding i eFormidling er i all hovedsak basert på metadata i JSON- og XML-format, samt vedlegg. Vedleggene er det reelle innholdet i forsendelsen, resten er 'konvolutten'.
 
-Når en forsendelse blir funnet på integrasjonspunktet vil sync2pureservice laste ned vedleggene og bruke metadataene til å opprette avsenders virksomhet og en egen eFormidling-avsender i Pureservice. Deretter oppretter sync2pureservice en sak der metadataene brukes til å lage en beskrivelse, og laster opp vedleggene til saken. Saken fordeles til valgt sone og team, og er klar for behandling i Pureservice.
+Når en forsendelse blir funnet på integrasjonspunktet vil sync2pureservice laste ned og pakke ut vedleggene og bruke metadataene til å opprette avsenders virksomhet og en egen eFormidling-avsender i Pureservice. Deretter oppretter sync2pureservice en sak der metadataene brukes til å lage en beskrivelse, og laster opp vedleggene til saken. Saken fordeles til valgt sone og team, og er klar for behandling i Pureservice.
 
 For at vedleggene skal bli korrekt arkiverte i Documaster når saken lukkes (en egen app i Pureservice) vil sync2pureservice opprette en egen innkommende melding for vedleggene til saken. Det kan se litt forvirrende ut, men resultatet er at vedleggene kommer inn i saken, og når saken arkiveres vil de bli arkiverte som vedlegg til journalpost nr 2 på saken.
+
+Dersom den innkommende meldingen er et innsynkrav vil sync2pureservice bruke metadata fra innsynkravet til å hente ut hvilke saker og dokumenter kravet gjelder. Deretter oppretter sync2pureservice én sak i Pureservice per saksnummer det ønskes innsyn i. Det er ofte forskjellige saksbehandlere på ulike saker, og ved å splitte innsynskravet blir det raskere å besvare det.
 ## Utgående meldinger ##
 
 Vi arbeider aktivt for å etablere en metodikk for sending av meldinger fra Pureservice til eFormidling, men dette er noe som vil ta litt tid å få på plass. Dette vil bli inkludert som en del av [masseutsending-funksjonen](utsendelse.md).
@@ -44,11 +46,13 @@ Det er en rekke miljøvariabler som må settes for at eFormidling skal fungere i
 | EF_IP_USER | | Brukernavnet, hvis innlogging kreves |
 | EF_IP_PASSWORD | | Passordet, hvis innlogging kreves |
 
+Vi kan forøvrig anbefale å sette opp integrasjonspunktet i nettskyen, og har laget et docker-oppsett som fungerer veldig bra som en web app i Microsoft Azure. Der har vi også sperret ned tilgangen basert på IP-adresser (IP-whitelisting), samt slått på innlogging. [Mer om dette her](https://bitbucket.org/dibk/docker-integrasjonspunkt/).
+
 ## Innsynkrav (DPE) ##
 
 | Variabel | Standardverdi | Kommentar |
 |----|----|----|
-| DPE_TICKET_TYPE | Innsynskrav | Sakstypen som skal brukes for innsynskrav. **Må defineres i Pureservice** |
+| DPE_TICKET_TYPE | Innsynskrav | Sakstypen som skal brukes for innsynskrav. **Må defineres i Pureservice**. Det er også lurt å legge et tjenestenivå på denne sakstypen, siden det er lovpålagt å besvare innsynskravet innen tre arbeidsdager. |
 | DPE_TICKET_TEAM | verdien fra PURESERVICE_TICKET_TEAM | Navn på Pureservice-teamet som skal få innsynskrav. **Må defineres i Pureservice** |
 | DPE_TICKET_ZONE | verdien fra PURESERVICE_TICKET_ZONE | Navn på samhandlingssonen i Pureservice som skal få innsynskrav. **Må defineres i Pureservice** |
 | DPE_TICKET_SOURCE | Innsynskrav | Kilden som skal brukes for innsynskrav. **Må defineres i Pureservice** |
