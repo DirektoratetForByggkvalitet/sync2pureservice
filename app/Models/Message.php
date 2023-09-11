@@ -208,7 +208,7 @@ class Message extends Model {
             $ps = new PsApi();
             $ps->setTicketOptions('innsynskrav');
         endif;
-        $emailtext = [];
+        $emailtext = '';
         foreach ($this->attachments as $a):
             if (basename($a) == 'order.xml' ):
                 $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($a))), true);
