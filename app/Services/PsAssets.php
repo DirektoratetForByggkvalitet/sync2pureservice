@@ -278,8 +278,11 @@ class PsAssets extends PsApi {
         endif;
     }
 
-    public function deleteAsset(array $psAsset): bool {
-        return ($this->updateAssetDetail($psAsset, ['isMarkedForDeletion' => true]));
+    public function deleteAsset(array $asset): bool {
+        $data = ['isMarkedForDeletion' => true];
+        $uri =  $uri = '/asset/'.$asset['id'];
+        $response = $this->apiPatch($uri, $data, 'application/json');
+        return $response->successful();
     }
 
     public function updateAssetDetail(array $asset, array $data) {

@@ -198,8 +198,9 @@ class Jamf2Pureservice extends Command {
             $eolDiff = $devEol->diffInDays($deleteEol, false);
             // Sletter enheten dersom den hadde EndOfLife for mer enn to år siden
             if ($eolDiff >= 0):
-                $this->line(Tools::L3.'Enheten skal slettes fra Pureservice');
-                //$this->psApi->deleteAsset($dev);
+                $this->line(Tools::L3.'Enheten slettes fra Pureservice');
+                $this->psApi->deleteAsset($dev);
+                $this->newLine();
                 continue;
             endif;
 
