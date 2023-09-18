@@ -69,7 +69,7 @@ class Jamf2Pureservice extends Command {
 
         $time1 = microtime(true);
         $this->info(Tools::L1.'1. Henter enheter fra Jamf Pro');
-        $this->jamfDevices = Cache::remember('jamfDevices', 14400, function() {
+        $this->jamfDevices = Cache::remember('jamfProDevices', 3600, function() {
             return collect($this->getJamfAssetsAsPsAssets());
         });
         $this->jamfCount = $this->jamfDevices->count();
@@ -79,7 +79,7 @@ class Jamf2Pureservice extends Command {
 
         $time1 = microtime(true);
         $this->info(Tools::L1.'2. Henter enheter fra Pureservice');
-        $this->psDevices = Cache::remember('psDevices', 14400, function() {
+        $this->psDevices = Cache::remember('psAllDevices', 3600, function() {
             return $this->psApi->getAllAssets();
         });
         $this->psCount = count($this->psDevices);
@@ -194,11 +194,11 @@ class Jamf2Pureservice extends Command {
             //$this->line(Tools::L3.$typeName.' er ikke registrert i Jamf Pro');
             $updated = false;
             $cutoff = Carbon::now()->subYears(1);
-            $devEol = Carbon::parse($dev[$fn['lastSeen']], 'Europe/Oslo');
-            $eolDiff = $devEol->diffInDays($cutoff, false);
+            $devLastSeen = Carbon::parse($dev[$fn['lastSeen']], 'Europe/Oslo');
+            $eolDiff = $devLastSeen->diffInDays($cutoff, false);
             // Sletter enheten dersom den ble sist sett for mer enn ett år siden
             if ($eolDiff >= 0):
-                $this->line(Tools::L3.'Enheten slettes fra Pureservice');
+                $this->line(Tools::L3.'Enheten ble sist sett '.$devLastSeen->format('d.m.Y H:i').'. Sletter den fra Pureservice.');
                 $this->psApi->deleteAsset($dev);
                 $this->newLine();
                 continue;
