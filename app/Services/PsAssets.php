@@ -87,8 +87,7 @@ class PsAssets extends PsApi {
     public function getAllAssets(): Collection {
         $totalAssets = [];
         foreach (['computer', 'mobile'] as $type):
-            $uri = '/asset/';
-            $uri .= '_'.$this->myConf($type.'.asset_type_id').'_Assets_'.$this->myConf($type.'.displayName');
+            $uri = '/asset/'.$this->myConf($type.'.className');
             $assets = $this->apiGet($uri)['assets'];
             foreach ($assets as $asset):
                 if (!isset($asset['assets_UDF_95_EOL'])):
@@ -283,8 +282,9 @@ class PsAssets extends PsApi {
 
         $uri = '/asset/'.$updateAsset['id'];
         //$typeClass = config('pureservice.'.$updateAsset['type'].'.className');
-        $data['name'] = $updateAsset['name'];
+        $data['name'] = isset($data['name']) ? $data['name'] : $updateAsset['name'];
         $data['imported'] = Carbon::now()->toJSON();
+        $data['typeId'] = $updateAsset['typeId'];
         // $updateAsset = collect($updateAsset)
         //     ->except([
         //         'usernames', 'type',
@@ -316,11 +316,15 @@ class PsAssets extends PsApi {
         if ($response->successful()):
             return $response->json('assets.0');
         else:
-            //dd([$uri, $data, $response->json()]);
+            // dd([$uri, $data, $response->json(), $response->status()]);
             return false;
         endif;
     }
 
+    protected function assetUriWithType(array $psAsset, bool $addId): string {
+        $uri = '/asset/'.$this->myConf($psAsset['type'].'.className').'/';
+        return $addId ? $uri . $psAsset['id'] : $uri;
+    }
 
     /** updateAsset
      * Kjører oppdatering på gitt Puserservice Asset

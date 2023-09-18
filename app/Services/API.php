@@ -169,8 +169,8 @@ class API {
      */
     public function apiPatch(string $uri, array $body, string|null $contentType = null, bool $returnBool = false): Response|bool {
         $uri = $this->resolveUri($uri);
-        $accept = $this->myConf('api.accept');
-        $contentType = $contentType ? $contentType : $accept;
+        $accept = $this->myConf('api.accept', 'application/json');
+        $contentType = $contentType ? $contentType : $this->myConf('api.contentType', $accept);
         $response = $this->prepRequest($accept, $contentType)->patch($uri, $body);
         return $returnBool ? $response->successful() : $response;
     }
