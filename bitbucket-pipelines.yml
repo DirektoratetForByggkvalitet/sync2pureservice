@@ -3,7 +3,7 @@ definitions:
     - script: &resetDB
         ./artisan migrate:fresh --force
     - script: &install
-        cp .env.example .env && composer install
+        echo "Setter opp miljøet for kjøring" && cp .env.example .env && composer install
   steps:
     - step: &forberedeSvarInn
         name: Forbereder kjøring
@@ -66,14 +66,6 @@ pipelines:
             - "self.hosted"
           script:
             - cp .env.example .env
-            - *install
-            - ./artisan pureservice:sync-jamf
-
-    jamf2ps-test:
-      - step:
-          name: Synkroniser mellom Jamf Pro og Pureservice
-          deployment: Test
-          script:
             - *install
             - ./artisan pureservice:sync-jamf
 
