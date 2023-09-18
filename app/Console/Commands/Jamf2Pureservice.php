@@ -206,14 +206,17 @@ class Jamf2Pureservice extends Command {
                     endif;
                 endif;
                 $newStatusId = $this->psApi->calculateStatus($dev, true);
-                $this->psApi->changeAssetStatus($dev, $newStatusId);
-
-                if ($this->psApi->updateAssetDetail($dev, [
-                    $fn['jamfUrl'] => null,
-                ])):
-                    $this->line(Tools::L3.'Enheten er oppdatert i Pureservice');
+                if ($dev['statusId'] != $newStatusId && $dev[$fn['jamfUrl']] == null):
+                    $this->line(Tools::L3.'Enheten er allerede oppdatert');
                 else:
-                    $this->error(Tools::L3.'Fikk ikke oppdatert enheten');
+                    if ($dev['statusId'] != $newStatusId):
+                        $this->psApi->changeAssetStatus($dev, $newStatusId);
+                        $this->line(Tools::L3.'Endret status på enheten');
+                    endif;
+                    if ($dev[$fn['jamfUrl']] != null):
+                        $this->psApi->updateAssetDetail($dev, [$fn['jamfUrl'] => null,]);
+                        $this->line(Tools::L3.'Fjernet lenke til Jamf Pro');
+                    endif;
                 endif;
                 $this->newLine();
            endif;
