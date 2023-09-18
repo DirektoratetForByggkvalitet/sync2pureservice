@@ -88,13 +88,11 @@ class PsAssets extends PsApi {
         $totalAssets = [];
         foreach (['computer', 'mobile'] as $type):
             $uri = '/asset/';
-            $query = [
-                'filter' => 'typeId =='.$this->myConf($type.'.asset_type_id'),
-            ];
-            $assets = $this->apiQuery($uri, $query)['assets'];
+            $uri .= '_'.$this->myConf($type.'.asset_type_id').'_Assets_'.$this->myConf($type.'.displayName');
+            $assets = $this->apiGet($uri)['assets'];
             foreach ($assets as $asset):
                 if (!isset($asset['assets_UDF_95_EOL'])):
-                    // Korrigerer feil i APIet der feltene ikke returneres ved søk
+                    // Korrigerer feil i APIet dersom feltene ikke returneres ved søk
                     $response = $this->apiGet($uri.$asset['id'], true);
                     if ($response->successful()):
                         $asset = $response->json('assets.0');
@@ -118,7 +116,7 @@ class PsAssets extends PsApi {
         if ($response->successful()):
             $asset = $response->json('assets.0');
             if (!isset($asset['assets_UDF_95_EOL'])):
-                // Korrigerer feil i APIet der feltene ikke returneres ved søk
+                // Korrigerer feil i APIet dersom feltene ikke returneres ved søk
                 $response = $this->apiGet($uri.$asset['id'], true);
                 if ($response->successful()):
                     $asset = $response->json('assets.0');

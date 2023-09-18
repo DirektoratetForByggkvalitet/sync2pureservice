@@ -32,7 +32,7 @@ Det er fullt mulig å kjøre skriptene lokalt på egen maskin. I så fall trenge
 Her kan vi ikke tilby så mye hjelp, det må være opptil hver enkelt å gjøre dette oppsettet slik man vil ha det. Generelt vil det gå på noe slikt:
 
 1. Bruk git clone eller last ned kildekoden til din maskin
-1. Opprett en .env-fil ved å kopiere .env.example til .env og sette dine egne innstillinger (f.eks. `cp .env.example .env`)
+1. Opprett en .env-fil ved å kopiere .env.example til .env og sette dine egne innstillinger (f.eks. `cp .env.example .env`). Det er en hel haug med miljøvariabler som kan settes i .env eller som miljøvariabler før kjøring. Nærmere info om dette under hver enkelt funksjon
 1. Kjør `composer install` for å installere nødvendige rammeverk
 1. Kjør `php artisan migrate:fresh` for å klargjøre den lokale databasen (eller om du vil bruke ditt eget databaseoppsett spesifisert i [config/database.php](config/database.php))
 1. Du er nå klar for å kjøre sync2pureservice (gitt at .env inneholder det du trenger)
