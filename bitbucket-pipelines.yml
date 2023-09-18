@@ -38,6 +38,11 @@ definitions:
         files:
           - "storage/framework/cache/data/*"
       path: storage/framework/cache
+    composer-vendor:
+      key:
+        files:
+          - composer.lock
+      path: "vendor"
 # Setter maksimum kjøretid for et steg
 options:
   max-time: 60
@@ -64,8 +69,8 @@ pipelines:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: jamf2pureservice
           caches:
-            - composer
             - laravel
+            - composer-vendor
           runs-on:
             - "self.hosted"
           script:
@@ -79,7 +84,7 @@ pipelines:
           name: Sjekker SvarUtMottak
           deployment: Production
           caches:
-            - composer
+            - composer-vendor
           runs-on:
             - "self.hosted"
           script:
@@ -98,7 +103,7 @@ pipelines:
           name: Henter inn meldinger fra eFormidling (Altinn, Svarut, eInnsyn)
           deployment: eFormidling
           caches:
-            - composer
+            - composer-vendor
           runs-on:
             - "self.hosted"
           script:
@@ -113,7 +118,7 @@ pipelines:
           name: Sjekker innsynskrav
           deployment: eFormidling
           caches:
-            - composer
+            - composer-vendor
           script:
             - echo 'Kjører sjekkInnsynskrav'
             - *install
@@ -125,7 +130,7 @@ pipelines:
           name: 'Importerer offentlige instanser fra BRREG inn i Pureservice'
           deployment: Production
           caches:
-            - composer
+            - composer-vendor
           script:
             - *install
             - *resetDB
@@ -152,7 +157,7 @@ pipelines:
           deployment: Production
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
           caches:
-            - composer
+            - composer-vendor
           script:
             - *install
             - *resetDB
@@ -163,7 +168,7 @@ pipelines:
           deployment: Test
           name: 'TEST: Ser etter masseutsendelser i PS og sørger for å sende dem'
           caches:
-            - composer
+            - composer-vendor
           script:
             - *install
             - *resetDB
@@ -173,7 +178,7 @@ pipelines:
       - step:
           name: Splitter et innsynskrav gitt med requestNumber
           caches:
-            - composer
+            - composer-vendor
           script:
             - *install
             - ./artisan pureservice:splittInnsynskrav ${requestNumber}
