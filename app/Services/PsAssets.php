@@ -110,6 +110,14 @@ class PsAssets extends PsApi {
         $response = $this->ApiQuery($uri, $query, true);
         if ($response->successful()):
             $asset = $response->json('assets.0');
+            if (!isset($asset['assets_UDF_95_EOL'])):
+                // Korrigerer feil i APIet der feltene ikke returneres ved søk
+                $response = $this->apiGet($uri.$asset['id']);
+                if ($response->successful()):
+                    $asset = $response->json('assets.0');
+                endif;
+            endif;
+
             $asset['type'] = $type;
             $asset['usernames'] = $this->getAssetRelatedUsernames($asset['id']);
             return $asset;
