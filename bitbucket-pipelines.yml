@@ -70,6 +70,7 @@ pipelines:
           deployment: jamf2pureservice
           caches:
             - laravel
+            - composer
             - composer-vendor
           runs-on:
             - "self.hosted"
@@ -85,6 +86,7 @@ pipelines:
           deployment: Production
           caches:
             - composer-vendor
+            - composer
           runs-on:
             - "self.hosted"
           script:
@@ -104,6 +106,7 @@ pipelines:
           deployment: eFormidling
           caches:
             - composer-vendor
+            - composer
           runs-on:
             - "self.hosted"
           script:
@@ -119,6 +122,7 @@ pipelines:
           deployment: eFormidling
           caches:
             - composer-vendor
+            - composer
           script:
             - echo 'Kjører sjekkInnsynskrav'
             - *install
@@ -130,6 +134,7 @@ pipelines:
           name: 'Importerer offentlige instanser fra BRREG inn i Pureservice'
           deployment: Production
           caches:
+            - composer
             - composer-vendor
           script:
             - *install
@@ -157,6 +162,7 @@ pipelines:
           deployment: Production
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
           caches:
+            - composer
             - composer-vendor
           script:
             - *install
@@ -169,6 +175,7 @@ pipelines:
           name: 'TEST: Ser etter masseutsendelser i PS og sørger for å sende dem'
           caches:
             - composer-vendor
+            - composer
           script:
             - *install
             - *resetDB
@@ -179,6 +186,7 @@ pipelines:
           name: Splitter et innsynskrav gitt med requestNumber
           caches:
             - composer-vendor
+            - composer
           script:
             - *install
             - ./artisan pureservice:splittInnsynskrav ${requestNumber}
