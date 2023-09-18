@@ -278,13 +278,16 @@ class PsAssets extends PsApi {
         endif;
     }
 
-    public function updateAssetDetail(array $updateAsset, array $data) {
+    public function deleteAsset(array $psAsset): bool {
+        return ($this->updateAssetDetail($psAsset, ['isMarkedForDeletion' => true]));
+    }
 
-        $uri = '/asset/'.$updateAsset['id'];
+    public function updateAssetDetail(array $asset, array $data) {
+        $uri = '/asset/'.$asset['id'];
         //$typeClass = config('pureservice.'.$updateAsset['type'].'.className');
-        $data['name'] = isset($data['name']) ? $data['name'] : $updateAsset['name'];
+        $data['name'] = isset($data['name']) ? $data['name'] : $asset['name'];
         $data['imported'] = Carbon::now()->toJSON();
-        $data['typeId'] = $updateAsset['typeId'];
+        $data['typeId'] = $asset['typeId'];
         // $updateAsset = collect($updateAsset)
         //     ->except([
         //         'usernames', 'type',

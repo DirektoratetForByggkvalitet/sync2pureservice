@@ -188,38 +188,45 @@ class Jamf2Pureservice extends Command {
         $this->info(Tools::L1.'4. Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
 
         foreach ($this->psDevices->lazy()->whereNotIn('id', $this->updatedPsDevices) as $dev):
-            $updated = false;
-
             $fn = config('pureservice.'.$dev['type'].'.properties');
-            if (!$this->jamfDevices->contains($fn['serial'],$dev['uniqueId'])):
-                $this->line(Tools::L2.$dev['uniqueId'].' - '.$dev[$fn['name']]);
-                $typeName = config('pureservice.'.$dev['type'].'.displayName').'en';
-                $this->line(Tools::L3.$typeName.' er ikke registrert i Jamf Pro');
-                if (
-                    $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_deployed') ||
-                    $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_phaseOut') ||
-                    $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_inStorage')
-                ):
-                    if ($dev['usernames'] != []):
-                        $this->line(Tools::L3.$typeName.' er registrert på '.implode(', ', $dev['usernames']));
-                        $this->line(Tools::L3.'Fjerner brukerkobling(er)');
-                        $this->removeRelationships($dev['id']);
-                    endif;
+            $this->line(Tools::L2.$dev['uniqueId'].' - '.$dev[$fn['name']]);
+            $typeName = config('pureservice.'.$dev['type'].'.displayName').'en';
+            //$this->line(Tools::L3.$typeName.' er ikke registrert i Jamf Pro');
+            $updated = false;
+            $deleteEol = Carbon::now()->subYears(2);
+            $devEol = Carbon::parse($dev[$fn['EOL']], 'Europe/Oslo');
+            $eolDiff = $devEol->diffInDays($deleteEol, false);
+            // Sletter enheten dersom den hadde EndOfLife for mer enn to år siden
+            if ($eolDiff >= 0):
+                $this->line(Tools::L3.'Enheten skal slettes fra Pureservice');
+                //$this->psApi->deleteAsset($dev);
+                continue;
+            endif;
+
+            if (
+                $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_deployed') ||
+                $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_phaseOut') ||
+                $dev['statusId'] == config('pureservice.'.$dev['type'].'.status.active_inStorage')
+            ):
+                if ($dev['usernames'] != []):
+                    $this->line(Tools::L3.$typeName.' er registrert på '.implode(', ', $dev['usernames']));
+                    $this->line(Tools::L3.'Fjerner brukerkobling(er)');
+                    $this->removeRelationships($dev['id']);
                 endif;
-                $newStatusId = $this->psApi->calculateStatus($dev, true);
-                if ($dev['statusId'] != $newStatusId):
-                    $this->psApi->changeAssetStatus($dev, $newStatusId);
-                    $this->line(Tools::L3.'Endret status på enheten');
-                    $updated = true;
-                endif;
-                if ($dev[$fn['jamfUrl']] != null):
-                    $this->psApi->updateAssetDetail($dev, [$fn['jamfUrl'] => null,]);
-                    $this->line(Tools::L3.'Fjernet lenke til Jamf Pro');
-                    $updated = true;
-                endif;
-                if (!$updated) $this->line(Tools::L3.'Enheten trenger ikke oppdatering i Pureservice');
-                $this->newLine();
-           endif;
+            endif;
+            $newStatusId = $this->psApi->calculateStatus($dev, true);
+            if ($dev['statusId'] != $newStatusId):
+                $this->psApi->changeAssetStatus($dev, $newStatusId);
+                $this->line(Tools::L3.'Endret status på enheten');
+                $updated = true;
+            endif;
+            if ($dev[$fn['jamfUrl']] != null):
+                $this->psApi->updateAssetDetail($dev, [$fn['jamfUrl'] => null,]);
+                $this->line(Tools::L3.'Fjernet lenke til Jamf Pro');
+                $updated = true;
+            endif;
+            if (!$updated) $this->line(Tools::L3.'Enheten trenger ikke oppdatering i Pureservice');
+            $this->newLine();
         endforeach;
 
         // Oppsummering
