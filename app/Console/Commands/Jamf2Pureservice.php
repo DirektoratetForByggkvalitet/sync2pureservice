@@ -97,9 +97,9 @@ class Jamf2Pureservice extends Command {
             $fn = config('pureservice.'.$jamfDev['type'].'.properties');
             $this->line('');
             $this->line(Tools::L2.$itemno.'/'.$this->jamfCount.' '.$jamfDev[$fn['serial']].' - '.$jamfDev[$fn['name']]);
-            //$psDev = $this->psDevices->firstWhere('uniqueId', $jamfDev[$fn['serial']]);
+            $psDev = $this->psDevices->firstWhere('uniqueId', $jamfDev[$fn['serial']]);
             // Sjekker om enheten finnes i Pureservice
-            $psDev = $this->psApi->getAssetByUniqueId($jamfDev[$fn['serial']], $jamfDev['type']);
+            //$psDev = $this->psApi->getAssetByUniqueId($jamfDev[$fn['serial']], $jamfDev['type']);
             //dd($psDev);
             $typeName = config('pureservice.'.$jamfDev['type'].'.displayName').'en';
 
