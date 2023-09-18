@@ -210,7 +210,7 @@ class Jamf2Pureservice extends Command {
                 endif;
                 $newStatusId = $this->psApi->calculateStatus($dev, true);
                 $this->psApi->changeAssetStatus($dev, $newStatusId);
-                if ($dev[$fn['jamfUrl']] != null) $dev[$fn['jamfUrl']];
+
                 if ($this->psApi->updateAssetDetail($dev, [
                     'statusId' => $newStatusId,
                     $fn['jamfUrl'] => null,
