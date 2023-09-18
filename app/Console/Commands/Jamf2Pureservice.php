@@ -188,6 +188,7 @@ class Jamf2Pureservice extends Command {
         $this->info(Tools::L1.'4. Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
 
         foreach ($this->psDevices->lazy()->whereNotIn('id', $this->updatedPsDevices) as $dev):
+            $updated = false;
 
             $fn = config('pureservice.'.$dev['type'].'.properties');
             if (!$this->jamfDevices->contains($fn['serial'],$dev['uniqueId'])):
@@ -206,18 +207,17 @@ class Jamf2Pureservice extends Command {
                     endif;
                 endif;
                 $newStatusId = $this->psApi->calculateStatus($dev, true);
-                if ($dev['statusId'] != $newStatusId && $dev[$fn['jamfUrl']] == null):
-                    $this->line(Tools::L3.'Enheten er allerede oppdatert');
-                else:
-                    if ($dev['statusId'] != $newStatusId):
-                        $this->psApi->changeAssetStatus($dev, $newStatusId);
-                        $this->line(Tools::L3.'Endret status på enheten');
-                    endif;
-                    if ($dev[$fn['jamfUrl']] != null):
-                        $this->psApi->updateAssetDetail($dev, [$fn['jamfUrl'] => null,]);
-                        $this->line(Tools::L3.'Fjernet lenke til Jamf Pro');
-                    endif;
+                if ($dev['statusId'] != $newStatusId):
+                    $this->psApi->changeAssetStatus($dev, $newStatusId);
+                    $this->line(Tools::L3.'Endret status på enheten');
+                    $updated = true;
                 endif;
+                if ($dev[$fn['jamfUrl']] != null):
+                    $this->psApi->updateAssetDetail($dev, [$fn['jamfUrl'] => null,]);
+                    $this->line(Tools::L3.'Fjernet lenke til Jamf Pro');
+                    $updated = true;
+                endif;
+                if (!$updated) $this->line(Tools::L3.'Enheten trenger ikke oppdatering i Pureservice');
                 $this->newLine();
            endif;
         endforeach;
