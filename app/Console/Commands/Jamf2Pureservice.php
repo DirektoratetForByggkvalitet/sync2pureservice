@@ -193,10 +193,10 @@ class Jamf2Pureservice extends Command {
             $typeName = config('pureservice.'.$dev['type'].'.displayName').'en';
             //$this->line(Tools::L3.$typeName.' er ikke registrert i Jamf Pro');
             $updated = false;
-            $deleteEol = Carbon::now()->subYears(2);
-            $devEol = Carbon::parse($dev[$fn['EOL']], 'Europe/Oslo');
-            $eolDiff = $devEol->diffInDays($deleteEol, false);
-            // Sletter enheten dersom den hadde EndOfLife for mer enn to år siden
+            $cutoff = Carbon::now()->subYears(1);
+            $devEol = Carbon::parse($dev[$fn['lastSeen']], 'Europe/Oslo');
+            $eolDiff = $devEol->diffInDays($cutoff, false);
+            // Sletter enheten dersom den ble sist sett for mer enn ett år siden
             if ($eolDiff >= 0):
                 $this->line(Tools::L3.'Enheten slettes fra Pureservice');
                 $this->psApi->deleteAsset($dev);
