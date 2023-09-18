@@ -33,7 +33,11 @@ definitions:
               AZURE_TENANT_ID: $AZURE_SP_TENANT
               CLI_COMMAND: az storage blob download --auth-mode login --file ${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
   caches:
-    laravel: storage/framework/cache
+    laravel:
+      key:
+        files:
+          - "storage/framework/cache/data/*"
+      path: storage/framework/cache
 # Setter maksimum kjøretid for et steg
 options:
   max-time: 60
