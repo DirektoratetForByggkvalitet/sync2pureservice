@@ -179,18 +179,15 @@ class Jamf2Pureservice extends Command {
             else:
                 $this->line(Tools::L3.'Enheten er ikke koblet til noen bruker');
             endif;
+            $this->updatedPsDevices[] = $psDevId;
             $elapsed = microtime(true) - $time1;
             $this->line(Tools::L3.'Behandlingstid: '.round($elapsed, 2).' sek');
-
         endforeach;
-
         $this->newLine();
         // Looper gjennom Pureservice-enheter for å evt. endre status på enheter som ikke lenger finnes i Jamf Pro
         $this->info(Tools::L1.'4. Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
 
-        foreach ($this->psDevices->lazy() as $dev):
-            // Hopper over enheter som allerede er prosesserte
-            if (in_array($dev['id'], $this->updatedPsDevices)) continue;
+        foreach ($this->psDevices->lazy()->whereNotIn('id', $this->updatedPsDevices) as $dev):
 
             $fn = config('pureservice.'.$dev['type'].'.properties');
             if (!$this->jamfDevices->contains($fn['serial'],$dev['uniqueId'])):
@@ -212,7 +209,6 @@ class Jamf2Pureservice extends Command {
                 $this->psApi->changeAssetStatus($dev, $newStatusId);
 
                 if ($this->psApi->updateAssetDetail($dev, [
-                    'statusId' => $newStatusId,
                     $fn['jamfUrl'] => null,
                 ])):
                     $this->line(Tools::L3.'Enheten er oppdatert i Pureservice');
