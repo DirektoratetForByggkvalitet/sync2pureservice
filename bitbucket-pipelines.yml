@@ -33,7 +33,7 @@ definitions:
               AZURE_TENANT_ID: $AZURE_SP_TENANT
               CLI_COMMAND: az storage blob download --auth-mode login --file ${SVARINN_EXCEL_LOOKUP_FILE} --name ${SVARINN_EXCEL_LOOKUP_FILE} --container-name ${STORAGE_CONTAINER} --no-progress --account-name ${STORAGE_ACCOUNT_NAME}
   caches:
-    laravel:
+    laravel-cache:
       key:
         files:
           - "storage/framework/cache/data/*"
@@ -69,7 +69,7 @@ pipelines:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: jamf2pureservice
           caches:
-            - laravel
+            - laravel-cache
             - composer
             - composer-vendor
           runs-on:
