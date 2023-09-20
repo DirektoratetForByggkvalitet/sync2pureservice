@@ -115,6 +115,8 @@ class API {
         if ($contentType):
             $request->contentType($contentType);
         endif;
+        // Setter timeout for forespørselen
+        $request->timeout(90);
         return $request;
     }
 
