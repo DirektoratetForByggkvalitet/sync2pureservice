@@ -160,23 +160,27 @@ class Message extends Model {
             $ps = new PsApi();
             $ps->setTicketOptions('eformidling');
         endif;
-        $sender = $this->sender();
         // Dersom avsender ikke er oss selv
-        if ($sender->organizationNumber != config('eformidling.address.sender_id')):
+        if ($this->sender->organizationNumber != config('eformidling.address.sender_id')):
             // Legg til eller oppdater avsenders virksomhet i Pureservice
-            $sender->addOrUpdatePS($ps);
+            $this->sender->addOrUpdatePS($ps);
+        else:
+            $this->sender = $ps->findCompany($sender->organizationNumber, null, true);
+            $this->sender->save();
         endif;
             // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
-        $senderUser = $sender->getEfUser();
+        $senderUser = $this->sender->getEfUser();
         $senderUser->addOrUpdatePs($ps, true);
         $senderUser->syncChanges();
 
-        $receiver = $this->receiver();
         // Dersom mottaker ikke er oss selv (noe det vil være)
-        if ($receiver->organizationNumber != config('eformidling.address.sender_id')):
-            $receiver->addOrUpdatePS($ps);
+        if ($this->receiver->organizationNumber != config('eformidling.address.sender_id')):
+            $this->receiver->addOrUpdatePS($ps);
+        else:
+            $this->receiver = $ps->findCompany($receiver->organizationNumber, null, true);
+            $this->receiver->save();
         endif;
-        $receiverUser = $receiver->getEfUser();
+        $receiverUser = $this->receiver->getEfUser();
         $receiverUser->addOrUpdatePs($ps, true);
         $receiverUser->syncChanges();
 
