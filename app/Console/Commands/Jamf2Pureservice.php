@@ -71,7 +71,7 @@ class Jamf2Pureservice extends Command {
 
         $time1 = microtime(true);
         $this->info(Tools::L1.'1. Henter enheter fra Jamf Pro');
-        $this->jamfDevices = Cache::remember('jamfDevices', 3600, function() {
+        $this->jamfDevices = Cache::remember('jamfDevices', 7200, function() {
             return collect($this->getJamfAssetsAsPsAssets());
         });
         $this->jamfCount = $this->jamfDevices->count();
@@ -81,7 +81,7 @@ class Jamf2Pureservice extends Command {
 
         $time1 = microtime(true);
         $this->info(Tools::L1.'2. Henter enheter fra Pureservice');
-        $this->psDevices = Cache::remember('psDevices', 3600, function() {
+        $this->psDevices = Cache::remember('psDevices', 7200, function() {
             return $this->psApi->getAllAssets();
         });
         $this->psCount = count($this->psDevices);

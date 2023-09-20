@@ -36,8 +36,8 @@ definitions:
     laravel-cache:
       key:
         files:
-          - "storage/framework/cache/data/*"
-      path: storage/framework/cache
+          - "**/*"
+      path: storage/framework/cache/data
     composer-vendor:
       key:
         files:
