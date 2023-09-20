@@ -165,19 +165,20 @@ class Message extends Model {
         if ($sender->organizationNumber != config('eformidling.address.sender_id')):
             // Legg til eller oppdater avsenders virksomhet i Pureservice
             $sender->addOrUpdatePS($ps);
-            // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
-            $senderUser = $sender->getEfUser();
-            $senderUser->addOrUpdatePs($ps, true);
-            $senderUser->syncChanges();
         endif;
+            // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
+        $senderUser = $sender->getEfUser();
+        $senderUser->addOrUpdatePs($ps, true);
+        $senderUser->syncChanges();
+
         $receiver = $this->receiver();
         // Dersom mottaker ikke er oss selv (noe det vil være)
         if ($receiver->organizationNumber != config('eformidling.address.sender_id')):
             $receiver->addOrUpdatePS($ps);
-            $receiverUser = $receiver->getEfUser();
-            $receiverUser->addOrUpdatePs($ps, true);
-            $receiverUser->syncChanges();
         endif;
+        $receiverUser = $receiver->getEfUser();
+        $receiverUser->addOrUpdatePs($ps, true);
+        $receiverUser->syncChanges();
 
         if (Str::lower($this->documentType()) == 'arkivmelding' && $arkivmelding = $this->readXml()):
             $subject = Arr::get($arkivmelding, 'mappe.tittel', Arr::get($arkivmelding, 'mappe.basisregistrering.tittel', ''));
