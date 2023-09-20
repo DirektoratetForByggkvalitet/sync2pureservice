@@ -116,7 +116,7 @@ class API {
             $request->contentType($contentType);
         endif;
         // Setter timeout for forespørselen
-        $request->timeout(90);
+        $request->timeout($this->myConf('api.timeout', 90));
         return $request;
     }
 
