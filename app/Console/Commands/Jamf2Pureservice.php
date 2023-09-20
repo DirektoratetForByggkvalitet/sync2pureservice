@@ -27,6 +27,7 @@ class Jamf2Pureservice extends Command {
     protected $start;
     protected $jamfCount;
     protected $psCount;
+    protected $deleteCount = 0;
 
     /**
      * The console command description.
@@ -69,7 +70,7 @@ class Jamf2Pureservice extends Command {
 
         $time1 = microtime(true);
         $this->info(Tools::L1.'1. Henter enheter fra Jamf Pro');
-        $this->jamfDevices = Cache::remember('jamfProDevices', 3600, function() {
+        $this->jamfDevices = Cache::remember('jamfDevices', 3600, function() {
             return collect($this->getJamfAssetsAsPsAssets());
         });
         $this->jamfCount = $this->jamfDevices->count();
@@ -79,7 +80,7 @@ class Jamf2Pureservice extends Command {
 
         $time1 = microtime(true);
         $this->info(Tools::L1.'2. Henter enheter fra Pureservice');
-        $this->psDevices = Cache::remember('psAllDevices', 3600, function() {
+        $this->psDevices = Cache::remember('psDevices', 3600, function() {
             return $this->psApi->getAllAssets();
         });
         $this->psCount = count($this->psDevices);
@@ -201,6 +202,7 @@ class Jamf2Pureservice extends Command {
                 if ($eolDiff >= 0):
                     $this->line(Tools::L3.'Enheten ble sist sett '.$devLastSeen->format('d.m.Y H:i').'. Sletter den fra Pureservice.');
                     $this->psApi->deleteAsset($dev);
+                    $this->deleteCount++;
                     $this->newLine();
                     continue;
                 endif;
@@ -236,14 +238,11 @@ class Jamf2Pureservice extends Command {
         $this->newLine();
         $this->info($this->ts().'Synkronisering ferdig');
         $this->line(Tools::L3.$this->jamfCount.' enheter fra Jamf Pro ble synkroniserte med '.$this->psCount.' enheter i Pureservice.');
+        if ($this->deleteCount) $this->line(Tools::L3.$this->deleteCount . ' enheter ble slettet fra Pureservice fordi de ikke lenger er relevante.');
         $this->line(Tools::L3.'Operasjonen ble fullført på '.round(microtime(true) - $this->start, 2).' sekunder');
 
         return Command::SUCCESS;
 
-    }
-
-    protected function ts() {
-        return '['.Carbon::now(config('app.timezone'))->toDateTimeLocalString().'] ';
     }
 
     protected function removeRelationships($assetId) {

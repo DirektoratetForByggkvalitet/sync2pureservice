@@ -11,6 +11,7 @@ return [
         'accept' => 'application/vnd.api+json',
         'contentType' => 'application/vnd.api+json',
         'dlPath' => env('PURESERVICE_TMP_PATH', 'pureservice'),
+        'timeout' => 90,
     ],
     'computer' => [
         'displayName' => env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Datamaskin'),

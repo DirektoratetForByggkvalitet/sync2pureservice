@@ -88,8 +88,11 @@ class PsAssets extends PsApi {
         $totalAssets = [];
         foreach (['computer', 'mobile'] as $type):
             $uri = '/asset/'.$this->myConf($type.'.className');
-            $assets = $this->apiGet($uri)['assets'];
-            foreach ($assets as $asset):
+            $params = [
+                'filter' => '!isMarkedForDeletion',
+            ];
+            $response = $this->apiQuery($uri, $params, true);
+            foreach ($response->json('assets') as $asset):
                 if (!isset($asset['assets_UDF_95_EOL'])):
                     // Korrigerer feil i APIet dersom feltene ikke returneres ved søk
                     $response = $this->apiGet($uri.$asset['id'], true);
