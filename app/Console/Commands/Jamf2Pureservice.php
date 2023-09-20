@@ -27,6 +27,7 @@ class Jamf2Pureservice extends Command {
     protected $start;
     protected $jamfCount;
     protected $psCount;
+    protected $psOnlyCount;
     protected $deleteCount = 0;
 
     /**
@@ -187,13 +188,13 @@ class Jamf2Pureservice extends Command {
         $this->newLine();
         // Looper gjennom Pureservice-enheter for å evt. endre status på enheter som ikke lenger finnes i Jamf Pro
         $notUpdatedDevs = $this->psDevices->lazy()->whereNotIn('id', $this->updatedPsDevices);
-        $nuCount = $notUpdatedDevs->count();
-        $this->info(Tools::L1.'4. Oppdaterer status for '.$nuCount.' enheter som ikke er i Jamf Pro');
+        $this->psOnlyCount = $notUpdatedDevs->count();
+        $this->info(Tools::L1.'4. Oppdaterer status for '.$this->psOnlyCount.' enheter som ikke er i Jamf Pro');
         $i = 0;
         foreach ($notUpdatedDevs as $dev):
             $i++;
             $fn = config('pureservice.'.$dev['type'].'.properties');
-            $this->line(Tools::L2.$i.'/'.$nuCount.' '.$dev['uniqueId'].' - '.$dev[$fn['name']]);
+            $this->line(Tools::L2.$i.'/'.$this->psOnlyCount.' '.$dev['uniqueId'].' - '.$dev[$fn['name']]);
             $typeName = config('pureservice.'.$dev['type'].'.displayName').'en';
             //$this->line(Tools::L3.$typeName.' er ikke registrert i Jamf Pro');
             $updated = false;
@@ -240,9 +241,10 @@ class Jamf2Pureservice extends Command {
         // Oppsummering
         $this->newLine();
         $this->info(Tools::ts().'Synkronisering ferdig');
-        $this->line(Tools::L3.$this->jamfCount.' enheter fra Jamf Pro ble synkroniserte med '.$this->psCount.' enheter i Pureservice.');
-        if ($this->deleteCount) $this->line(Tools::L3.$this->deleteCount . ' enheter ble slettet fra Pureservice fordi de ikke lenger er relevante.');
-        $this->line(Tools::L3.'Operasjonen ble fullført på '.round(microtime(true) - $this->start, 2).' sekunder');
+        $this->line(Tools::L2.$this->jamfCount.' enheter fra Jamf Pro ble oppdaterte i Pureservice.');
+        $this->line(Tools::L2.'Gikk også gjennom '.$this->psOnlyCount.' enheter i Pureservice som ikke ligger i Jamf Pro.');
+        if ($this->deleteCount) $this->line(Tools::L3.$this->deleteCount . ' av disse ble slettet.');
+        $this->line(Tools::L2.class_basename($this).' fullførte på '.round(microtime(true) - $this->start, 2).' sekunder');
 
         return Command::SUCCESS;
 
