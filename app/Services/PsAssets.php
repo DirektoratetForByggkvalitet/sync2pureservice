@@ -184,9 +184,9 @@ class PsAssets extends PsApi {
      * @param   psAsset         assoc_array   Asset-array som følger Pureservice sine felt-definisjoner
      * @param   notDeployed     boolean       Bestemmer om vurderingen skal ta høyde for at maskinen ikke skal være tildelt
      *
-     * @return  integer                       Status-ID som kan brukes mot Pureservice
+     * @return  int                       Status-ID som kan brukes mot Pureservice
      */
-    public function calculateStatus($psAsset, $notDeployed=false) {
+    public function calculateStatus(array $psAsset, bool $notDeployed=false): int {
         $type = $psAsset['type'];
         $fn = config('pureservice.'.$type.'.properties');
         $status = $psAsset['statusId'];;
@@ -195,7 +195,7 @@ class PsAssets extends PsApi {
             $this->statuses[$type]['active_inStorage'],
             $this->statuses[$type]['active_phaseOut']
         ];
-        if (in_array($status, $active_statuses)):
+        if (in_array($status, $active_statuses) && $psAsset[$fn['EOL']] != null):
             $today = Carbon::today();
             $EOL = Carbon::create($psAsset[$fn['EOL']]);
             if ($EOL->lessThanOrEqualTo($today->copy()->addMonth(3))) $status = $this->statuses[$type]['active_phaseOut'];

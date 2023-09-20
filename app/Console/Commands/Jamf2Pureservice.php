@@ -194,14 +194,16 @@ class Jamf2Pureservice extends Command {
             //$this->line(Tools::L3.$typeName.' er ikke registrert i Jamf Pro');
             $updated = false;
             $cutoff = Carbon::now()->subYears(1);
-            $devLastSeen = Carbon::parse($dev[$fn['lastSeen']], 'Europe/Oslo');
-            $eolDiff = $devLastSeen->diffInDays($cutoff, false);
-            // Sletter enheten dersom den ble sist sett for mer enn ett år siden
-            if ($eolDiff >= 0):
-                $this->line(Tools::L3.'Enheten ble sist sett '.$devLastSeen->format('d.m.Y H:i').'. Sletter den fra Pureservice.');
-                $this->psApi->deleteAsset($dev);
-                $this->newLine();
-                continue;
+            if ($dev[$fn['lastSeen']] != null):
+                $devLastSeen = Carbon::parse($dev[$fn['lastSeen']], 'Europe/Oslo');
+                $eolDiff = $devLastSeen->diffInDays($cutoff, false);
+                // Sletter enheten dersom den ble sist sett for mer enn ett år siden
+                if ($eolDiff >= 0):
+                    $this->line(Tools::L3.'Enheten ble sist sett '.$devLastSeen->format('d.m.Y H:i').'. Sletter den fra Pureservice.');
+                    $this->psApi->deleteAsset($dev);
+                    $this->newLine();
+                    continue;
+                endif;
             endif;
 
             if (
