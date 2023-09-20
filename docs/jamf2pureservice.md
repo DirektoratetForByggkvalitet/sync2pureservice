@@ -1,23 +1,25 @@
 # Hva gjør jamf2pureservice?
 
-Ferdig installert vil jamf2pureservice tilby én kommandolinje-kommando som utfører følgende operasjoner:
+Jamf2pureservice er en konsoll-kommando som utfører følgende operasjoner:
 
-1. Kobler til Jamf Pro og sjekker tilkoblingen
+1. Kobler til Jamf Pro
 2. Kobler til Pureservice og setter opp koblinger mot ressurstyper og statuser basert på ressurstypenes navn
-3. Går gjennom alle enheter fra Jamf Pro
-4. Regner ut EOL og bestemmer status på enheter som skal fases ut
-5. Oppdaterer/oppretter dem i Pureservice
+3. Laster inn alle enheter fra Jamf Pro og Pureservice
+4. Går gjennom enhetene fra Jamf Pro, og regner ut EOL og bestemmer status på enheter som skal fases ut
+5. Oppdaterer/oppretter enhetene i Pureservice
 6. Kobler enheter i Pureservice mot brukere, slik det er registrert i Jamf Pro
-7. Ser etter enheter i Pureservice som ikke lenger eksisterer og oppdaterer status på dem
+7. Går gjennom enheter i Pureservice som ikke er registrerte i Jamf Pro, og oppdaterer status på dem. Gamle enheter slettes fra Pureservice.
 
 ## Systemkrav
+
 - En instans av Jamf Pro
 - En Pureservice-instans med brukersynkronisering (f.eks. Azure AD) som er ajour med brukerne i Jamf Pro
 - Pureservice Assets satt opp med to ressurstyper: Datamaskin og mobilenhet
 - PHP 8.x og PHP composer på maskinen som skal kjøre synkroniseringen
 
-## Nødvendige .env-variabler
-Det er en rekke variabler som er nødvendige for at skriptet skal få gjort alt som trengs. Mye av dette krever oppsett i Pureservice. Variablene kan settes i .env-fila, eller de kan settes opp som runtime-variabler før kjøring. Sistnevnte er å foretrekke om man bruker Pipelines el.l. for å kjøre synkroniseringen.
+## Nødvendige miljøvariabler
+
+Det er en rekke miljøvariabler som er nødvendige for at skriptet skal få gjort alt som trengs. Mye av dette krever oppsett i Pureservice. Variablene kan settes i .env-fila, eller de kan settes opp som miljøvariabler før kjøring. Sistnevnte er å foretrekke om man bruker Pipelines el.l. for å kjøre synkroniseringen.
 
 | Variabel | Standardverdi | Beskrivelse |
 | ----------- | ----------- | ----------- |
@@ -26,16 +28,23 @@ Det er en rekke variabler som er nødvendige for at skriptet skal få gjort alt 
 | JAMFPRO_PASSWORD | pass | Passord til Jamf Pro-brukeren |
 | PURESERVICE_URL | https://customer.pureservice.com | Base-adressen til Pureservice-instansen |
 | PURESERVICE_APIKEY | ey... | API-nøkkel til Pureservice |
-| PURESERVICE_COMPUTER_ASSETTYPE_NAME | Computer | Navnet til ressurstypen som brukes til datamaskiner i Pureservice |
-| PURESERVICE_MOBILE_ASSETTYPE_NAME | Mobile | Navnet til ressurstypen som brukes til mobilenheter i Pureservice |
 
 ## Nødvendig oppsett i Pureservice
 
-Før synkronisering kan kjøres må man definere de to ressurstypene Datamaskin og Mobilenhet i Pureservice. Du kan kalle ressurstypene hva du vil, og oppgi ressurstypenes navn som miljøvariabler.
+Før synkronisering kan kjøres må du opprette de to ressurstypene for å lagre datamaskiner og mobilenheter i Pureservice. Du kan kalle ressurstypene hva du vil, og oppgi ressurstypenes navn som miljøvariabler.
+
+![Eksempel på datamaskin-ressurs](ressurs-datamaskin.png)
+
+| Miljøvariabel | Standardverdi | Beskrivelse |
+| ----------- | ----------- | ----------- |
+| PURESERVICE_COMPUTER_ASSETTYPE_NAME | Datamaskin | Navnet til ressurstypen som brukes til datamaskiner i Pureservice |
+| PURESERVICE_MOBILE_ASSETTYPE_NAME | Mobilenhet | Navnet til ressurstypen som brukes til mobilenheter i Pureservice |
 
 ### Felter for ressurstypene
 
-Feltene er stort sett felles for de to ressurstypene, men feltnavnene kan også overstyres med miljøvariabler. Har lagt opp til at man kan ha forskjellige feltnavn for datamaskiner og mobilenheter, og når man oppgir miljøvariabler må [TYPE] i tabellen under erstattes med enten "COMPUTER" eller "MOBILE". Feltene som må settes som Påkrevde er i grunnen bare Navn og Serienr.
+Feltene er stort sett felles for de to ressurstypene, men feltnavnene kan også overstyres med miljøvariabler. Har lagt opp til at man kan ha forskjellige feltnavn for datamaskiner og mobilenheter, og når man oppgir miljøvariabler må [TYPE] i tabellen under erstattes med enten "COMPUTER" eller "MOBILE". Feltene som må settes som Påkrevde i Pureservice er i grunnen bare Navn og Serienr.
+
+![Noen av feltene til datamaskin-ressursen](ressurs-felter-datamaskin.png)
 
 | Miljøvariabel | Standardverdi | Type | Beskrivelse |
 | ----------- | ----------- | ----------- | ----------- |
@@ -59,6 +68,8 @@ Vi har lagt opp til at systemet bruker en rekke statuser for å angi hvor i livs
 
 Følgende statuser er forventet inne i Pureservice, der de tre første regnes som aktive statuser, mens de øvrige er inaktive. [TYPE] skal være enten COMPUTER eller MOBILE, som tidligere nevnt.
 
+![Eksempel på status for datamaskiner](ressurs-status-datamaskin.png)
+
 | Miljøvariabel | Standardverdi | Type status | Beskrivelse |
 | ----------- | ----------- | ----------- | ----------- |
 | PURESERVICE_[TYPE]_STATUS_DEPLOYED | Tildelt bruker | Aktiv | Vanlig status for enhet som er utlevert til bruker |
@@ -81,8 +92,8 @@ Det er best om man lager en test-enhet for hver ressurs før man kjører jamf2pu
 1. Last ned eller klon jamf2pureservice
 2. Kjør `composer install` for å installere biblioteker og rammeverk
 3. Kopier fila .env.example til .env (`cp .env.example .env`), og fyll ut nødvendige miljøvariabler for koblinger mot Jamf Pro og Pureservice.
-4. Kjør `php artisan key:generate` for å opprette en unik APP_KEY i .env
-5. Synkroniseringen kjøres med `php artisan jamf2pureservice:run`
+4. Kjør `./artisan key:generate` for å opprette en unik APP_KEY i .env
+5. Synkroniseringen kjøres med `./artisan pureservice:sync-jamf`
 
 Fila bitbucket-pipelines.yml gir et eksempel på hvordan dette kan kjøres gjennom Pipelines. I slike tilfeller kan innholdet i .env være erstattet med miljøvariabler som settes i Pipeline-oppsettet.
 
