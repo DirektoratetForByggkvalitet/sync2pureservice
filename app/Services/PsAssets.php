@@ -290,37 +290,12 @@ class PsAssets extends PsApi {
 
     public function updateAssetDetail(array $asset, array $data) {
         $uri = '/asset/'.$asset['id'];
-        //$typeClass = config('pureservice.'.$updateAsset['type'].'.className');
-        $data['name'] = isset($data['name']) ? $data['name'] : $asset['name'];
+        $fn = config('pureservice.'.$asset['type'].'.properties');
+
+        // Vi oppdaterer alltid enhetens navn
+        $data[$fn['name']] = $asset[$fn['name']];
         $data['imported'] = Carbon::now()->toJSON();
         $data['typeId'] = $asset['typeId'];
-        // $updateAsset = collect($updateAsset)
-        //     ->except([
-        //         'usernames', 'type',
-        //         'modified', 'modifiedById',
-        //         'created', 'createdById',
-        //         'importedById', 'importJobId',
-        //         'links.restrictedDepartment',
-        //         'restrictedDepartmentId',
-        //         'links.restrictedTeam',
-        //         'restrictedTeamId',
-        //         'links.restrictedUser',
-        //         'restrictedUserId',
-        //         'isMarkedForDeletion',
-        //         'links.modifiedBy',
-        //         'links.createdBy',
-        //         'links.importedBy',
-        //         'links.importJob',
-        //         'links',
-        //         'imported',
-        //     ])
-        //     ->toArray();
-        // //$updateAsset['links']['type']['id'] = (string) $updateAsset['links']['type']['id'];
-        // $body = [
-        //     $typeClass => [
-        //         $updateAsset
-        //     ],
-        // ];
         $response = $this->apiPatch($uri, $data, 'application/json');
         if ($response->successful()):
             return $response->json('assets.0');
