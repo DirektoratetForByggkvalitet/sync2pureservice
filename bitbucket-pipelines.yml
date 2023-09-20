@@ -36,13 +36,13 @@ definitions:
     laravel-cache:
       key:
         files:
-          - "data/*/*/*"
+          - "storage/framework/cache/data/*/*/*"
       path: storage/framework/cache
     composer-vendor:
       key:
         files:
           - composer.lock
-      path: "vendor"
+      path: vendor
 # Setter maksimum kjøretid for et steg
 options:
   max-time: 60
