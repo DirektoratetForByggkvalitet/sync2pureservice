@@ -272,6 +272,7 @@ class Jamf2Pureservice extends Command {
 
             $psAsset = [];
             $psAsset[$fn['name']] = $dev['name'] == '' ? '-uten-navn-': $dev['name'];
+            $psAsset['name'] = $psAsset[$fn['name']];
             $psAsset[$fn['serial']] = $dev['serialNumber'];
             $psAsset[$fn['model']] = $dev[$dev['type']]['model'];
             $psAsset[$fn['modelId']] = $dev[$dev['type']]['modelIdentifier'];
@@ -311,6 +312,7 @@ class Jamf2Pureservice extends Command {
 
             $psAsset = [];
             $psAsset[$fn['name']] = $mac['general']['name'] != '' ? $mac['general']['name'] : '-uten-navn-';
+            $psAsset['name'] = $psAsset[$fn['name']];
             $psAsset[$fn['serial']] = $mac['hardware']['serialNumber'];
             $psAsset[$fn['model']] = $mac['hardware']['model'];
             $psAsset[$fn['modelId']] = $mac['hardware']['modelIdentifier'];
