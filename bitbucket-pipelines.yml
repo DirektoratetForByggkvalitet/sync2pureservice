@@ -36,7 +36,8 @@ definitions:
     laravel-cache:
       key:
         files:
-          - "storage/framework/cache/data/*/*/*"
+          - .env # Burde utløse opplasting hver gang
+          - "storage/framework/cache/data/**/*"
       path: storage/framework/cache
     composer-vendor:
       key:
