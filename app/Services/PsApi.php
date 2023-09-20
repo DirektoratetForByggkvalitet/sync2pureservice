@@ -343,7 +343,7 @@ class PsApi extends API {
             endif;
         endif;
         if (isset($c)):
-            return $returnClass ? collect($c)->mapInto(Company::class): $c;
+            return $returnClass ? collect([$c])->mapInto(Company::class): $c;
         endif;
         return false;
     }
@@ -375,7 +375,7 @@ class PsApi extends API {
         else:
             $returnValue = $companyByName;
         endif;
-        return $returnClass ? collect($returnValue)->mapInto(Company::class): $returnValue;
+        return $returnClass ? collect([$returnValue])->mapInto(Company::class): $returnValue;
     }
 
 
