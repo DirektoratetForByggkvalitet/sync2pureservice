@@ -186,11 +186,14 @@ class Jamf2Pureservice extends Command {
         endforeach;
         $this->newLine();
         // Looper gjennom Pureservice-enheter for å evt. endre status på enheter som ikke lenger finnes i Jamf Pro
-        $this->info(Tools::L1.'4. Oppdaterer status for enheter som eventuelt er fjernet fra Jamf Pro');
-
-        foreach ($this->psDevices->lazy()->whereNotIn('id', $this->updatedPsDevices) as $dev):
+        $notUpdatedDevs = $this->psDevices->lazy()->whereNotIn('id', $this->updatedPsDevices);
+        $nuCount = $notUpdatedDevs->count();
+        $this->info(Tools::L1.'4. Oppdaterer status for '.$nuCount.' enheter som ikke er i Jamf Pro');
+        $i = 0;
+        foreach ($notUpdatedDevs as $dev):
+            $i++;
             $fn = config('pureservice.'.$dev['type'].'.properties');
-            $this->line(Tools::L2.$dev['uniqueId'].' - '.$dev[$fn['name']]);
+            $this->line(Tools::L2.$i.'/'.$nuCount.' '.$dev['uniqueId'].' - '.$dev[$fn['name']]);
             $typeName = config('pureservice.'.$dev['type'].'.displayName').'en';
             //$this->line(Tools::L3.$typeName.' er ikke registrert i Jamf Pro');
             $updated = false;
