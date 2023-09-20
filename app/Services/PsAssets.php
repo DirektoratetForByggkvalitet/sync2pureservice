@@ -294,7 +294,7 @@ class PsAssets extends PsApi {
 
         // Vi oppdaterer alltid enhetens navn
         //$data[$fn['name']] = $asset[$fn['name']];
-        $data['name'] = $data[$fn['name']];
+        $data['name'] = $asset[$fn['name']];
         $data['imported'] = Carbon::now()->toJSON();
         $data['typeId'] = $asset['typeId'];
         $response = $this->apiPatch($uri, $data, 'application/json');
