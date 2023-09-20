@@ -293,7 +293,8 @@ class PsAssets extends PsApi {
         $fn = config('pureservice.'.$asset['type'].'.properties');
 
         // Vi oppdaterer alltid enhetens navn
-        $data[$fn['name']] = $asset[$fn['name']];
+        //$data[$fn['name']] = $asset[$fn['name']];
+        $data['name'] = $data[$fn['name']];
         $data['imported'] = Carbon::now()->toJSON();
         $data['typeId'] = $asset['typeId'];
         $response = $this->apiPatch($uri, $data, 'application/json');

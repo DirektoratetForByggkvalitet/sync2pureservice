@@ -242,7 +242,7 @@ class Jamf2Pureservice extends Command {
         $this->newLine();
         $this->info(Tools::ts().'Synkronisering ferdig');
         $this->line(Tools::L2.$this->jamfCount.' enheter fra Jamf Pro ble oppdaterte i Pureservice.');
-        $this->line(Tools::L2.'Gikk også gjennom '.$this->psOnlyCount.' enheter i Pureservice som ikke ligger i Jamf Pro.');
+        $this->line(Tools::L2.'Behandlet '.$this->psOnlyCount.' enheter i Pureservice som ikke ligger i Jamf Pro.');
         if ($this->deleteCount) $this->line(Tools::L3.$this->deleteCount . ' av disse ble slettet.');
         $this->line(Tools::L2.class_basename($this).' fullførte på '.round(microtime(true) - $this->start, 2).' sekunder');
 
