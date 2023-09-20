@@ -328,6 +328,26 @@ class PsApi extends API {
         return false;
     }
 
+    public function getSelfCompany(bool $returnClass = true): Company|array|false {
+        $orgNo = config('eformidling.address.sender_id');
+        $uri = '/company/1';
+        $response = $this->apiGet($uri, true);
+        if ($response->json('companies.0.organizationNumber') == $orgNo):
+            $c = $response->json('companies.0');
+        else:
+            $uri = '/company/';
+            $query['filter'] = '(!disabled AND organizationNumber=="'.$orgNo.'")';
+            $response = $this->apiQuery($uri, $query, true);
+            if ($response->json('companies.0.id')):
+                $c = $response->json('companies.0');
+            endif;
+        endif;
+        if (isset($c)):
+            return $returnClass ? collect($c)->mapInto(Company::class): $c;
+        endif;
+        return false;
+    }
+
     public function findCompany(string|null $orgNo=null, string|null $companyName=null, bool $returnClass = false): Company|array|false {
         $uri = '/company/';
         $query = [
@@ -355,7 +375,7 @@ class PsApi extends API {
         else:
             $returnValue = $companyByName;
         endif;
-        return $returnClass ? collect($returnValue)->mapInto('App\Models\Company'): $returnValue;
+        return $returnClass ? collect($returnValue)->mapInto(Company::class): $returnValue;
     }
 
 

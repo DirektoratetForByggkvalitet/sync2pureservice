@@ -165,7 +165,7 @@ class Message extends Model {
             // Legg til eller oppdater avsenders virksomhet i Pureservice
             $sender->addOrUpdatePS($ps);
         else:
-            $sender = $ps->findCompany($sender->organizationNumber, null, true);
+            $sender = $ps->getSelfCompany();
             $sender->save();
         endif;
             // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
@@ -178,7 +178,7 @@ class Message extends Model {
         if ($receiver->organizationNumber != config('eformidling.address.sender_id')):
             $receiver->addOrUpdatePS($ps);
         else:
-            $receiver = $ps->findCompany($receiver->organizationNumber, null, true);
+            $receiver = $ps->getSelfCompany();
             $receiver->save();
         endif;
         $receiverUser = $receiver->getEfUser();
