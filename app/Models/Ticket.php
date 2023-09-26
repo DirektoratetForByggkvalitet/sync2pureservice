@@ -163,8 +163,7 @@ class Ticket extends Model
 
             // Kobler vedlegget til saken i DB
             if (count($filesToAttach)):
-                $this->attachments = $filesToAttach;
-                $this->save();
+                $this->addToAttachments($filesToAttach);
             endif;
         endif;
 
@@ -181,6 +180,8 @@ class Ticket extends Model
 
         if (Storage::exists($this->pdf)) Storage::delete($this->pdf);
         $pdf->save($this->pdf, config('filesystems.default'));
+
+        $this->addToAttachments($this->pdf);
 
         $this->save();
         return $this->pdf;
@@ -208,13 +209,16 @@ class Ticket extends Model
         $this->save();
     }
 
-    public function createMessage(Company $receiver) {
+    /**
+     * Oppretter en melding fra saken
+     */
+    public function createMessage(Company $receiver): Message {
         $message = Message::factory()->make([
             'sender_id' => config('eformidling.address.sender_id'),
             'receiver_id' => $receiver->getIso6523ActorIdUpi(),
-            'mainDocument' => !$this->pdf ? basename($this->pdf) : basename($this->makePdf()),
+            'mainDocument' => $this->pdf ? basename($this->pdf) : basename($this->makePdf()),
         ]);
-        $message->attachments = Storage::allFiles($this->getDownloadPath());
+        $message->addToAttachments(Storage::allFiles($this->getDownloadPath()));
         // Lagrer JSON for meldingshodet og lagrer i DB
         $message->makeContent();
 
@@ -222,9 +226,11 @@ class Ticket extends Model
             // Vi trenger en arkivmelding.xml-fil
             $xmlfile = $this->tempPath().'/arkivmelding.xml';
             if (Storage::put($xmlfile, Blade::render('xml/arkivmelding', ['ticket' => $this, 'msg' => $message]))):
-                $message->attachments[] = $xmlfile;
+                $message->addToAttachments($xmlfile);
             endif;
         endif;
+
+        return $message;
 
     }
 
@@ -248,5 +254,21 @@ class Ticket extends Model
             return $ps->getEntityNameById('tickettype', $this->ticketTypeId);
         endif;
         return "Ukjent";
+    }
+
+    protected function addToAttachments(array|string $additions): void {
+        $attachments = $this->attachments;
+        if (!is_array($additions)) $additions = [$additions];
+        $save_needed = false;
+        foreach ($additions as $add):
+            if (!in_array($add, $attachments)):
+                $attachments[] = $add;
+                $save_needed = true;
+            endif;
+        endforeach;
+        if ($save_needed):
+            $this->attachments = $attachments;
+            $this->save();
+        endif;
     }
 }

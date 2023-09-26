@@ -9,8 +9,6 @@ use App\Models\{Company, User, Ticket, TicketCommunication};
 use App\Mail\TicketMessage;
 use Illuminate\Support\Facades\{Mail, Blade, Storage};
 
-
-
 class PSUtsending extends Command {
     protected float $start;
     protected PsApi $ps;
@@ -31,7 +29,7 @@ class PSUtsending extends Command {
      *
      * @var string
      */
-    protected $description = 'Ser etter saker som skal ha masseutsendelse, og håndterer dem';
+    protected $description = 'Ser etter saker som skal ha masseutsending, og håndterer dem';
 
     /**
      * Execute the console command.
@@ -200,9 +198,6 @@ class PSUtsending extends Command {
                     continue;
                 // elseif ($t->eFormidling && $company->organizationNumber):
                 //     $message = $t->createMessage($company);
-                //     if ($message->documentType() == 'arkivmelding'):
-                //         $message->createXmlFromTicket($t);
-                //     endif;
                 //     // Test
                 //     $this->ef->sendMessageWithTest($message);
                 //     $ticketResults['eFormidling']++;
@@ -221,11 +216,11 @@ class PSUtsending extends Command {
             $statusId = $this->ps->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
             $solution = Blade::render('report', ['ticket' => $t, 'results' => $ticketResults]);
             // $file = $t->makePdf();
-            $body = [
-                'statusId' => $statusId,
-                'solution' => $solution,
-            ];
-            $uri = '/ticket/' . $t->id. '/';
+            // $body = [
+            //     'statusId' => $statusId,
+            //     'solution' => $solution,
+            // ];
+            // $uri = '/ticket/' . $t->id. '/';
 
             // if ($updated = $this->ps->apiPatch($uri, $body, 'application/json', true)):
             if ($updated = $this->ps->solveWithAttachment($t, $solution)):

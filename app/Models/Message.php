@@ -298,10 +298,7 @@ class Message extends Model {
         endif;
         $file = $this->tempPath().'/arkivmelding.xml';
         if (Storage::put($file, Blade::render('xml/arkivmelding', ['msg' => $this, 'ticket' => $t]))):
-            $att = $this->attachments;
-            $att[] = $file;
-            $this->attachments = $att;
-            $this->save();
+            $this->addToAttachments($file);
             return true;
         endif;
         return false;
@@ -324,6 +321,7 @@ class Message extends Model {
      */
     public function assureAttachments(): void {
         $tmp = is_array($this->attachments) ? $this->attachments : [];
+        $this->attachments = $tmp;
         $this->save();
     }
 
@@ -350,4 +348,21 @@ class Message extends Model {
 
         return collect($dokumenter);
     }
+
+    protected function addToAttachments(array|string $additions): void {
+        $attachments = $this->attachments;
+        if (!is_array($additions)) $additions = [$additions];
+        $save_needed = false;
+        foreach ($additions as $add):
+            if (!in_array($add, $attachments)):
+                $attachments[] = $add;
+                $save_needed = true;
+            endif;
+        endforeach;
+        if ($save_needed):
+            $this->attachments = $attachments;
+            $this->save();
+        endif;
+    }
+
 }
