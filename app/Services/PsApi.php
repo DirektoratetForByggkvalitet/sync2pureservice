@@ -667,33 +667,40 @@ class PsApi extends API {
         $uri = '/attachment/'.$ticket->id.'/?relatedType=ticket&isVisible=';
         $uri .= $visible ? 'true' : 'false';
         $uri = $this->resolveUri($uri);
-        $request = $this->prepRequest(null, $this->myConf('api.contentType'));
-        $handlers = [];
-        foreach ($attachments as $file):
-            if (Storage::exists($file)):
+
+        $uploadedAttachments = [];
+        // Deler opp vedleggene i grupper på 5
+        $chunks = collect($attachments)->chunks(5);
+        foreach ($chunks->lazy() as $chunk):
+            $handlers = [];
+            $chunkRequest = $this->prepRequest(null, $this->myConf('api.contentType'));
+            // Behandler hver fil i gruppen
+            $chunk->each(function (string $file, int $key) use ($handlers, $uploadFilter, $chunkRequest) {
                 $filename = basename($file);
-                // Hopper over vedlegg som ikke skal lastes opp
-                if (in_array($filename, $uploadFilter)):
-                    continue;
+                if (Storage::exists($file) && !in_array($filename, $uploadFilter)):
+                    // Hopper over vedlegg som ikke skal lastes opp
+                    $fh = fopen(Storage::path($file), 'r');
+                    $chunkRequest->attach(Str::beforeLast($filename, '.'), $fh, $filename);
+                    $handlers[] = $fh;
                 endif;
-                $fh = fopen(Storage::path($file), 'r');
-                $request->attach(Str::beforeLast($filename, '.'), $fh, $filename);
-                $handlers[] = $fh;
+            });
+            $response = $chunkRequest->post($uri);
+            if ($response->successful()):
+                if (count($uploadedAttachments)):
+                    array_merge($uploadedAttachments, $response->json('attachments'));
+                else:
+                    $uploadedAttachments = $response->json('attachments');
+                endif;
+            else:
+                // Feilmelding
+                dd($response->json());
             endif;
+            // Lukker åpne filer
+            collect($handlers)->each(function (mixed $item, int $key) {
+                fclose($item);
+            });
         endforeach;
-        // Laster opp filene
-        $response = $request->post($uri);
 
-        // Lukker åpne filer
-        collect($handlers)->each(function (mixed $item, int $key) {
-            fclose($item);
-        });
-        if ($response->successful()):
-            return $response->json('attachments');
-        else:
-            dd($response->json());
-            return false;
-        endif;
-
+        return $uploadedAttachments;
     }
 }
