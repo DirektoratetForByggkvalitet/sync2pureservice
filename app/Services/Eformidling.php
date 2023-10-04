@@ -163,17 +163,17 @@ class Eformidling extends API {
         $dbAttachments = is_array($dbMessage->attachments) ? $dbMessage->attachments : [];
         $uri = 'messages/in/pop/'.$messageId;
         $dlPath = $dlPath ? $dlPath : $this->myConf('download_path') . '/'. $messageId;
-
-        $response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'));
+        $tmpFile = $dlPath.'/asic.tmp';
+        $options = [
+            'sink' => Storage::path($tmpFile),
+        ];
+        $response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'), null, $options);
         if ($response->successful()):
             // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
             //$fileMimeType = Str::before($response->header('content-type'), ';');
             $cd = ContentDisposition::parse($response->header('content-disposition'));
             $fileName = $dlPath . '/' . $cd->getFileName();
-            Storage::put(
-                $fileName,
-                $response->toPsrResponse()->getBody()->getContents()
-            );
+            Storage::move($tmpFile, $fileName);
 
             // Pakker ut zip-filen
             $path = $dbMessage->downloadPath();
