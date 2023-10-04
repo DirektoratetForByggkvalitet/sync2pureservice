@@ -185,7 +185,15 @@ class API {
     /**
      * PATCH-forespørsel mot APIet
      */
-    public function apiPatch(string $uri, array $body, string|null $contentType = null, bool $returnBool = false, null|array $withOptions = null): Response|bool {
+    public function apiPatch
+        (
+            string $uri,
+            array $body,
+            string|null $contentType = null,
+            bool $returnBool = false,
+            null|array $withOptions = null
+        ): Response|bool
+    {
         $uri = $this->resolveUri($uri);
         $accept = $this->myConf('api.accept', 'application/json');
         $contentType = $contentType ? $contentType : $this->myConf('api.contentType', $accept);
