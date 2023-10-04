@@ -668,7 +668,7 @@ class PsApi extends API {
         $uri = $this->resolveUri($uri);
         $params = [
             'relatedType' => 'Ticket',
-            'isVisible' => $visible,
+            'isVisible' => $visible ? 'true' : 'false',
         ];
 
         $uploadedAttachments = [];
@@ -688,7 +688,6 @@ class PsApi extends API {
                 endif;
             });
             $chunkRequest->withQueryParameters($params);
-            $chunkRequest->asMultipart();
             // Debug
             //$chunkRequest->dd();
             $response = $chunkRequest->post($uri);
