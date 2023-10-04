@@ -684,9 +684,9 @@ class PsApi extends API {
                 $filename = basename($file);
                 if (Storage::exists($file) && !in_array($filename, $uploadFilter)):
                     // Hopper over vedlegg som ikke skal lastes opp
-                    $fh = fopen(Storage::path($file), 'r');
-                    $chunkRequest->attach(Str::beforeLast($filename, '.'), $fh, $filename);
-                    $handlers[] = $fh;
+                    //$fh = fopen(Storage::path($file), 'r');
+                    $chunkRequest->attach(Str::beforeLast($filename, '.'), Storage::path($file), $filename);
+                    //$handlers[] = $fh;
                 endif;
             });
             // Debug
