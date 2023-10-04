@@ -112,7 +112,7 @@ class API {
         else:
             $request->acceptJson();
         endif;
-        if ($contentType):
+        if ($contentType && !in_array($contentType, ['none', 'no', 'auto'])):
             $request->contentType($contentType);
         endif;
         // Setter timeout for forespørselen
