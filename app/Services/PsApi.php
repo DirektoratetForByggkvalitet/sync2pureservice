@@ -136,7 +136,9 @@ class PsApi extends API {
      * @param   array   $userId         Sluttbrukers ID
      * @param   mixed   $visibility     Synlighetskode, standard = 2 (usynlig)
     */
-    public function createTicket(string $subject, string $description, int $userId, int $visibility = 2, bool $returnClass = true): array|false|Ticket {
+    public function createTicket(
+        string $subject,
+        string $description, int $userId, int $visibility = 2, bool $returnClass = true): array|false|Ticket {
         //if ($this->ticketOptions == []) $this->setTicketOptions();
         $uri = '/ticket';
         $ticket = [
@@ -190,19 +192,28 @@ class PsApi extends API {
      * Laster opp vedlegg til en sak i Pureservice
      * @param array         $attachments    Array over filstier relative til storage/app som skal lastes opp
      * @param App\Models\Ticket   $ticket   Saken som skal ha vedlegget
-     * @param array         $communication  Vedleggene skal koblet til en kommunikasjon
+     * @param array         $uploadFilter  Filnavn som ikke skal lastes opp
      *
      * @return assoc_array  Rapport på status og antall filer/opplastinger
      */
-    public function uploadAttachments(array $attachments, Ticket $ticket, bool $connectToSolution = false): array {
+    public function uploadAttachments(
+        array $attachments,
+        Ticket $ticket,
+        array $uploadFilter = [],
+        bool $visible = true
+    ): array {
         $uri = '/attachment';
         $attachmentCount = count($attachments);
         $uploadCount = 0;
-        $status = 'OK';
+        $status = '';
         $uploads = [];
         foreach ($attachments as $file):
             if (Storage::exists($file)):
                 $filename = basename($file);
+                // Hopper over vedlegg som ikke skal lastes opp
+                if (in_array($filename, $uploadFilter)):
+                    continue;
+                endif;
                 $body = [
                     'name' => Str::beforeLast($filename, '.'),
                     'fileName' => $filename,
@@ -210,18 +221,17 @@ class PsApi extends API {
                     'contentType' => Storage::mimeType($file),
                     'ticketId' => $ticket->id,
                     'bytes' => base64_encode(Storage::get($file)),
-                    'isVisible' => true,
+                    'isVisible' => $visible,
                 ];
-                if ($connectToSolution) $body['isPartOfCurrentSolution'] = true;
                 // Sender med Content-Type satt til korrekt type
                 $result = $this->apiPost($uri, $body, null, $this->myConf('api.accept'));
                 if ($result->successful()):
                     $uploads[] = $result->json('attachments.0');
                 else:
-                    $status = 'Feil med '.$file;
+                    $status .= 'Feil med '.$file.' ';
                 endif;
             else:
-                $status = 'Filen \''.$file.'\' ble ikke funnet';
+                $status .= 'Filen \''.$file.'\' ble ikke funnet. ';
             endif;
         endforeach;
         return [
@@ -605,31 +615,37 @@ class PsApi extends API {
             $subject = 'Vedlegg til innkommende forsendelse';
             $communication['subject'] = $subject;
             $communication['text'] = Blade::render('incoming/vedlegg', ['subject' => $subject, 'attachments' => $attachments]);
-            $body['linked']['attachments'] = [];
-            $communication['links']['attachments'] = [];
-            foreach ($attachments as $file):
-                if (basename($file) == 'arkivmelding.xml'):
-                    continue;
-                endif;
-                if (Storage::exists($file)):
-                    $filename = basename($file);
-                    $attTempId = Str::uuid()->toString();
-                    $communication['links']['attachments'][] = [
-                        'temporaryId' => $attTempId,
-                        'type' => 'attachment',
-                    ];
-                    $body['linked']['attachments'][] = [
-                        'name' => Str::beforeLast($filename, '.'),
-                        'fileName' => $filename,
-                        'size' => $this->human_filesize(Storage::size($file)),
-                        'contentType' => Storage::mimeType($file),
-                        'ticketId' => $ticket->id,
-                        'isVisible' => true,
-                        'temporaryId' => $attTempId,
-                        'bytes' => base64_encode(Storage::get($file)),
-                    ];
-                endif;
-            endforeach;
+            $communication['links']['attachments'] = [
+                'ids' => [],
+                'type' => 'attachment'
+            ];
+            $uploads = collect($this->uploadAttachments($attachments, $ticket, ['arkivmelding.xml'], false));
+            $uploads->each(function (array $item, int $key) use ($communication){
+                $communication['links']['attachments']['ids'][] = $item['id'];
+            });
+            // foreach ($uploads as $attachment):
+            //     if (basename($file) == 'arkivmelding.xml'):
+            //         continue;
+            //     endif;
+            //     if (Storage::exists($file)):
+            //         $filename = basename($file);
+            //         $attTempId = Str::uuid()->toString();
+            //         $communication['links']['attachments'][] = [
+            //             'temporaryId' => $attTempId,
+            //             'type' => 'attachment',
+            //         ];
+            //         $body['linked']['attachments'][] = [
+            //             'name' => Str::beforeLast($filename, '.'),
+            //             'fileName' => $filename,
+            //             'size' => $this->human_filesize(Storage::size($file)),
+            //             'contentType' => Storage::mimeType($file),
+            //             'ticketId' => $ticket->id,
+            //             'isVisible' => true,
+            //             'temporaryId' => $attTempId,
+            //             'bytes' => base64_encode(Storage::get($file)),
+            //         ];
+            //     endif;
+            // endforeach;
         endif;
         // dd(json_encode($body, JSON_PRETTY_PRINT));
         $body['communications'][] = $communication;
