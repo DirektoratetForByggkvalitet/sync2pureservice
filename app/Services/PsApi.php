@@ -689,7 +689,7 @@ class PsApi extends API {
             });
             $chunkRequest->withQueryParameters($params);
             // Debug
-            //$chunkRequest->dd();
+            $chunkRequest->dd();
             $response = $chunkRequest->post($uri);
             if ($response->successful()):
                 if (count($uploadedAttachments)):
