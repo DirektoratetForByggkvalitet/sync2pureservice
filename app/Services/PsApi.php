@@ -662,7 +662,7 @@ class PsApi extends API {
             Ticket $ticket,
             bool $visible = true,
             array $uploadFilter = []
-        ): array
+        ): array|false
     {
         $uri = '/attachment/'.$ticket->id.'/';
         $uri = $this->resolveUri($uri);
@@ -694,6 +694,7 @@ class PsApi extends API {
         if ($response->successful()):
             return $response->json('attachments');
         else:
+            dd($response->json());
             return false;
         endif;
 
