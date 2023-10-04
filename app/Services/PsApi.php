@@ -677,6 +677,8 @@ class PsApi extends API {
         foreach ($chunks->lazy() as $chunk):
             $handlers = [];
             $chunkRequest = $this->prepRequest('*/*', 'auto');
+            $chunkRequest->withQueryParameters($params);
+            $chunkRequest->asMultiPart();
             // Behandler hver fil i gruppen
             $chunk->each(function (string $file, int $key) use ($handlers, $uploadFilter, $chunkRequest) {
                 $filename = basename($file);
@@ -687,7 +689,6 @@ class PsApi extends API {
                     $handlers[] = $fh;
                 endif;
             });
-            $chunkRequest->withQueryParameters($params);
             // Debug
             $chunkRequest->dd();
             $response = $chunkRequest->post($uri);
