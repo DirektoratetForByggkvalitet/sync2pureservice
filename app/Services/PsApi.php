@@ -676,7 +676,7 @@ class PsApi extends API {
         $chunks = collect($attachments)->chunk(1);
         foreach ($chunks->lazy() as $chunk):
             $handlers = [];
-            $chunkRequest = $this->prepRequest('*/*', 'multipart/form-data');
+            $chunkRequest = $this->prepRequest('*/*');
             // Behandler hver fil i gruppen
             $chunk->each(function (string $file, int $key) use ($handlers, $uploadFilter, $chunkRequest) {
                 $filename = basename($file);
