@@ -664,7 +664,7 @@ class PsApi extends API {
             array $uploadFilter = []
         ): array|false
     {
-        $uri = '/attachment/'.$ticket->id.'/?relatedType=ticket&isVisible=';
+        $uri = '/attachment/'.$ticket->id.'/?relatedType=Ticket&isVisible=';
         $uri .= $visible ? 'true' : 'false';
         $uri = $this->resolveUri($uri);
 
@@ -684,6 +684,7 @@ class PsApi extends API {
                     $handlers[] = $fh;
                 endif;
             });
+            $chunkRequest->dd();
             $response = $chunkRequest->post($uri);
             if ($response->successful()):
                 if (count($uploadedAttachments)):
