@@ -575,8 +575,7 @@ class PsApi extends API {
     /**
      * Legger til en innkommende kommunikasjon på saken
      */
-    public function addInboundCommunicationToTicket
-        (
+    public function addInboundCommunicationToTicket(
             Ticket $ticket,
             int $senderId,
             array|false $attachments = false,
@@ -612,52 +611,34 @@ class PsApi extends API {
             ]
         ];
         if (is_array($attachments)):
-            $subject = 'Vedlegg til innkommende forsendelse';
+            $subject = count($attachments).' vedlegg til innkommende forsendelse';
             $communication['subject'] = $subject;
             $communication['text'] = Blade::render('incoming/vedlegg', ['subject' => $subject, 'attachments' => $attachments]);
-            $communication['links']['attachments'] = [
-                'ids' => [],
-                'type' => 'attachment'
-            ];
-            if ($uploads = $this->uploadAttachmentsAsMultipart($attachments, $ticket, false, ['arkivmelding.xml'])):
-                $uploads = collect($uploads);
-                $uploads->each(function (array $item, int $key) use ($communication){
-                    $communication['links']['attachments']['ids'][] = $item['id'];
-                });
-            else:
-                return false;
-            endif;
-            // foreach ($uploads as $attachment):
-            //     if (basename($file) == 'arkivmelding.xml'):
-            //         continue;
-            //     endif;
-            //     if (Storage::exists($file)):
-            //         $filename = basename($file);
-            //         $attTempId = Str::uuid()->toString();
-            //         $communication['links']['attachments'][] = [
-            //             'temporaryId' => $attTempId,
-            //             'type' => 'attachment',
-            //         ];
-            //         $body['linked']['attachments'][] = [
-            //             'name' => Str::beforeLast($filename, '.'),
-            //             'fileName' => $filename,
-            //             'size' => $this->human_filesize(Storage::size($file)),
-            //             'contentType' => Storage::mimeType($file),
-            //             'ticketId' => $ticket->id,
-            //             'isVisible' => true,
-            //             'temporaryId' => $attTempId,
-            //             'bytes' => base64_encode(Storage::get($file)),
-            //         ];
-            //     endif;
-            // endforeach;
+            $communication['links']['attachments'] = [];
+            $uploads = collect($attachments);
+            $body['linked']['attachments'] = [];
+            $uploads->each(function (array $item, int $key) use ($communication, $body, $ticket){
+                $tempId = Str::orderedUuid()->toString();
+                $communication['links']['attachments']['ids'][] = [
+                    'temporaryId' => $tempId,
+                    'type' => 'attachment',
+                ];
+                $body['linked']['attachments'][] = [
+                    'attachmentCopyId' => $item['id'],
+                    'temporaryId' => $tempId,
+                    'ticketId' => $ticket->id,
+                    'fileName' => $item['fileName'],
+                    'isVisible' => false,
+
+                ];
+        });
         endif;
         // dd(json_encode($body, JSON_PRETTY_PRINT));
         $body['communications'][] = $communication;
         return $this->apiPost($uri, $body, null, config('pureservice.api.accept'));
     }
 
-    public function uploadAttachmentsAsMultipart
-        (
+    public function uploadAttachmentsAsMultipart(
             array $attachments,
             Ticket $ticket,
             bool $visible = true,
@@ -678,19 +659,18 @@ class PsApi extends API {
             $handlers = [];
             $chunkRequest = $this->prepRequest('*/*', 'auto');
             $chunkRequest->withQueryParameters($params);
-            $chunkRequest->asMultiPart();
             // Behandler hver fil i gruppen
             $chunk->each(function (string $file, int $key) use ($handlers, $uploadFilter, $chunkRequest) {
                 $filename = basename($file);
                 if (Storage::exists($file) && !in_array($filename, $uploadFilter)):
                     // Hopper over vedlegg som ikke skal lastes opp
-                    //$fh = fopen(Storage::path($file), 'r');
-                    $chunkRequest->attach(Str::beforeLast($filename, '.'), Storage::path($file), $filename);
-                    //$handlers[] = $fh;
+                    $fh = fopen(Storage::path($file), 'r');
+                    $chunkRequest->attach(Str::beforeLast($filename, '.'), $fh, $filename);
+                    $handlers[] = $fh;
                 endif;
             });
-            // Debug
-            $chunkRequest->dd();
+            // Debug: Vil avbryte og returnere request før den sendes
+            //$chunkRequest->dd();
             $response = $chunkRequest->post($uri);
             if ($response->successful()):
                 if (count($uploadedAttachments)):
@@ -710,4 +690,29 @@ class PsApi extends API {
 
         return $uploadedAttachments;
     }
+
+    public function uploadAttachmentToTicket(
+        string $file,
+        Ticket $ticket,
+        bool $visible = true
+    ): Response|false {
+        $uri = '/attachment';
+        if (Storage::exists($file)):
+            $filename = basename($file);
+            // Hopper over vedlegg som ikke skal lastes opp
+            $body = [
+                'name' => Str::beforeLast($filename, '.'),
+                'fileName' => $filename,
+                'size' => $this->human_filesize(Storage::size($file)),
+                'contentType' => Storage::mimeType($file),
+                'ticketId' => $ticket->id,
+                'bytes' => base64_encode(Storage::get($file)),
+                'isVisible' => $visible,
+            ];
+            // Sender med Content-Type satt til korrekt type
+            return $this->apiPost($uri, $body, null, $this->myConf('api.accept'));
+        endif;
+        return false;
+    }
+
 }

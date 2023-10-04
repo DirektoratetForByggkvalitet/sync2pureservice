@@ -17,7 +17,6 @@ class API {
     protected $prefix = ''; // Prefiks til uri
     protected $options = [
         'headers' => [
-            'Content-Type' => 'application/json; charset=utf-8',
             'Connection' => 'keep-alive',
             'Accept-Encoding' => 'gzip, deflate, br',
             'User-Agent' => 'sync2pureservice/PHP'

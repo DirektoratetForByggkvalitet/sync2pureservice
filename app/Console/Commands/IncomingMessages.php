@@ -159,11 +159,44 @@ class IncomingMessages extends Command {
                 endif;
              else:
                 // Alle andre typer meldinger
-                $this->line(Tools::l2().'Oppretter sak i Pureservice');
+                $this->line(Tools::L2.'Oppretter sak i Pureservice');
                 $this->ps->setTicketOptions('eformidling');
-                if ($new = $message->saveToPs($this->ps)):
+                if ($new = $message->saveToPs($this->ps, false)):
                     $tickets[] = $new;
-                    $this->line(Tools::l3().'Sak ID '.$new->requestNumber. ' ble opprettet.');
+                    $this->line(Tools::L3.'Sak ID '.$new->requestNumber. ' ble opprettet.');
+                    $attachments = $message->attachments;
+                    if (count($attachments)):
+                        $uploads = [];
+                        $this->line(Tools::L2.'Laster opp '.count($attachments).' vedlegg til saken');
+                        $i = 0;
+                        foreach ($attachments as $file):
+                            $i++;
+                            $this->line(Tools::L3.$i.' \''.basename($file).'\' ('.Tools::human_filesize(Storage::fileSize($file)).')');
+                            $response = $this->ps->uploadAttachmentToTicket($file, $new, false);
+                            if (!$response):
+                                $this->error(Tools::L1.' Filen ble ikke funnet. Avbryter...');
+                                return Command::FAILURE;
+                            endif;
+                            if ($response->successful()):
+                                $this->line(Tools::L3.'    - Lastet opp OK');
+                                $uploads[] = $response->json('attachments.0');
+                            else:
+                                $this->error(Tools::L3.'  - Feilmelding ved opplasting: '.$response->status());
+                                dd($response->json());
+                            endif;
+                        endforeach;
+                        $this->line(Tools::L2.'Oppretter en innkommende kommunikasjon for vedleggene');
+                        $sender = $message->sender();
+                        $senderUser = $sender->getEfUser();
+                        $response = $this->ps->addInboundCommunicationToTicket($new, $senderUser->id, $uploads);
+                        if ($response->successful()):
+                            $this->line(Tools::L3.'- Opprettet OK');
+                        else:
+                            $this->error(Tools::L1.'Feil ved oppretting av kommunikasjon:'.$response->status());
+                            dd($response->json());
+                        endif;
+                    endif;
+
                     // unset($new);
                 else:
                     $this->error(Tools::l2().'Klarte ikke å opprette sak i Pureservice');

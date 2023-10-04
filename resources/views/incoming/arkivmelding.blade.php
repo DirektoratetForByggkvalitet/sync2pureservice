@@ -1,7 +1,6 @@
 @php
     use Illuminate\Support\{Arr};
 
-    $dlPath = $msg->downloadPath();
     $attachmentCount = collect($msg->attachments)->filter(function (string $value, int $key) {
         return basename($value) != 'arkivmelding.xml';
     })->count();

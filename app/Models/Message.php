@@ -155,7 +155,7 @@ class Message extends Model {
      /**
      * Oppretter en sak i Pureservice basert på meldingen
      */
-    public function saveToPs(PsApi|false $ps = false): Ticket|false {
+    public function saveToPs(PsApi|false $ps = false, bool $addAttachments = true): Ticket|false {
         if (!$ps):
             $ps = new PsApi();
             $ps->setTicketOptions('eformidling');
@@ -198,7 +198,7 @@ class Message extends Model {
         //dd($description);
         endif;
         if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.invisible'))):
-            if (count($this->attachments)):
+            if (count($this->attachments) && $addAttachments):
                 // Oppretter en kommunikasjon med vedleggene som vedlegg
                 $ps->addInboundCommunicationToTicket($ticket, $senderUser->id, $this->attachments);
             endif;
