@@ -206,8 +206,10 @@ class IncomingMessages extends Command {
             endif;
             // $bar->advance();
             // DEBUG: Stopp etter første melding, før sletting
-            $this->error('Debug: Stopper etter første melding uten å slette den fra integrasjonspunktet');
-            return Command::FAILURE;
+            if ($message->documentType() == 'arkivmelding'):
+                $this->error('Debug: Stopper etter første arkivmelding uten å slette den fra integrasjonspunktet');
+                return Command::FAILURE;
+            endif;
             // End DEBUG
 
             // Vi har tatt vare på meldingen. Sletter den fra eFormidling sin kø
