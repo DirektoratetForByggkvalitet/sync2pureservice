@@ -664,18 +664,10 @@ class PsApi extends API {
             array $uploadFilter = []
         ): array|false
     {
-        $uri = '/attachment/'.$ticket->id.'/';
+        $uri = '/attachment/'.$ticket->id.'/?relatedType=ticket&isVisible=';
+        $uri .= $visible ? 'true' : 'false';
         $uri = $this->resolveUri($uri);
-        $attachmentCount = count($attachments);
-        $uploadCount = 0;
-        $status = '';
-        $uploads = [];
-        $params = [
-            'isVisible' => $visible,
-            'relatedType' => 'ticket',
-        ];
         $request = $this->prepRequest(null, $this->myConf('api.contentType'));
-        $request->withBody($params);
         $handlers = [];
         foreach ($attachments as $file):
             if (Storage::exists($file)):
@@ -690,7 +682,12 @@ class PsApi extends API {
             endif;
         endforeach;
         // Laster opp filene
-        $response = $request->post($uri, $params);
+        $response = $request->post($uri);
+
+        // Lukker åpne filer
+        collect($handlers)->each(function (mixed $item, int $key) {
+            fclose($item);
+        });
         if ($response->successful()):
             return $response->json('attachments');
         else:
