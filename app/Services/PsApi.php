@@ -670,7 +670,7 @@ class PsApi extends API {
 
         $uploadedAttachments = [];
         // Deler opp vedleggene i grupper på 5
-        $chunks = collect($attachments)->chunks(5);
+        $chunks = collect($attachments)->chunk(5);
         foreach ($chunks->lazy() as $chunk):
             $handlers = [];
             $chunkRequest = $this->prepRequest(null, $this->myConf('api.contentType'));
