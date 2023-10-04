@@ -172,6 +172,11 @@ class IncomingMessages extends Command {
                 endif;
             endif;
             // $bar->advance();
+            // DEBUG: Stopp etter første melding, før sletting
+            $this->error('Debug: Stopper etter første melding uten å slette den fra integrasjonspunktet');
+            return Command::FAILURE;
+            // End DEBUG
+
             // Vi har tatt vare på meldingen. Sletter den fra eFormidling sin kø
             if ($this->ip->deleteIncomingMessage($message->messageId)):
                 $this->line(Tools::l3().'Meldingen har blitt slettet fra integrasjonspunktet');

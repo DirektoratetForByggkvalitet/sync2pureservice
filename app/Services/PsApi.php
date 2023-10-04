@@ -619,10 +619,14 @@ class PsApi extends API {
                 'ids' => [],
                 'type' => 'attachment'
             ];
-            $uploads = collect($this->uploadAttachments($attachments, $ticket, ['arkivmelding.xml'], false));
-            $uploads->each(function (array $item, int $key) use ($communication){
-                $communication['links']['attachments']['ids'][] = $item['id'];
-            });
+            if ($uploads = $this->uploadAttachmentsAsMultipart($attachments, $ticket, false, ['arkivmelding.xml'])):
+                $uploads = collect($uploads);
+                $uploads->each(function (array $item, int $key) use ($communication){
+                    $communication['links']['attachments']['ids'][] = $item['id'];
+                });
+            else:
+                return false;
+            endif;
             // foreach ($uploads as $attachment):
             //     if (basename($file) == 'arkivmelding.xml'):
             //         continue;
@@ -650,5 +654,48 @@ class PsApi extends API {
         // dd(json_encode($body, JSON_PRETTY_PRINT));
         $body['communications'][] = $communication;
         return $this->apiPost($uri, $body, null, config('pureservice.api.accept'));
+    }
+
+    public function uploadAttachmentsAsMultipart
+        (
+            array $attachments,
+            Ticket $ticket,
+            bool $visible = true,
+            array $uploadFilter = []
+        ): array
+    {
+        $uri = '/attachment/'.$ticket->id.'/';
+        $uri = $this->resolveUri($uri);
+        $attachmentCount = count($attachments);
+        $uploadCount = 0;
+        $status = '';
+        $uploads = [];
+        $params = [
+            'isVisible' => $visible,
+            'relatedType' => 'ticket',
+        ];
+        $request = $this->prepRequest(null, $this->myConf('api.contentType'));
+        $request->withBody($params);
+        $handlers = [];
+        foreach ($attachments as $file):
+            if (Storage::exists($file)):
+                $filename = basename($file);
+                // Hopper over vedlegg som ikke skal lastes opp
+                if (in_array($filename, $uploadFilter)):
+                    continue;
+                endif;
+                $fh = fopen(Storage::path($file), 'r');
+                $request->attach($fh);
+                $handlers[] = $fh;
+            endif;
+        endforeach;
+        // Laster opp filene
+        $response = $request->post($uri, $params);
+        if ($response->successful()):
+            return $response->json('attachments');
+        else:
+            return false;
+        endif;
+
     }
 }
