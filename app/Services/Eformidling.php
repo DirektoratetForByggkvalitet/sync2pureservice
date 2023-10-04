@@ -166,6 +166,7 @@ class Eformidling extends API {
         $tmpFile = $dlPath.'/asic.tmp';
         $options = [
             'sink' => Storage::path($tmpFile),
+            'read_timeout' => 300,
         ];
         $response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'), null, $options);
         if ($response->successful()):
