@@ -166,7 +166,16 @@ class API {
     /**
      * POST-forespørsel mot APIet
      */
-    public function apiPost(string $uri, mixed $body = null, string|null $accept = null, string|null $contentType = null, bool $returnBool = false, null|array $withOptions = null): Response|bool {
+    public function apiPost
+        (
+            string $uri,
+            mixed $body = null,
+            string|null $accept = null,
+            string|null $contentType = null,
+            bool $returnBool = false,
+            null|array $withOptions = null
+        ): Response|bool
+    {
         $uri = $this->resolveUri($uri);
         $response = $this->prepRequest($accept, $contentType, $withOptions)->post($uri, $body);
         if ($returnBool) return $response->successful();
@@ -176,7 +185,7 @@ class API {
     /**
      * PATCH-forespørsel mot APIet
      */
-    public function apiPatch(string $uri, array $body, string|null $contentType = null, bool $returnBool = false, null|array $withOptions): Response|bool {
+    public function apiPatch(string $uri, array $body, string|null $contentType = null, bool $returnBool = false, null|array $withOptions = null): Response|bool {
         $uri = $this->resolveUri($uri);
         $accept = $this->myConf('api.accept', 'application/json');
         $contentType = $contentType ? $contentType : $this->myConf('api.contentType', $accept);
