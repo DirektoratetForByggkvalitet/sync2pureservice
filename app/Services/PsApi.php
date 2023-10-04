@@ -685,7 +685,7 @@ class PsApi extends API {
                     continue;
                 endif;
                 $fh = fopen(Storage::path($file), 'r');
-                $request->attach($fh);
+                $request->attach(Str::beforeLast($filename, '.'), $fh, $filename);
                 $handlers[] = $fh;
             endif;
         endforeach;
