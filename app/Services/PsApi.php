@@ -664,16 +664,19 @@ class PsApi extends API {
             array $uploadFilter = []
         ): array|false
     {
-        $uri = '/attachment/'.$ticket->id.'/?relatedType=Ticket&isVisible=';
-        $uri .= $visible ? 'true' : 'false';
+        $uri = '/attachment/'.$ticket->id.'/';
         $uri = $this->resolveUri($uri);
+        $params = [
+            'relatedType' => 'Ticket',
+            'isVisible' => $visible,
+        ];
 
         $uploadedAttachments = [];
         // Deler opp vedleggene i grupper på 5
         $chunks = collect($attachments)->chunk(1);
         foreach ($chunks->lazy() as $chunk):
             $handlers = [];
-            $chunkRequest = $this->prepRequest('*/*', null);
+            $chunkRequest = $this->prepRequest('*/*', 'multipart/form-data');
             // Behandler hver fil i gruppen
             $chunk->each(function (string $file, int $key) use ($handlers, $uploadFilter, $chunkRequest) {
                 $filename = basename($file);
@@ -684,6 +687,9 @@ class PsApi extends API {
                     $handlers[] = $fh;
                 endif;
             });
+            $chunkRequest->withQueryParameters($params);
+            $chunkRequest->asMultipart();
+            // Debug
             $chunkRequest->dd();
             $response = $chunkRequest->post($uri);
             if ($response->successful()):
