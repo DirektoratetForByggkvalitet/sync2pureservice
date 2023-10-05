@@ -95,7 +95,7 @@ class API {
             $this->setPrefix($this->myConf('api.prefix'));
         endif;
         if ($this->myConf('api.url', false)):
-            $request->baseUrl($this->myConf('api.url')).$this->prefix;
+            $request->baseUrl($this->myConf('api.url').$this->prefix);
         endif;
         if ($this->auth):
             switch ($this->auth):
@@ -127,11 +127,11 @@ class API {
 
     public function resolveUri(string $path): string {
         return Str::replace('//', '/', '/' . $path);
-        if (Str::startsWith($path, 'https:') || Str::startsWith($path, 'http:')):
-            return $path; // Returnerer samme verdi, siden det er en full URL
-        else:
-            return Str::replace('//', '/', '/' . $path);
-        endif;
+        // if (Str::startsWith($path, 'https:') || Str::startsWith($path, 'http:')):
+        //     return $path; // Returnerer samme verdi, siden det er en full URL
+        // else:
+        //     return Str::replace('//', '/', '/' . $path);
+        // endif;
     }
 
     /**
