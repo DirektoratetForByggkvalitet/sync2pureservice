@@ -31,6 +31,9 @@ class API {
         $this->cKey =Str::lower(class_basename($this));
         $this->auth = $this->myConf($prefix.'.auth', false);
         $this->prefix = $this->myConf($prefix.'.prefix', '');
+        if ($this->prefix != '' & !Str::startsWith($this->prefix, '/')):
+            $this->prefix = Str::replace('//', '/', '/'.$this->prefix);
+        endif;
         $this->base_url = $this->myConf($prefix.'.url');
         // Beholder samme User-Agent uansett prefix
         if (env('BITBUCKET_COMMIT', false)):
@@ -72,7 +75,7 @@ class API {
      * Setter prefiks for alle API-kall (det som kommer etter 'https://server.no' i alle kall)
      */
     public function setPrefix(string $prefix): void {
-        $this->prefix = $prefix;
+        $this->prefix = $prefix != '' ? Str::replace('//', '/', '/'.$prefix): $prefix;
     }
 
     /**
@@ -80,7 +83,7 @@ class API {
      * @param   string    $contentType    Setter forespørselens Content-Type, standard 'application/json'
      * @return  Illuminate\Http\Client\PendingRequest
      */
-    public function prepRequest(string|null $accept = null, string|null $contentType = null, null|array $options = null): PendingRequest {
+    public function prepRequest(string|null $accept = null, string|null $contentType = null, null|string $toFile = null): PendingRequest {
         $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
         // Setter timeout for forespørselen
         $request->timeout($this->myConf('api.timeout', config('api.timeout')));
@@ -93,12 +96,12 @@ class API {
         // Korrigerer manglende prefix eller prefix som ikke starter med '/'
         if ($this->myConf('api.prefix', false) && $this->prefix == ''):
             $this->setPrefix(Str::replace('//', '/', '/'.$this->myConf('api.prefix')));
-        elseif ($this->prefix != '' && !Str::startsWith($this->prefix, '/')):
-            $this->setPrefix(Str::replace('//', '/', '/'.$this->prefix));
         endif;
+        // Setter baseUrl, inkludert prefix
         if ($this->myConf('api.url', false)):
             $request->baseUrl($this->myConf('api.url').$this->prefix);
         endif;
+        // Setter opp autentisering, hvis oppgitt i config
         if ($this->auth):
             switch ($this->auth):
                 case 'digest':
@@ -111,17 +114,20 @@ class API {
                     $request->withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'));
             endswitch;
         endif;
+        // Setter accept-headeren
         if ($accept || $this->myConf('api.accept', false)):
             $accept ? $request->accept($accept) : $request->accept($this->myConf('api.accept'));
         else:
             $request->acceptJson();
         endif;
+        // Setter content-type
         if ($contentType && !in_array($contentType, ['none', 'no', 'auto'])):
             $request->contentType($contentType);
         endif;
 
-        if ($options):
-            $request->withOptions($options);
+        // Hvis filplassering er oppgitt, bruk sink
+        if ($toFile):
+            $request->sink($toFile);
         endif;
 
         return $request;
@@ -142,10 +148,10 @@ class API {
      * @param   bool    $returnResponse Returnerer Response-objektet, fremfor kun dataene
      * @param   string  $contentType    Setter Content-Type for forespørselen
      */
-    public function apiGet(string $uri, bool $returnResponse = false, string|null|false $accept = null, null|array $query = null, null|array $withOptions = null): mixed {
+    public function apiGet(string $uri, bool $returnResponse = false, string|null|false $accept = null, null|array $query = null, null|string $toFile = null): mixed {
         $uri = $this->resolveUri($uri);
         $query = is_array($query) ? $query : [];
-        $response = $this->prepRequest($accept, null, $withOptions)->get($uri, $query);
+        $response = $this->prepRequest($accept, null, $toFile)->get($uri, $query);
         if ($response->successful()):
             if ($returnResponse) return $response;
             return $response->json();
@@ -161,9 +167,9 @@ class API {
         array $query = [],
         bool $returnResponse = false,
         string|null|false $accept = null,
-        null|array $withOptions = null
+        null|string $toFile = null
     ): Response|array|false {
-        return $this->apiGet($uri, $returnResponse, $accept, $query, $withOptions);
+        return $this->apiGet($uri, $returnResponse, $accept, $query, $toFile);
     }
 
     /**

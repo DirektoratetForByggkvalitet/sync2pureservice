@@ -144,36 +144,33 @@ class Eformidling extends API {
         $uri = 'messages/in/pop/'.$messageId;
         $dlPath = $dlPath ? $dlPath : $this->myConf('download_path') . '/'. $messageId;
         $tmpFile = $dlPath.'/asic.tmp';
-        $options = [
-            'sink' => Storage::path($tmpFile),
-            'read_timeout' => 500,
-        ];
-        $response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'), null, $options);
+        $response = $this->apiGet($uri, true, $this->myConf('api.asic_accept'), null, Storage::path($tmpFile));
         if ($response->successful()):
             // Henter filnavn fra header content-disposition - 'attachment; filename="dokumenter-7104a48e.zip"'
-            //$fileMimeType = Str::before($response->header('content-type'), ';');
             $cd = ContentDisposition::parse($response->header('content-disposition'));
-            $fileName = $dlPath . '/' . $cd->getFileName();
-            Storage::move($tmpFile, $fileName);
+            $asicName = $dlPath . '/' . $cd->getFileName();
+            Storage::move($tmpFile, $asicName);
 
             // Pakker ut zip-filen
             $path = $dbMessage->downloadPath();
-            if (Str::endsWith($fileName, '.zip')):
-                // Vi har et filnavn som slutter på .zip, pakker den ut
+            // Hvis vi har et filnavn som slutter på .zip pakker vi den ut
+            if (Str::endsWith($asicName, '.zip')):
                 $zipArchive = new ZipArchive();
-                $zipArchive->open(Storage::path($fileName), ZipArchive::RDONLY);
+                $zipArchive->open(Storage::path($asicName), ZipArchive::RDONLY);
                 $zipArchive->extractTo(Storage::path($path));
                 $zipArchive->close();
                 // Sletter zip-filen, siden innholdet er pakket ut
-                Storage::delete($fileName);
+                Storage::delete($asicName);
                 if (Storage::directoryExists($path.'/META-INF')):
                     Storage::deleteDirectory($path.'/META-INF');
                 endif;
+                // Sletter Asic-fila, siden det er en zip-fil
+                Storage::delete($asicName);
             endif;
             foreach (Storage::files($path) as $filepath):
                 // Hopper over filer med filnavn som begynner med '.'
                 $fname = basename($filepath);
-                if (Str::startsWith($fname, '.') || $fname == 'manifest.xml' || $fname == 'mimetype' || $fname == basename($fileName)):
+                if (Str::startsWith($fname, '.') || $fname == 'manifest.xml' || $fname == 'mimetype'):
                     continue;
                 endif;
                 // Legger filen til i listen over vedlegg
