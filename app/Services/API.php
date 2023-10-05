@@ -18,6 +18,7 @@ class API {
     protected false|string $auth = false;
 
     public function __construct() {
+        $this->setCKey(Str::lower(class_basename($this)));
         $this->setProperties();
     }
 
@@ -28,7 +29,6 @@ class API {
      * som de vil bruke 'eformidling.testapi' for å finne innstillingene
      */
     public function setProperties(string $prefix = 'api') {
-        $this->cKey =Str::lower(class_basename($this));
         $this->auth = $this->myConf($prefix.'.auth', false);
         $this->prefix = $this->myConf($prefix.'.prefix', '');
         if ($this->prefix != '' & !Str::startsWith($this->prefix, '/')):
