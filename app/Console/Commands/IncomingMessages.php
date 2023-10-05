@@ -182,7 +182,6 @@ class IncomingMessages extends Command {
                 $this->line(Tools::l3().'Enten er den allerede slettet, eller så oppsto det en feil under sletting.');
                 $this->line(Tools::l3().'Hvis det oppsto en feil KAN meldingen bli behandlet igjen neste gang vi sjekker.');
             endif;
-
             $this->newLine();
         endforeach;
         // $bar->finish();

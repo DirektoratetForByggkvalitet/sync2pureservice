@@ -611,85 +611,38 @@ class PsApi extends API {
             ]
         ];
         if (is_array($attachments)):
-            $subject = count($attachments).' vedlegg til innkommende forsendelse';
-            $communication['subject'] = $subject;
-            $communication['text'] = Blade::render('incoming/vedlegg', ['subject' => $subject, 'attachments' => $attachments]);
             $communication['links']['attachments'] = [];
-            $uploads = collect($attachments);
             $body['linked']['attachments'] = [];
-            $uploads->each(function (array $item, int $key) use ($communication, $body, $ticket){
-                $tempId = Str::orderedUuid()->toString();
-                $communication['links']['attachments']['ids'][] = [
-                    'temporaryId' => $tempId,
-                    'type' => 'attachment',
-                ];
-                $body['linked']['attachments'][] = [
-                    'attachmentCopyId' => $item['id'],
-                    'temporaryId' => $tempId,
-                    'ticketId' => $ticket->id,
-                    'fileName' => $item['fileName'],
-                    'isVisible' => false,
-
-                ];
-        });
+            $uploads = [];
+            foreach ($attachments as $file):
+                if (!in_array(basename($file), config('eformidling.attachment-blacklist'))):
+                    $tempId = Str::orderedUuid()->toString();
+                    $communication['links']['attachments'][] = [
+                        'temporaryId' => $tempId,
+                        'type' => 'attachment',
+                    ];
+                    $body['linked']['attachments'][] = [
+                        'temporaryId' => $tempId,
+                        'ticketId' => $ticket->id,
+                        'fileName' => basename($file),
+                        'name' => Str::beforeLast($file, '.'),
+                        'isVisible' => true,
+                        'contentType' => Storage::mimeType($file),
+                        'size' => $this->human_filesize(Storage::size($file)),
+                        'bytes' => base64_encode(Storage::get($file)),
+                    ];
+                    $uploads[] = $file;
+                endif;
+            endforeach;
+            $subject = count($uploads).' vedlegg til innkommende forsendelse';
+            $communication['subject'] = $subject;
+            $communication['text'] = Blade::render('incoming/vedlegg', ['subject' => $subject, 'attachments' => $uploads]);
         endif;
         // dd(json_encode($body, JSON_PRETTY_PRINT));
         $body['communications'][] = $communication;
         return $this->apiPost($uri, $body, null, config('pureservice.api.accept'));
     }
 
-    public function uploadAttachmentsAsMultipart(
-            array $attachments,
-            Ticket $ticket,
-            bool $visible = true,
-            array $uploadFilter = []
-        ): array|false
-    {
-        $uri = '/attachment/'.$ticket->id.'/';
-        $uri = $this->resolveUri($uri);
-        $params = [
-            'relatedType' => 'Ticket',
-            'isVisible' => $visible ? 'true' : 'false',
-        ];
-
-        $uploadedAttachments = [];
-        // Deler opp vedleggene i grupper på 5
-        $chunks = collect($attachments)->chunk(1);
-        foreach ($chunks->lazy() as $chunk):
-            $handlers = [];
-            $chunkRequest = $this->prepRequest('*/*', 'auto');
-            $chunkRequest->withQueryParameters($params);
-            // Behandler hver fil i gruppen
-            $chunk->each(function (string $file, int $key) use ($handlers, $uploadFilter, $chunkRequest) {
-                $filename = basename($file);
-                if (Storage::exists($file) && !in_array($filename, $uploadFilter)):
-                    // Hopper over vedlegg som ikke skal lastes opp
-                    $fh = fopen(Storage::path($file), 'r');
-                    $chunkRequest->attach(Str::beforeLast($filename, '.'), $fh, $filename);
-                    $handlers[] = $fh;
-                endif;
-            });
-            // Debug: Vil avbryte og returnere request før den sendes
-            //$chunkRequest->dd();
-            $response = $chunkRequest->post($uri);
-            if ($response->successful()):
-                if (count($uploadedAttachments)):
-                    array_merge($uploadedAttachments, $response->json('attachments'));
-                else:
-                    $uploadedAttachments = $response->json('attachments');
-                endif;
-            else:
-                // Feilmelding
-                dd($response->json());
-            endif;
-            // Lukker åpne filer
-            collect($handlers)->each(function (mixed $item, int $key) {
-                fclose($item);
-            });
-        endforeach;
-
-        return $uploadedAttachments;
-    }
 
     public function uploadAttachmentToTicket(
         string $file,

@@ -48,6 +48,11 @@ return [
         'standard' => env('EF_MESSAGE_STANDARD', 'urn:no:difi:arkivmelding:xsd::arkivmelding'),
         'template' => env('EF_MESSAGE_VIEW', 'json/arkivmelding.template.json'),
     ],
+    'attachment-blacklist' => [
+        'arkivmelding.xml',
+        'emailtext',
+        'mimetype',
+    ],
     'process_pre' => 'urn:no:difi:profile:',
     'process_post' => ':ver1.0',
     'process' => [

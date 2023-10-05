@@ -83,7 +83,7 @@ class API {
      * @param   string    $contentType    Setter forespørselens Content-Type, standard 'application/json'
      * @return  Illuminate\Http\Client\PendingRequest
      */
-    public function prepRequest(string|null $accept = null, string|null $contentType = null, null|string $toFile = null): PendingRequest {
+    public function prepRequest(string|null $accept = null, string|null $contentType = 'auto', null|string $toFile = null): PendingRequest {
         $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
         // Setter timeout for forespørselen
         $request->timeout($this->myConf('api.timeout', config('api.timeout')));
@@ -123,6 +123,8 @@ class API {
         // Setter content-type
         if ($contentType && !in_array($contentType, ['none', 'no', 'auto'])):
             $request->contentType($contentType);
+        elseif ($contentType == 'auto' && $this->myConf('api.contentType', false)):
+            $request->contentType($this->myConf('api.contentType'));
         endif;
 
         // Hvis filplassering er oppgitt, bruk sink
@@ -180,13 +182,13 @@ class API {
             string $uri,
             mixed $body = null,
             string|null $accept = null,
-            string|null $contentType = null,
+            string|null $contentType = 'auto',
             bool $returnBool = false,
-            null|array $withOptions = null
+            null|string $toFile = null
         ): Response|bool
     {
         $uri = $this->resolveUri($uri);
-        $response = $this->prepRequest($accept, $contentType, $withOptions)->post($uri, $body);
+        $response = $this->prepRequest($accept, $contentType, $toFile)->post($uri, $body);
         if ($returnBool) return $response->successful();
         return $response;
     }
@@ -198,15 +200,15 @@ class API {
         (
             string $uri,
             array $body,
-            string|null $contentType = null,
+            string|null $contentType = 'auto',
             bool $returnBool = false,
-            null|array $withOptions = null
+            null|string $toFile = null
         ): Response|bool
     {
         $uri = $this->resolveUri($uri);
         $accept = $this->myConf('api.accept', 'application/json');
-        $contentType = $contentType ? $contentType : $this->myConf('api.contentType', $accept);
-        $response = $this->prepRequest($accept, $contentType, $withOptions)->patch($uri, $body);
+        //$contentType = $contentType ? $contentType : $this->myConf('api.contentType', $accept);
+        $response = $this->prepRequest($accept, $contentType, $toFile)->patch($uri, $body);
         return $returnBool ? $response->successful() : $response;
     }
 

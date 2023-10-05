@@ -259,7 +259,7 @@ class Message extends Model {
             $description = Blade::render(config('eformidling.in.innsynskrav'), ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject, 'docMetadata' => $docMetadata]);
             $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'));
             if (isset($emailtext)):
-                $ps->createInternalNote($emailtext, $ticket['id'], 'Opprinnelig bestilling');
+                $ps->createInternalNote(Str::replace("\n", "<br/>\n", $emailtext), $ticket['id'], 'Opprinnelig bestilling');
             endif;
             $tickets[] = $ticket;
         endforeach;
