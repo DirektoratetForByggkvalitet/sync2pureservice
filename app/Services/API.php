@@ -90,9 +90,11 @@ class API {
             'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
             'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
         ]);
-        // Korrigerer manglende prefix
+        // Korrigerer manglende prefix eller prefix som ikke starter med '/'
         if ($this->myConf('api.prefix', false) && $this->prefix == ''):
-            $this->setPrefix($this->myConf('api.prefix'));
+            $this->setPrefix(Str::replace('//', '/', '/'.$this->myConf('api.prefix')));
+        elseif ($this->prefix != '' && !Str::startsWith($this->prefix, '/')):
+            $this->setPrefix(Str::replace('//', '/', '/'.$this->prefix));
         endif;
         if ($this->myConf('api.url', false)):
             $request->baseUrl($this->myConf('api.url').$this->prefix);
