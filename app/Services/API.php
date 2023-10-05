@@ -91,7 +91,7 @@ class API {
      * @param   string    $contentType    Setter forespørselens Content-Type, standard 'application/json'
      * @return  Illuminate\Http\Client\PendingRequest
      */
-    public function prepRequest(string|null $accept = null, string|null $contentType = null): PendingRequest {
+    public function prepRequest(string|null $accept = null, string|null $contentType = null, null|array $options = null): PendingRequest {
         $headers = $this->options['headers'];
         $request = Http::withHeaders($headers);
         if ($this->auth):
@@ -116,6 +116,11 @@ class API {
         endif;
         // Setter timeout for forespørselen
         $request->timeout($this->myConf('api.timeout', 90));
+
+        if ($options):
+            $request->withOptions($options);
+        endif;
+
         return $request;
     }
 
@@ -133,26 +138,28 @@ class API {
      * @param   bool    $returnResponse Returnerer Response-objektet, fremfor kun dataene
      * @param   string  $contentType    Setter Content-Type for forespørselen
      */
-    public function apiGet(string $uri, bool $returnResponse = false, string|null|false $accept = null, array $query = [], bool $statusOnError = false): mixed {
+    public function apiGet(string $uri, bool $returnResponse = false, string|null|false $accept = null, null|array $query = null, null|array $withOptions = null): mixed {
         $uri = $this->resolveUri($uri);
-        $response = $this->prepRequest($accept)->get($uri, $query);
+        $query = is_array($query) ? $query : [];
+        $response = $this->prepRequest($accept, null, $withOptions)->get($uri, $query);
         if ($response->successful()):
             if ($returnResponse) return $response;
             return $response->json();
         endif;
-        if ($statusOnError) return
-            [$response->status(), $response->json()];
         return $returnResponse ? $response : false;
     }
 
+    /**
+     * Samme som apiGet, men forenklet for å ta imot URL-parametre
+     */
     public function apiQuery(
         string $uri,
         array $query = [],
         bool $returnResponse = false,
         string|null|false $accept = null,
-        bool $statusOnError = false
+        null|array $withOptions = null
     ): Response|array|false {
-        return $this->apiGet($uri, $returnResponse, $accept, $query, $statusOnError);
+        return $this->apiGet($uri, $returnResponse, $accept, $query, $withOptions);
     }
 
     /**
