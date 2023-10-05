@@ -52,20 +52,22 @@ class IncomingMessages extends Command {
             $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
             return Command::SUCCESS;
         endif;
-        $messagesToSkip = $messages->lazy()->whereIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering']);
+        $skipCount = $messages->lazy()->whereIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering'])->count();
 
-        $this->info(Tools::l1().'Av totalt '.$messages->count().' innkommende meldinger er '.$messagesToSkip->count().' einnsynskvitteringer som vi hopper over.');
+        $this->info(Tools::l1().'Totalt '.$messages->count().' innkommende meldinger. '.$skipCount.' av disse er kvitteringer fra eInnsyn, som vi hopper over.');
 
         // Avslutter dersom alle meldinger skal hoppes over.
-        if ($messages->count() == $messagesToSkip->count()):
+        if ($messages->count() == $skipCount):
             $this->newLine();
             $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
             return Command::SUCCESS;
         endif;
-
+        $i = 0;
+        $subtotal = $messages->count() - $skipCount;
         foreach ($messages->lazy()->whereNotIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering']) as $m):
+            $i++;
             $msgId = $this->ip->getMsgDocumentIdentification($m);
-            $this->line(Tools::l1().'Behandler meldingen \''.$msgId['instanceIdentifier'].'\'');
+            $this->line(Tools::l1().$i.'/'.$subtotal.' Behandler meldingen \''.$msgId['instanceIdentifier'].'\'');
 
             // Hopper over kvitteringsmeldinger fra eInnsyn, for nå.
             if ($this->ip->getMessageDocumentType($m) == 'einnsyn_kvittering'):
@@ -107,7 +109,7 @@ class IncomingMessages extends Command {
                     if ($kparter = Arr::get($arkivmelding, 'mappe.basisregistrering.korrespondansepart', null)):
                         // Avklarer avsender, også hvis det bare er én korrespondansepart
                         $avsender = isset($kparter['korrespondanseparttype']) ? $kparter : collect($kparter)->firstWhere('korrespondanseparttype', 'Avsender');
-                        $this->ps = new PsApi();
+                        $this->ensurePs();
                         if ($psSender = $this->ps->findCompany(null, $avsender['korrespondansepartNavn'])):
                             $this->line(Tools::L3.'Fant avsender: '.$psSender['name']);
                             foreach (['id', 'name', 'organizationNumber', 'website'] as $f):
@@ -124,7 +126,7 @@ class IncomingMessages extends Command {
 
         $this->newLine();
         $this->info(Tools::l1().'Oppretter meldinger som saker i Pureservice');
-        if (!isset($this->ps)) $this->ps = new PsApi();
+        $this->ensurePs();
         $this->info(Tools::l1().'Bruker Pureservice-instansen '.$this->ps->getBaseUrl().'.');
         $this->ps->setTicketOptions('eformidling');
         // $bar = $this->output->createProgressBar(Message::count());
@@ -187,5 +189,12 @@ class IncomingMessages extends Command {
         $this->info('Ferdig. Operasjonen tok '.round((microtime(true) - $this->start), 0).' sekunder');
         //$this->info(count($tickets).' sak'.count($tickets) > 1 ? 'er' : ''.' ble opprettet');
         return Command::SUCCESS;
+    }
+
+    /**
+     * Sikrer at det er opprettet en instans av tjenesten PsApi
+     */
+    protected function ensurePs() : void {
+        if (!isset($this->ps)) $this->ps = new PsApi();
     }
 }

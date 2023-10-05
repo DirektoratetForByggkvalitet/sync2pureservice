@@ -16,8 +16,7 @@ class PsApi extends API {
     protected array $statuses;
 
     public function __construct() {
-        $this->cKey = 'pureservice';
-        $this->setProperties();
+        parent::__construct();
     }
 
     /**

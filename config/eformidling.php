@@ -9,6 +9,8 @@ return [
         'password' => env('EF_IP_PASSWORD'),
         'accept' => null,
         'asic_accept' => 'application/vnd.etsi.asic-e+zip',
+        'timeout' => 90,
+        'retry' => 3,
     ],
     'testapi' => [
         'url' => env('EF_TEST_IP_URL', 'https://qa-meldingsutveksling.difi.no/integrasjonspunkt/digdir-leikanger'),
@@ -30,7 +32,7 @@ return [
     ],
     'system' => [
         'name' => env('EF_SYSTEM_NAME', 'sync2pureservice'),
-        'systemId' => env('EF_SYSTEM_ID', Str::uuid()),
+        'systemId' => env('EF_SYSTEM_ID', Str::uuid()->toString()),
     ],
     'path' => [
         'download' => env('EF_DOWNLOAD_PATH', 'eformidling_download'),

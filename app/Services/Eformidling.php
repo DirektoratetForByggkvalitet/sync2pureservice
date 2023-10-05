@@ -16,29 +16,9 @@ class Eformidling extends API {
 
     public function __construct() {
         parent::__construct();
-        $this->prefix = $this->myConf('api.prefix');
-        $this->setupClient();
         $this->brreg = new Enhetsregisteret();
     }
 
-    protected function setupClient(): void {
-        $options = [];
-        $options['headers'] = [
-            'Accept' => 'application/json',
-            'Connection' => 'keep-alive',
-            'Accept-Encoding' => 'gzip, deflate, br',
-            'User-Agent' => 'sync2pureservice/PHP'
-        ];
-        // Legger til innlogging, hvis påkrevd
-        if ($this->myConf('api.auth') == true):
-            $options['auth'] = [
-                $this->myConf('api.user'),
-                $this->myConf('api.password'),
-            ];
-        endif;
-        $this->base_url = $this->myConf('api.url');
-        $this->setOptions($options);
-    }
     /**
      * Setter opp til å bruke Digdir sitt test-api for å sende meldinger (til oss selv)
     */
@@ -47,7 +27,7 @@ class Eformidling extends API {
             'eformidling.default.api' => config('eformidling.api'),
             'eformidling.api' => config('eformidling.testapi'),
         ]);
-        $this->setupClient();
+        $this->setProperties();
     }
 
     public function switchToOriginalIp(): void {
@@ -55,7 +35,7 @@ class Eformidling extends API {
             config([
                 'eformidling.api' => config('eformidling.default.api'),
             ]);
-            $this->setupClient();
+            $this->setProperties();
         endif;
     }
 

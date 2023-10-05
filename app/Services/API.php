@@ -15,17 +15,10 @@ class API {
     public $base_url;
 
     protected $prefix = ''; // Prefiks til uri
-    protected $options = [
-        'headers' => [
-            'Connection' => 'keep-alive',
-            'Accept-Encoding' => 'gzip, deflate, br',
-            'User-Agent' => 'sync2pureservice/PHP'
-        ],
-    ];
     protected false|string $auth = false;
 
     public function __construct() {
-        $this->setCKey(Str::lower(class_basename($this)));
+        $this->setProperties();
     }
 
     /**
@@ -35,9 +28,14 @@ class API {
      * som de vil bruke 'eformidling.testapi' for å finne innstillingene
      */
     public function setProperties(string $prefix = 'api') {
+        $this->cKey =Str::lower(class_basename($this));
         $this->auth = $this->myConf($prefix.'.auth', false);
         $this->prefix = $this->myConf($prefix.'.prefix', '');
         $this->base_url = $this->myConf($prefix.'.url');
+        // Beholder samme User-Agent uansett prefix
+        config([
+            Str::lower(class_basename($this)).'.api.user-agent' => class_basename($this).'/'.config('api.user-agent'),
+        ]);
     }
 
     public function setBaseUrl(string $url): void {
@@ -64,20 +62,6 @@ class API {
         return config($this->cKey.'.'.$key, $default);
     }
 
-    /**
-     * Setter standardvalg for GuzzleHttp-klienten
-     */
-    public function setOptions(array $options): void {
-        $this->options = $options;
-        //$this->options['http_errors'] = false;
-    }
-
-    /**
-     * Henter ut standardvalgene for GuzzleHttp-klienten
-     */
-    public function getOptions(): array {
-        return $this->options;
-    }
 
     /**
      * Setter prefiks for alle API-kall (det som kommer etter 'https://server.no' i alle kall)
@@ -92,8 +76,22 @@ class API {
      * @return  Illuminate\Http\Client\PendingRequest
      */
     public function prepRequest(string|null $accept = null, string|null $contentType = null, null|array $options = null): PendingRequest {
-        $headers = $this->options['headers'];
-        $request = Http::withHeaders($headers);
+        $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
+        // Setter timeout for forespørselen
+        $request->timeout($this->myConf('api.timeout', config('api.timeout')));
+        $request->retry($this->myConf('api.retry', config('api.retry')));
+        // Setter headers
+        $request->withHeaders([
+            'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
+            'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
+        ]);
+        // Korrigerer manglende prefix
+        if ($this->myConf('api.prefix', false) && $this->prefix == ''):
+            $this->setPrefix($this->myConf('api.prefix'));
+        endif;
+        if ($this->myConf('api.url', false)):
+            $request->baseUrl($this->myConf('api.url')).$this->prefix;
+        endif;
         if ($this->auth):
             switch ($this->auth):
                 case 'digest':
@@ -114,8 +112,6 @@ class API {
         if ($contentType && !in_array($contentType, ['none', 'no', 'auto'])):
             $request->contentType($contentType);
         endif;
-        // Setter timeout for forespørselen
-        $request->timeout($this->myConf('api.timeout', 90));
 
         if ($options):
             $request->withOptions($options);
@@ -125,10 +121,11 @@ class API {
     }
 
     public function resolveUri(string $path): string {
+        return Str::replace('//', '/', '/' . $path);
         if (Str::startsWith($path, 'https:') || Str::startsWith($path, 'http:')):
             return $path; // Returnerer samme verdi, siden det er en full URL
         else:
-            return $this->base_url . Str::replace('//', '/', '/' . $this->prefix . '/' . $path);
+            return Str::replace('//', '/', '/' . $path);
         endif;
     }
 
