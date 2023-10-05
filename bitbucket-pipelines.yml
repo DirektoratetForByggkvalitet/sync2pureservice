@@ -105,6 +105,7 @@ pipelines:
       - step:
           name: Henter inn meldinger fra eFormidling (Altinn, Svarut, eInnsyn)
           deployment: eFormidling
+          size: 2x
           caches:
             - composer-vendor
             - composer

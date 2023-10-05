@@ -174,10 +174,7 @@ class Eformidling extends API {
             //$fileMimeType = Str::before($response->header('content-type'), ';');
             $cd = ContentDisposition::parse($response->header('content-disposition'));
             $fileName = $dlPath . '/' . $cd->getFileName();
-            Storage::put(
-                $fileName,
-                $response->toPsrResponse()->getBody()->getContents()
-            );
+            Storage::move($tmpFile, $fileName);
 
             // Pakker ut zip-filen
             $path = $dbMessage->downloadPath();
