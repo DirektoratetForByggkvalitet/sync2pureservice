@@ -165,7 +165,7 @@ class IncomingMessages extends Command {
                 $this->ps->setTicketOptions('eformidling');
                 if ($new = $message->saveToPs($this->ps)):
                     $tickets[] = $new;
-                    $this->line(Tools::l3().'Sak ID '.$new->requestNumber. ' ble opprettet.');
+                    $this->line(Tools::l3().'- Sak ID '.$new->requestNumber. ' ble opprettet.');
                     // unset($new);
                 else:
                     $this->error(Tools::l2().'Klarte ikke å opprette sak i Pureservice');
