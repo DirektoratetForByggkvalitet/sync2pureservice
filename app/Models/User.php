@@ -85,6 +85,7 @@ class User extends Model
         // endif;
 
         $body = $this->toArray();
+        if (isset($body['id'])) unset($body['id']);
         $body['emailaddressId'] = $emailId;
         if ($noEmail && config('pureservice.user.no_email_field')):
             $body[config('pureservice.user.no_email_field')] = 1;
