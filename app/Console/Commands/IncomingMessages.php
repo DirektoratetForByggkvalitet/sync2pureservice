@@ -64,7 +64,10 @@ class IncomingMessages extends Command {
         endif;
         $i = 0;
         $subtotal = $messages->count() - $skipCount;
-        foreach ($messages->lazy()->whereNotIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering']) as $m):
+        foreach ($messages->lazy()
+            ->whereNotIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering'])
+            ->sortByDesc('standardBusinessDocumentHeader.documentIdentification.type') as $m
+        ):
             $i++;
             $msgId = $this->ip->getMsgDocumentIdentification($m);
             $this->line(Tools::l1().$i.'/'.$subtotal.' Behandler meldingen \''.$msgId['instanceIdentifier'].'\'');
