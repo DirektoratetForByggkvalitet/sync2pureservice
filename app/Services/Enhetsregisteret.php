@@ -48,7 +48,8 @@ class Enhetsregisteret extends API {
                     return $response->json();
                 endif;
             } catch (RequestException $e) {
-                return $e->response;
+                //return $e->response;
+                continue;
             }
         endforeach;
         return false;
