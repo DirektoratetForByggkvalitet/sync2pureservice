@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Services\API;
 use App\Models\Company;
 use Illuminate\Support\{Str, Arr};
+use Illuminate\Http\Client\{RequestException};
 
 class Enhetsregisteret extends API {
 
@@ -39,12 +40,16 @@ class Enhetsregisteret extends API {
     }
 
     public function lookupCompany(string $regno): array|false {
-        foreach (['underenheter', 'enheter'] as $uri):
+        foreach (['enheter', 'underenheter'] as $uri):
             $uri .= '/'.$regno;
-            $response = $this->apiGet($uri, true);
-            if ($response->successful()):
-                return $response->json();
-            endif;
+            try {
+                $response = $this->apiGet($uri, true);
+                if ($response->successful()):
+                    return $response->json();
+                endif;
+            } catch (RequestException $e) {
+                return $e->response;
+            }
         endforeach;
         return false;
     }
