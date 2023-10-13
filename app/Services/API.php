@@ -131,7 +131,7 @@ class API {
         if ($toFile):
             $request->sink($toFile);
         endif;
-
+        $request->throwIfStatus(500);
         return $request;
     }
 
