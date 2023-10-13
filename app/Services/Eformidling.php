@@ -45,7 +45,9 @@ class Eformidling extends API {
     public function resolveActors(array $message): array {
         $sender = $this->brreg->getCompany(
             $this->stripIsoPrefix(
-                Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier.value')));
+                Arr::get($message, 'standardBusinessDocumentHeader.sender.0.identifier.value')
+            )
+        );
         if (!$sender):
             // Avsender slås ikke opp i BRREG
             $sender = Company::factory()->create([

@@ -39,7 +39,7 @@ class Enhetsregisteret extends API {
     }
 
     public function lookupCompany(string $regno): array|false {
-        foreach (['enheter', 'underenheter'] as $uri):
+        foreach (['underenheter', 'enheter'] as $uri):
             $uri .= '/'.$regno;
             $response = $this->apiGet($uri, true);
             if ($response->successful()):
