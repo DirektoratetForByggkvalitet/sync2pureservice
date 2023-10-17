@@ -62,7 +62,7 @@ class Tools {
             $data[1] = Str::ucfirst(Str::after($beforeAt, '.'));
         else:
             $data[0] = $beforeAt;
-            $data[1] = $domain;
+            $data[1] = '-';
         endif;
 
         return $splitName ? $data : implode(' ', $data);
