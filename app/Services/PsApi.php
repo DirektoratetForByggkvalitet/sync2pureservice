@@ -626,7 +626,7 @@ class PsApi extends API {
                         'temporaryId' => $tempId,
                         'ticketId' => $ticket->id,
                         'fileName' => basename($file),
-                        'name' => Str::beforeLast($file, '.'),
+                        'name' => Str::beforeLast(basename($file), '.'),
                         'isVisible' => true,
                         'contentType' => Storage::mimeType($file),
                         'size' => $this->human_filesize(Storage::size($file)),
