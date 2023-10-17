@@ -557,7 +557,7 @@ class PsApi extends API {
         return false;
     }
 
-    public function createInternalNote(string $message, int $ticketId, string|null $subject = null): bool {
+    public function createInternalNote(string $message, int $ticketId, string|null $subject = null, bool $visible = true): bool {
         $uri = '/communication/';
         $body = ['communications' => [
             [
@@ -566,6 +566,7 @@ class PsApi extends API {
                 'type' => config('pureservice.comms.internal'),
                 'direction' => config('pureservice.comms.direction.internal'),
                 'ticketId' => $ticketId,
+                'visibility' => $visible ? config('pureservice.comms.visibility.on'): config('pureservice.comms.visibility.off'),
              ]
         ]];
         if ($res = $this->apiPost($uri, $body)) return true;
