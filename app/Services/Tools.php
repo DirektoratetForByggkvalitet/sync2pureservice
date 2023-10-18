@@ -58,8 +58,9 @@ class Tools {
         $domain = Str::after($email, '@');
         if (Str::contains($beforeAt, '.')):
             // Hvis e-postadressen f.eks. er ola.nordmann@gmail.com
-            $data[0] = Str::ucfirst(Str::before($beforeAt, '.'));
-            $data[1] = Str::ucfirst(Str::after($beforeAt, '.'));
+            $data[0] = Str::Title(Str::beforeLast($beforeAt, '.'));
+            $data[0] = Str::title(Str::replace('.', ' ', $data[0]));
+            $data[1] = Str::ucfirst(Str::afterLast($beforeAt, '.'));
         else:
             $data[0] = $beforeAt;
             $data[1] = '-';
@@ -70,7 +71,7 @@ class Tools {
     }
 
     public static function reorderName(string $name, bool $splitName = true): array {
-        $data = ['first', 'last'];
+        $data = [];
         $nameArray = explode(', ', $name);
         $data[] = trim($nameArray[1]);
         $data[] = trim($nameArray[0]);

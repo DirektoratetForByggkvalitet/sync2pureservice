@@ -389,6 +389,24 @@ class PsApi extends API {
     }
 
 
+    public function findCompanyByDomainName(string $search, bool $returnClass = false): array|false|Company {
+        $uri = '/company/';
+        $query = [
+            'filter' => 'emailAddress.email.contains("'.$search.'")',
+        ];
+        $response = $this->apiQuery($uri, $query, true);
+        if ($response->successful()):
+            $companies = collect($response->json('companies'));
+        else:
+            return false;
+        endif;
+        if ($companies->count() == 1):
+            return $returnClass ? $companies->mapInto(Company::class)->first() : $companies->first();
+        else:
+            return false;
+        endif;
+    }
+
     /**
      * Oppretter et firma i Pureservice, og legger til e-post og telefonnr hvis oppgitt
      * @param string|App\Models\Company $companyName   Foretaksnavn, påkrevd
