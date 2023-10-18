@@ -69,6 +69,14 @@ class Tools {
 
     }
 
+    public static function reorderName(string $name, bool $splitName = true): array {
+        $data = ['first', 'last'];
+        $nameArray = explode(', ', $name);
+        $data[] = trim($nameArray[1]);
+        $data[] = trim($nameArray[0]);
+        return $splitName ? $data : implode(' ', $data);
+    }
+
     public static function fileNameFromStoragePath(string $storagePath, bool $includeExt = true): string {
         $filename = Str::afterLast($storagePath, '/');
         return $includeExt ? $filename : Str::beforeLast($filename, '.');

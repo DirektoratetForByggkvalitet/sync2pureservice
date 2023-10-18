@@ -8,8 +8,16 @@ use Carbon\Carbon;
 use Illuminate\Support\{Str, Arr, Facades\Storage};
 use App\Models\{Company, User, Ticket, TicketCommunication};
 
-class Pureservice
-{
+/**
+ * Denne klassen er utdatert og er i praksis faset ut til fordel for PsApi og PsAsset
+ * Den brukes fortsatt av kommandoene
+ * - Innsynskrav2Pureservice
+ * - Offentlige2Ps
+ * - PsMailingLists
+ * - SplittInnsynskrav
+ * - SvarInn2Pureservice
+ */
+class Pureservice {
     protected $api;
     protected $options;
     protected $statuses = [];

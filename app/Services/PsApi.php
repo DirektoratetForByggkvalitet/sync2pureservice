@@ -669,4 +669,10 @@ class PsApi extends API {
         return false;
     }
 
+    /**
+     * Sjekker og korrigerer brukerdata mot PS
+     */
+    public function correctUserData(User $user): bool {
+        return false;
+    }
 }
