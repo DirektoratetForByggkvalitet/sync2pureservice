@@ -403,6 +403,9 @@ class PsApi extends API {
         if ($companies->count() == 1):
             return $returnClass ? $companies->mapInto(Company::class)->first() : $companies->first();
         else:
+            if ($search == 'bergen.kommune.no' && $company = $companies->firstWhere('name', 'Bergen Kommune')):
+                return $returnClass ? $companies->mapInto(Company::class)->firstWhere('name', 'Bergen Kommune'): $company;
+            endif;
             return false;
         endif;
     }
@@ -687,10 +690,4 @@ class PsApi extends API {
         return false;
     }
 
-    /**
-     * Sjekker og korrigerer brukerdata mot PS
-     */
-    public function correctUserData(User $user): bool {
-        return false;
-    }
 }

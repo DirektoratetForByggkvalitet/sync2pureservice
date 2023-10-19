@@ -108,14 +108,14 @@ class PsUserCleanup extends Command {
             endif;
             if ($updateMe):
                 $changeCount++;
-                $this->info(Tools::L2.'[ID '.$psUser->id.'] \''.$fullName.'\': '.$psUser->email);
+                $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
                 if (isset($newName)):
                     $psUser->firstName = Str::title($newName[0]);
                     $psUser->lastName = Str::title($newName[1]);
-                    $this->line(Tools::L3.'- Navn: '.$psUser->firstName.' '.$psUser->lastName);
+                    $this->line(Tools::L3.' Navn endres til \''.$psUser->firstName.' '.$psUser->lastName.'\'');
                 endif;
                 if ($companyChanged):
-                    $this->line(Tools::L3.'- Kobles til virksomheten \''.$company->name.'\'');
+                    $this->line(Tools::L3.' Kobles til virksomheten \''.$company->name.'\'');
                 endif;
                 // Oppdater brukeren i Pureservice
                 //$psUser->addOrUpdatePS($ps);
