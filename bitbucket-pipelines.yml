@@ -56,6 +56,7 @@ pipelines:
       - step:
           name: Bygger et docker-image for kjøring av sync2pureservice
           image: atlassian/default-image:4
+          deployment: Production
           services:
             - docker
           caches:
@@ -84,7 +85,7 @@ pipelines:
       - step: *forberedeSvarInn
       - step:
           name: Sjekker SvarUtMottak
-          deployment: Production
+          deployment: eFormidling
           caches:
             - composer-vendor
             - composer
@@ -134,7 +135,7 @@ pipelines:
     offentlige2ps:
       - step:
           name: 'Importerer offentlige instanser fra BRREG inn i Pureservice'
-          deployment: Production
+          deployment: maintenance
           caches:
             - composer
             - composer-vendor
@@ -161,7 +162,7 @@ pipelines:
 
     masseutsendelse:
       - step:
-          deployment: Production
+          deployment: utsendelse
           name: Ser etter masseutsendelser i PS og sørger for å sende dem
           caches:
             - composer
@@ -193,3 +194,13 @@ pipelines:
             - *install
             - ./artisan pureservice:splittInnsynskrav ${requestNumber}
 
+    userCleanup:
+      - step:
+          name: Rydder opp i brukerinformasjonen i Pureservice
+          deployment: maintenance
+          caches:
+            - composer-vendor
+            - composer
+          script:
+            - *install
+            - ./artisan pureservice:user-cleanup

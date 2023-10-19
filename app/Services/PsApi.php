@@ -103,7 +103,7 @@ class PsApi extends API {
      * @return  bool    angir om slettingen lyktes eller ikke
      */
     public function deleteRelation($relationshipId) {
-        return $this->apiDelete('/relationship/'.$relationshipId.'/delete');
+        return $this->apiDelete('/relationship/'.$relationshipId);
     }
 
     /**

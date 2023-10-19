@@ -15,6 +15,8 @@ class PsUserCleanup extends Command {
 
     protected Collection $psUsers;
     protected Collection $emailAddresses;
+    protected float $start;
+    protected string $version = '1.0';
     /**
      * The name and signature of the console command.
      *
@@ -33,6 +35,11 @@ class PsUserCleanup extends Command {
      * Execute the console command.
      */
     public function handle() {
+        $this->start = microtime(true);
+        $this->info(class_basename($this).' v'.$this->version);
+        $this->line($this->description);
+        $this->newLine(2);
+
         $ps = new PsApi();
         $userCount = 0;
         if (Cache::has('psUsers') && Cache::has('emailAddresses')):
@@ -40,7 +47,7 @@ class PsUserCleanup extends Command {
             $this->psUsers = Cache::get('psUsers');
             $this->emailAddresses = Cache::get('emailAddresses');
         else:
-            $this->info(Tools::L1.'Henter brukerdata fra '.$ps->base_url);
+            $this->info(Tools::L1.'Henter brukerdata fra \''.$ps->base_url.'\'');
             $uri = '/user/';
             $AND = ' && ';
             $query = [
@@ -111,11 +118,13 @@ class PsUserCleanup extends Command {
                     $this->line(Tools::L3.'- Kobles til virksomheten \''.$company->name.'\'');
                 endif;
                 // Oppdater brukeren i Pureservice
+                //$psUser->addOrUpdatePS($ps);
                 $this->newLine();
             endif;
         });
 
         $this->info('Ferdig. Av til sammen '.$userCount.' brukere måtte '.$changeCount.' endres på.');
+        $this->line(Tools::L1.'Jobben tok '.(microtime(true) - $this->start).' sekunder');
 
         return Command::SUCCESS;
 
