@@ -183,10 +183,6 @@ return [
             'company' => 'CMS Kluge Advokatfirma AS',
         ],
         [
-            'domain' => 'cms.law',
-            'company' => 'CMS Kluge Advokatfirma AS',
-        ],
-        [
             'domain' => 'epost.no',
             'company' => false,
         ],

@@ -389,17 +389,24 @@ class PsApi extends API {
     }
 
 
-    public function findCompanyByDomainName(string $search, bool $returnClass = false): array|false|Company {
-        return Cache::remember(Str::slug($search), 600, function() use ($search, $returnClass) {
+    public function findCompanyByDomainName(string $search, bool $returnClass = true): array|false|Company {
+        $cKey = $returnClass ? Str::slug($search.'_class') : Str::slug($search.'_array');
+        return Cache::remember($cKey, 600, function() use ($search, $returnClass) {
             // Henter virksomhetens navn fra domenemapping-config (hvis den er satt opp)
             $domainMapping = collect(config('pureservice.domainmapping'));
             $entry = $domainMapping->firstWhere('domain', $search);
             $companyName = isset($entry['company']) ? $entry['company'] : null;
 
             $uri = '/company/';
-            $query = [
-                'filter' => 'emailAddress.email.contains("'.$search.'")',
-            ];
+            if ($companyName):
+                $query = [
+                    'filter' => '!disabled AND name=="'.$companyName.'"',
+                ];
+            else:
+                $query = [
+                    'filter' => '!disabled AND emailAddress.email.contains("'.$search.'")',
+                ];
+            endif;
             $response = $this->apiQuery($uri, $query, true);
             if ($response->successful()):
                 $companies = collect($response->json('companies'));
@@ -408,6 +415,7 @@ class PsApi extends API {
             endif;
 
             if ($companies->count() == 1 && $companyName !== false):
+                dd($companies->mapInto(Company::class)->first());
                 return $returnClass ? $companies->mapInto(Company::class)->first() : $companies->first();
 
             elseif ($companies->count() > 1 && $companyName):
