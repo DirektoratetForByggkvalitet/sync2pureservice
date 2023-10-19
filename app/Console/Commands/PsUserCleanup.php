@@ -130,6 +130,5 @@ class PsUserCleanup extends Command {
         $this->line(Tools::L1.'Vi brukte '.round((microtime(true) - $this->start), 2).' sekunder på dette');
 
         return Command::SUCCESS;
-
     }
 }
