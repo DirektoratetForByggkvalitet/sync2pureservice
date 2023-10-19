@@ -124,7 +124,7 @@ class PsUserCleanup extends Command {
         });
 
         $this->info('Ferdig. Av til sammen '.$userCount.' brukere måtte '.$changeCount.' endres på.');
-        $this->line(Tools::L1.'Jobben tok '.(microtime(true) - $this->start).' sekunder');
+        $this->line(Tools::L1.'Jobben brukte '.round((microtime(true) - $this->start), 2).' sekunder på dette');
 
         return Command::SUCCESS;
 
