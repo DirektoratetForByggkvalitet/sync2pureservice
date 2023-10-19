@@ -126,6 +126,8 @@ pipelines:
           caches:
             - composer-vendor
             - composer
+          runs-on:
+            - "self.hosted"
           script:
             - echo 'Kjører sjekkInnsynskrav'
             - *install
@@ -139,6 +141,8 @@ pipelines:
           caches:
             - composer
             - composer-vendor
+          runs-on:
+            - "self.hosted"
           script:
             - *install
             - *resetDB
@@ -201,6 +205,8 @@ pipelines:
           caches:
             - composer-vendor
             - composer
+          runs-on:
+            - "self.hosted"
           script:
             - *install
             - ./artisan pureservice:user-cleanup
