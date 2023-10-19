@@ -82,6 +82,7 @@ class PsUserCleanup extends Command {
         $userCount = $this->psUsers->count();
         $changeCount = 0;
         $this->info(Tools::L1.'Vi fant '.$userCount.' sluttbrukere. Starter behandling...');
+        $this->newLine();
         $this->psUsers->lazy()->each(function (User $psUser, int $key) use ($ps, &$changeCount) {
             $updateMe = false;
             $companyChanged = false;
