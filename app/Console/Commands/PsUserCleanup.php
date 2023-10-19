@@ -121,7 +121,7 @@ class PsUserCleanup extends Command {
                     $this->line(Tools::L3.' Kobles til virksomheten \''.$company->name.'\'');
                 endif;
                 // Oppdater brukeren i Pureservice
-                //$psUser->addOrUpdatePS($this->ps);
+                $psUser->addOrUpdatePS($this->ps);
                 $this->newLine();
             endif;
         });
