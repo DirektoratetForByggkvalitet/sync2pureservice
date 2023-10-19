@@ -108,7 +108,7 @@ class PsUserCleanup extends Command {
             endif;
             if ($updateMe):
                 $changeCount++;
-                $this->info(Tools::L2.$key.'. \''.$fullName.'\' - '.$psUser->email.' [ID '.$psUser->id.']');
+                $this->info(Tools::L2.'[ID '.$psUser->id.'] \''.$fullName.'\': '.$psUser->email);
                 if (isset($newName)):
                     $psUser->firstName = Str::title($newName[0]);
                     $psUser->lastName = Str::title($newName[1]);

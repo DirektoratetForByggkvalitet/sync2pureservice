@@ -205,6 +205,7 @@ pipelines:
           caches:
             - composer-vendor
             - composer
+            - laravel-cache
           runs-on:
             - "self.hosted"
           script:
