@@ -390,7 +390,7 @@ class PsApi extends API {
 
 
     public function findCompanyByDomainName(string $search, bool $returnClass = true): array|false|Company {
-        $cKey = $returnClass ? Str::slug($search.'_class') : Str::slug($search.'_array');
+        $cKey = $returnClass ? Str::slug($search).'_class' : Str::slug($search).'_array';
         return Cache::remember($cKey, 600, function() use ($search, $returnClass) {
             // Henter virksomhetens navn fra domenemapping-config (hvis den er satt opp)
             $domainMapping = collect(config('pureservice.domainmapping'));
@@ -415,7 +415,6 @@ class PsApi extends API {
             endif;
 
             if ($companies->count() == 1 && $companyName !== false):
-                dd($companies->mapInto(Company::class)->first());
                 return $returnClass ? $companies->mapInto(Company::class)->first() : $companies->first();
 
             elseif ($companies->count() > 1 && $companyName):

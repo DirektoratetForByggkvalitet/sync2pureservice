@@ -183,6 +183,10 @@ return [
             'company' => 'CMS Kluge Advokatfirma AS',
         ],
         [
+            'domain' => 'inn.innsyn.no',
+            'company' => 'Faktisk.no AS',
+        ],
+        [
             'domain' => 'epost.no',
             'company' => false,
         ],
