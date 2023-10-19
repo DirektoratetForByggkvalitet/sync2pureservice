@@ -390,6 +390,9 @@ class PsApi extends API {
 
 
     public function findCompanyByDomainName(string $search, bool $returnClass = false): array|false|Company {
+        // Henter virksomhetens navn fra domenemapping-config (hvis den er satt opp)
+        $companyName = config('pureservice.domainmapping.'.$search, false);
+
         $uri = '/company/';
         $query = [
             'filter' => 'emailAddress.email.contains("'.$search.'")',
@@ -402,12 +405,15 @@ class PsApi extends API {
         endif;
         if ($companies->count() == 1):
             return $returnClass ? $companies->mapInto(Company::class)->first() : $companies->first();
-        else:
-            if ($search == 'bergen.kommune.no' && $company = $companies->firstWhere('name', 'Bergen Kommune')):
-                return $returnClass ? $companies->mapInto(Company::class)->firstWhere('name', 'Bergen Kommune'): $company;
-            endif;
-            return false;
+        elseif ($companies->count() > 1 && $companyName):
+            foreach ($companies as $c):
+                if (Str::title($c['name']) == Str::title($companyName)):
+                    return $returnClass ? collect($c)->mapInto(Company::class)->first() : $c;
+                endif;
+            endforeach;
         endif;
+        // Hvis ingenting over slår til
+        return false;
     }
 
     /**

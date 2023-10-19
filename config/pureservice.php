@@ -165,4 +165,13 @@ return [
             'toTicket' => env('PURESERVICE_DISPATCH_LINK_TO_TICKET', 'Gir mottakere til'),
         ],
     ],
+    // Overstyrer domenemapping (PsUserCleanup)
+    'domainmapping' => [
+        'bergen.kommune.no' => 'Bergen Kommune',
+        'gmail.com' => false,
+        'outlook.com' => false,
+        'hotmail.com' => false,
+        'epost.no' => false,
+        'email.ru' => false,
+    ],
 ];
