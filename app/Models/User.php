@@ -53,7 +53,6 @@ class User extends Model
      * @param bool $noEmail     Angir om brukeren skal ha noemail-feltet satt til 1
      */
     public function addOrUpdatePS(PsApi $ps, bool $noEmail = false): bool|array {
-        //$psCompanyUsers = $ps->findUsersByCompanyId($this->company->externalId;);
         $update = false;
         if ($psUser = $ps->findUser($this->email)):
             // Brukeren finnes i Pureservice
@@ -68,21 +67,11 @@ class User extends Model
             endif;
             $this->id = $psUser['id'];
             $this->role = $psUser['role'];
-            $this->companyId = $psUser['companyId'];
+            $this->companyId = $this->companyId ? $this->companyId : $psUser['companyId'];
             $this->save();
         endif;
 
         $emailId = $this->email ? $ps->findOrCreateEmailaddressId($this->email): null;
-        // if ($this->email && $emailId == null):
-        //     $uri = '/emailaddress/';
-        //     $body = ['emailaddresses' => []];
-        //     $body['emailaddresses'][] = [
-        //         'email' => $this->email,
-        //     ];
-        //     if ($response = $ps->apiPost($uri, $body)):
-        //         $emailId = $response->json('emailaddresses.0.id');
-        //     endif;
-        // endif;
 
         $body = $this->toArray();
         if (isset($body['id'])) unset($body['id']);

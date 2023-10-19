@@ -4,7 +4,7 @@ namespace App\Services;
 use App\Models\{Ticket, TicketCommunication, User, Company, Message};
 use Carbon\Carbon;
 use Illuminate\Support\{Str, Arr};
-use Illuminate\Support\Facades\{Storage, Blade};
+use Illuminate\Support\Facades\{Storage, Blade, Cache};
 use cardinalby\ContentDisposition\ContentDisposition;
 use Illuminate\Http\Client\Response;
 
@@ -390,30 +390,37 @@ class PsApi extends API {
 
 
     public function findCompanyByDomainName(string $search, bool $returnClass = false): array|false|Company {
-        // Henter virksomhetens navn fra domenemapping-config (hvis den er satt opp)
-        $companyName = config('pureservice.domainmapping.'.$search, false);
+        return Cache::remember(Str::slug($search), 600, function() use ($search, $returnClass) {
+            // Henter virksomhetens navn fra domenemapping-config (hvis den er satt opp)
+            $domainMapping = collect(config('pureservice.domainmapping'));
+            $entry = $domainMapping->firstWhere('domain', $search);
+            $companyName = isset($entry['company']) ? $entry['company'] : null;
 
-        $uri = '/company/';
-        $query = [
-            'filter' => 'emailAddress.email.contains("'.$search.'")',
-        ];
-        $response = $this->apiQuery($uri, $query, true);
-        if ($response->successful()):
-            $companies = collect($response->json('companies'));
-        else:
+            $uri = '/company/';
+            $query = [
+                'filter' => 'emailAddress.email.contains("'.$search.'")',
+            ];
+            $response = $this->apiQuery($uri, $query, true);
+            if ($response->successful()):
+                $companies = collect($response->json('companies'));
+            else:
+                return false;
+            endif;
+
+            if ($companies->count() == 1 && $companyName !== false):
+                return $returnClass ? $companies->mapInto(Company::class)->first() : $companies->first();
+
+            elseif ($companies->count() > 1 && $companyName):
+                // Hvis det er flere firma med samme domenenavn lener vi oss mot domenemapping-config
+                foreach ($companies as $c):
+                    if (Str::title($c['name']) == Str::title($companyName)):
+                        return $returnClass ? collect([$c])->mapInto(Company::class)->first() : $c;
+                    endif;
+                endforeach;
+            endif;
+            // Hvis ingenting over slår til
             return false;
-        endif;
-        if ($companies->count() == 1):
-            return $returnClass ? $companies->mapInto(Company::class)->first() : $companies->first();
-        elseif ($companies->count() > 1 && $companyName):
-            foreach ($companies as $c):
-                if (Str::title($c['name']) == Str::title($companyName)):
-                    return $returnClass ? collect($c)->mapInto(Company::class)->first() : $c;
-                endif;
-            endforeach;
-        endif;
-        // Hvis ingenting over slår til
-        return false;
+        });
     }
 
     /**

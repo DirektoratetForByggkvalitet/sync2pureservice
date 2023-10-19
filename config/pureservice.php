@@ -166,12 +166,41 @@ return [
         ],
     ],
     // Overstyrer domenemapping (PsUserCleanup)
+    // domain settes til e-postdomenet (det etter @)
+    // company settes til navnet på firmaet som er registrert i Pureservice
+    // company kan settes til false hvis domenet skal ignoreres
     'domainmapping' => [
-        'bergen.kommune.no' => 'Bergen Kommune',
-        'gmail.com' => false,
-        'outlook.com' => false,
-        'hotmail.com' => false,
-        'epost.no' => false,
-        'email.ru' => false,
+        [
+            'domain' => 'bergen.kommune.no',
+            'company' => 'Bergen Kommune',
+        ],
+        [
+            'domain' => 'statsforvalteren.no',
+            'company' => false,
+        ],
+        [
+            'domain' => 'epost.no',
+            'company' => false,
+        ],
+        [
+            'domain' => 'online.no',
+            'company' => false,
+        ],
+        [
+            'domain' => 'gmail.com',
+            'company' => false,
+        ],
+        [
+            'domain' => 'outlook.com',
+            'company' => false,
+        ],
+        [
+            'domain' => 'email.ru',
+            'company' => false,
+        ],
+        [
+            'domain' => 'altibox.no',
+            'company' => false,
+        ],
     ],
 ];

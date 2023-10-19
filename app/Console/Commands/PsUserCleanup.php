@@ -17,6 +17,8 @@ class PsUserCleanup extends Command {
     protected Collection $emailAddresses;
     protected float $start;
     protected string $version = '1.0';
+    protected int $changeCount = 0;
+    protected PsApi $ps;
     /**
      * The name and signature of the console command.
      *
@@ -40,14 +42,14 @@ class PsUserCleanup extends Command {
         $this->line($this->description);
         $this->newLine(2);
 
-        $ps = new PsApi();
+        $this->ps = new PsApi();
         $userCount = 0;
         if (Cache::has('psUsers') && Cache::has('emailAddresses')):
             $this->info(Tools::L1.'Henter brukerdata fra cache');
             $this->psUsers = Cache::get('psUsers');
             $this->emailAddresses = Cache::get('emailAddresses');
         else:
-            $this->info(Tools::L1.'Henter brukerdata fra \''.$ps->base_url.'\'');
+            $this->info(Tools::L1.'Henter brukerdata fra \''.$this->ps->base_url.'\'');
             $uri = '/user/';
             $AND = ' && ';
             $query = [
@@ -61,7 +63,7 @@ class PsUserCleanup extends Command {
             $psUsers = [];
             $emailData = [];
             while ($batchCount == 500):
-                $response = $ps->apiQuery($uri, $query, true);
+                $response = $this->ps->apiQuery($uri, $query, true);
                 if ($response->successful()):
                     $psUsers = array_merge($psUsers, $response->json('users'));
                     $emailData = array_merge($emailData, $response->json('linked.emailaddresses'));
@@ -80,10 +82,10 @@ class PsUserCleanup extends Command {
         endif;
 
         $userCount = $this->psUsers->count();
-        $changeCount = 0;
+        $this->changeCount = 0;
         $this->info(Tools::L1.'Vi fant '.$userCount.' sluttbrukere. Starter behandling...');
         $this->newLine();
-        $this->psUsers->lazy()->each(function (User $psUser, int $key) use ($ps, &$changeCount) {
+        $this->psUsers->lazy()->each(function (User $psUser, int $key) {
             $updateMe = false;
             $companyChanged = false;
             $email = $this->emailAddresses->firstWhere('userId', $psUser->id);
@@ -100,7 +102,7 @@ class PsUserCleanup extends Command {
 
             // Ser om det finnes et firma med samme domenenavn og kobler i tilfelle det opp mot brukeren
             $emailDomain = Str::after($psUser->email, '@');
-            if (Str::afterLast($emailDomain, '.') == 'no' && !in_array($emailDomain, ['epost.no', 'online.no', 'altibox.no']) && $company = $ps->findCompanyByDomainName('@'.$emailDomain, true)):
+            if ($company = $this->ps->findCompanyByDomainName($emailDomain, true)):
                 if ($company->id != $psUser->companyId):
                     $psUser->companyId = $company->id;
                     $updateMe = true;
@@ -108,7 +110,7 @@ class PsUserCleanup extends Command {
                 endif;
             endif;
             if ($updateMe):
-                $changeCount++;
+                $this->changeCount++;
                 $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
                 if (isset($newName)):
                     $psUser->firstName = Str::title($newName[0]);
@@ -119,12 +121,12 @@ class PsUserCleanup extends Command {
                     $this->line(Tools::L3.' Kobles til virksomheten \''.$company->name.'\'');
                 endif;
                 // Oppdater brukeren i Pureservice
-                //$psUser->addOrUpdatePS($ps);
+                //$psUser->addOrUpdatePS($this->ps);
                 $this->newLine();
             endif;
         });
 
-        $this->info('Ferdig. Av til sammen '.$userCount.' brukere måtte '.$changeCount.' endres på.');
+        $this->info('Ferdig. Av til sammen '.$userCount.' brukere måtte '.$this->changeCount.' endres på.');
         $this->line(Tools::L1.'Jobben brukte '.round((microtime(true) - $this->start), 2).' sekunder på dette');
 
         return Command::SUCCESS;
