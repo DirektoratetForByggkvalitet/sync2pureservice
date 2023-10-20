@@ -103,7 +103,7 @@ class User extends Model
                 return $response->json();
             endif;
         endif;
-    return false;
-}
+        return false;
+    }
 
 }

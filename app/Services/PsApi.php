@@ -405,7 +405,7 @@ class PsApi extends API {
                 ];
             else:
                 $query = [
-                    'filter' => '!disabled AND emailAddress.email.contains("'.$search.'")',
+                    'filter' => '!disabled AND emailAddress.email.contains("@'.$search.'")',
                     'include' => 'emailaddress'
                 ];
             endif;
@@ -413,6 +413,7 @@ class PsApi extends API {
             if ($response->successful()):
                 $results = collect($response->json('companies'));
                 $emailAddresses = collect($response->json('linked.companyemailaddresses'));
+                // Filtrerer resultatet slik at vi er sikre på at domenenavnet er helt likt det vi leter etter
                 $companies = $results->filter(function (array $item, int $key) use ($emailAddresses, $search) {
                     $email = $emailAddresses->firstWhere('companyId', $item['id']);
                     $domain = Str::after($email['email'], '@');

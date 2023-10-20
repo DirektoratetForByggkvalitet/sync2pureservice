@@ -19,6 +19,7 @@ class PsUserCleanup extends Command {
     protected string $version = '1.0';
     protected int $changeCount = 0;
     protected PsApi $ps;
+    protected bool $debug = false;
     /**
      * The name and signature of the console command.
      *
@@ -42,6 +43,7 @@ class PsUserCleanup extends Command {
         $this->line($this->description);
         $this->newLine(2);
 
+        $this->debug = config('app.debug');
         $this->ps = new PsApi();
         $userCount = 0;
         if (Cache::has('psUsers') && Cache::has('emailAddresses')):
@@ -65,27 +67,32 @@ class PsUserCleanup extends Command {
             while ($batchCount == 500):
                 $response = $this->ps->apiQuery($uri, $query, true);
                 if ($response->successful()):
+                    $batchCount = count($response->json('users'));
                     $psUsers = array_merge($psUsers, $response->json('users'));
                     $emailData = array_merge($emailData, $response->json('linked.emailaddresses'));
                 else:
                     continue;
                 endif;
                 $query['start'] = $query['start'] + $query['limit'];
-                $batchCount = count($response->json('users'));
             endwhile;
             $this->psUsers = collect($psUsers)->mapInto(User::class);
             $this->emailAddresses = collect($emailData);
             unset($response, $psUsers, $emailData);
             // Legger brukerdataene i cache inntil videre
-            Cache::add('psUsers', $this->psUsers, 3600);
-            Cache::add('emailAddresses', $this->emailAddresses, 3600);
+            Cache::add('psUsers', $this->psUsers, 600);
+            Cache::add('emailAddresses', $this->emailAddresses, 600);
         endif;
 
         $userCount = $this->psUsers->count();
         $this->changeCount = 0;
         $this->info(Tools::L1.'Vi fant '.$userCount.' sluttbrukere. Starter behandling...');
         $this->newLine();
-        $this->psUsers->lazy()->each(function (User $psUser, int $key) {
+        $bar = null;
+        if (!$this->debug):
+            $bar = $this->output->createProgressBar($this->psUsers->count());
+            $bar->start();
+        endif;
+        $this->psUsers->lazy()->each(function (User $psUser, int $key) use ($bar) {
             $updateMe = false;
             $companyChanged = false;
             $email = $this->emailAddresses->firstWhere('userId', $psUser->id);
@@ -111,24 +118,34 @@ class PsUserCleanup extends Command {
             endif;
             if ($updateMe):
                 $this->changeCount++;
-                $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
+                if ($this->debug) $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
                 if (isset($newName)):
                     $psUser->firstName = Str::title($newName[0]);
                     $psUser->lastName = Str::title($newName[1]);
-                    $this->line(Tools::L3.' Navn endres til \''.$psUser->firstName.' '.$psUser->lastName.'\'');
+                    if ($this->debug) $this->line(Tools::L3.' Navn endres til \''.$psUser->firstName.' '.$psUser->lastName.'\'');
                 endif;
                 if ($companyChanged):
-                    $this->line(Tools::L3.' Kobles til virksomheten \''.$company->name.'\'');
+                    if ($this->debug) $this->line(Tools::L3.' Kobles til virksomheten \''.$company->name.'\'');
                 endif;
                 // Oppdater brukeren i Pureservice
                 $psUser->addOrUpdatePS($this->ps);
-                $this->newLine();
+                if ($this->debug) $this->newLine();
             endif;
+            if (!$this->debug) $bar->advance();
         });
+        if (!$this->debug):
+            $bar->finish();
+            $this->newLine(2);
+        endif;
 
-        $this->info('Ferdig. Av til sammen '.$userCount.' brukere måtte '.$this->changeCount.' endres på.');
+        $this->line('####');
+        if ($this->changeCount):
+            $this->info('Ferdig. Undersøkte til sammen '.$userCount.' brukere. '.$this->changeCount.' brukere måtte oppdateres.');
+        else:
+            $this->info('Ferdig. Undersøkte til sammen '.$userCount.' brukere. Ingen trengte oppdatering.');
+        endif;
         $this->line(Tools::L1.'Vi brukte '.round((microtime(true) - $this->start), 2).' sekunder på dette');
-
+        $this->line('####');
         return Command::SUCCESS;
     }
 }
