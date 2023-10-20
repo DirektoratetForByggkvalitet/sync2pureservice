@@ -20,6 +20,7 @@ class PsUserCleanup extends Command {
     protected int $changeCount = 0;
     protected PsApi $ps;
     protected bool $debug = false;
+    protected array $report = [];
     /**
      * The name and signature of the console command.
      *
@@ -44,6 +45,11 @@ class PsUserCleanup extends Command {
         $this->newLine(2);
 
         $this->debug = config('app.debug');
+        $this->report = [
+            'Antall brukere' => 0,
+            'Navn endret' => 0,
+            'Koblet til firma' => 0,
+        ];
         $this->ps = new PsApi();
         $userCount = 0;
         if (Cache::has('psUsers') && Cache::has('emailAddresses')):
@@ -84,6 +90,7 @@ class PsUserCleanup extends Command {
         endif;
 
         $userCount = $this->psUsers->count();
+        $this->report['Antall brukere'] = $userCount;
         $this->changeCount = 0;
         $this->info(Tools::L1.'Vi fant '.$userCount.' sluttbrukere. Starter behandling...');
         $this->newLine();
@@ -98,7 +105,7 @@ class PsUserCleanup extends Command {
             $email = $this->emailAddresses->firstWhere('userId', $psUser->id);
             $psUser->email = $email['email'];
             $fullName = $psUser->firstName.' '.$psUser->lastName;
-            if (Str::contains($fullName, ['@', '.com', '.biz', '.net', '.ru']) || $fullName == ' '):
+            if (Str::contains($fullName, ['@', '.com', '.biz', '.net', '.ru']) || $psUser->firstName == '' || $psUser->lastName == ''):
                 $newName = Tools::nameFromEmail($psUser->email);
                 $updateMe = true;
             endif;
@@ -123,9 +130,11 @@ class PsUserCleanup extends Command {
                     $psUser->firstName = Str::title($newName[0]);
                     $psUser->lastName = Str::title($newName[1]);
                     if ($this->debug) $this->line(Tools::L3.' Navn endres til \''.$psUser->firstName.' '.$psUser->lastName.'\'');
+                    $this->report['Navn endret']++;
                 endif;
                 if ($companyChanged):
                     if ($this->debug) $this->line(Tools::L3.' Kobles til virksomheten \''.$company->name.'\'');
+                    $this->report['Koblet til firma']++;
                 endif;
                 // Oppdater brukeren i Pureservice
                 $psUser->addOrUpdatePS($this->ps);
@@ -138,14 +147,11 @@ class PsUserCleanup extends Command {
             $this->newLine(2);
         endif;
 
-        $this->line('####');
-        if ($this->changeCount):
-            $this->info('Ferdig. Undersøkte til sammen '.$userCount.' brukere. '.$this->changeCount.' brukere måtte oppdateres.');
-        else:
-            $this->info('Ferdig. Undersøkte til sammen '.$userCount.' brukere. Ingen trengte oppdatering.');
-        endif;
+        $this->info('####');
+        $this->line('Sluttrapport');
+        $this->table(array_keys($this->report), [array_values($this->report)]);
         $this->line(Tools::L1.'Vi brukte '.round((microtime(true) - $this->start), 2).' sekunder på dette');
-        $this->line('####');
+        $this->info('####');
         return Command::SUCCESS;
     }
 }
