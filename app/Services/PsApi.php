@@ -401,22 +401,30 @@ class PsApi extends API {
             if ($companyName):
                 $query = [
                     'filter' => '!disabled AND name=="'.$companyName.'"',
+                    'include' => 'emailaddress'
                 ];
             else:
                 $query = [
                     'filter' => '!disabled AND emailAddress.email.contains("'.$search.'")',
+                    'include' => 'emailaddress'
                 ];
             endif;
             $response = $this->apiQuery($uri, $query, true);
             if ($response->successful()):
-                $companies = collect($response->json('companies'));
+                $results = collect($response->json('companies'));
+                $emailAddresses = collect($response->json('linked.companyemailaddresses'));
+                $companies = $results->filter(function (array $item, int $key) use ($emailAddresses, $search) {
+                    $email = $emailAddresses->firstWhere('companyId', $item['id']);
+                    $domain = Str::after($email['email'], '@');
+                    return Str::lower($domain) == Str::lower($search);
+                });
+                unset($results);
             else:
                 return false;
             endif;
 
             if ($companies->count() == 1 && $companyName !== false):
                 return $returnClass ? $companies->mapInto(Company::class)->first() : $companies->first();
-
             elseif ($companies->count() > 1 && $companyName):
                 // Hvis det er flere firma med samme domenenavn lener vi oss mot domenemapping-config
                 foreach ($companies as $c):
