@@ -96,8 +96,8 @@ return [
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
-                'smtp',
                 'microsoft-graph',
+                'smtp',
             ],
         ],
     ],
