@@ -7,6 +7,7 @@ Vi har bygd en kommandolinje-basert Laravel-applikasjon for å utvide funksjonal
 - [svarinn2pureservice](docs/svarinn2pureservice.md) - fungerer som SvarUt-mottak for Pureservice (erstattes av eFormidling)
 - [offentlige2ps](docs/offentlige2ps.md) - importerer kommuner og statlige instanser inn som firma og sluttbrukere i Pureservice
 - [utsendelse](docs/utsendelse.md) - Håndterer masseutsendelser fra Pureservice
+- [cleanUpUsers](docs/clenupusers.md) - Går gjennom sluttbrukere og korrigerer brukerinfo
 
 ## Under utvikling
 
