@@ -29,6 +29,10 @@ Når en forsendelse blir funnet på integrasjonspunktet vil sync2pureservice las
 For at vedleggene skal bli korrekt arkiverte i Documaster når saken lukkes (en egen app i Pureservice) vil sync2pureservice opprette en egen innkommende melding for vedleggene til saken. Det kan se litt forvirrende ut, men resultatet er at vedleggene kommer inn i saken, og når saken arkiveres vil de bli arkiverte som vedlegg til journalpost nr 2 på saken.
 
 Dersom den innkommende meldingen er et innsynkrav vil sync2pureservice bruke metadata fra innsynkravet til å hente ut hvilke saker og dokumenter kravet gjelder. Deretter oppretter sync2pureservice én sak i Pureservice per saksnummer det ønskes innsyn i. Det er ofte forskjellige saksbehandlere på ulike saker, og ved å splitte innsynskravet blir det raskere å besvare det.
+
+![Skjult kommunikasjon](ps-skjult-kommunikasjon.png)
+De enkelte innsynskravene vil også inneholde en skjult kommunikasjon (som vises ved å vise 'Alt' i Pureservice) som inneholder teksten fra det opprinnelige innsynskravet.
+
 ## Utgående meldinger ##
 
 Vi arbeider aktivt for å etablere en metodikk for sending av meldinger fra Pureservice til eFormidling, men dette er noe som vil ta litt tid å få på plass. Dette vil bli inkludert som en del av [masseutsending-funksjonen](utsendelse.md).
