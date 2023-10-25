@@ -265,7 +265,7 @@ class Message extends Model {
                     $ticket,
                     $this->sender_id,
                     false,
-                    config('pureservice.comms.standard'),
+                    config('pureservice.comms.description'),
                     config('pureservice.comms.direction.in'),
                     config('pureservice.comms.visibility.off'),
                     'eInnsyn: Opprinnelig bestilling',

@@ -75,8 +75,6 @@ return [
         ],
     ],
     'comms' => [
-        'in' => 1,
-        'out' => 2,
         'internal' => 1,
         'standard' => 2,
         'description' => 7,
