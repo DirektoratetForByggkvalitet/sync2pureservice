@@ -200,7 +200,7 @@ class Message extends Model {
         if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.invisible'))):
             if (count($this->attachments) && $addAttachments):
                 // Oppretter en kommunikasjon med vedleggene som vedlegg
-                $ps->addInboundCommunicationToTicket($ticket, $senderUser->id, $this->attachments);
+                $ps->addCommunicationToTicket($ticket, $senderUser->id, $this->attachments);
             endif;
         endif;
         return $ticket;
@@ -257,9 +257,20 @@ class Message extends Model {
             $saksnr = $sak['saksnr'];
             $subject = 'Innsynskrav for sak '. $sak['saksnr'];
             $description = Blade::render(config('eformidling.in.innsynskrav'), ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject, 'docMetadata' => $docMetadata]);
-            $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'));
+            $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true);
+            // Oppretter en skjult innkommende melding med den opprinnelige bestillingen
             if (isset($emailtext)):
-                $ps->createInternalNote(Str::replace("\n", "<br/>\n", $emailtext), $ticket['id'], 'Opprinnelig bestilling', false);
+                $emailtext = Str::replace("\n", "<br/>\n", $emailtext);
+                $ps->addCommunicationToTicket(
+                    $ticket,
+                    $this->sender_id,
+                    false,
+                    config('pureservice.comms.standard'),
+                    config('pureservice.comms.visibility.off'),
+                    'eInnsyn: Opprinnelig bestilling',
+                    $emailtext
+                );
+                //$ps->createInternalNote(Str::replace("\n", "<br/>\n", $emailtext), $ticket['id'], 'Opprinnelig bestilling', false);
             endif;
             $tickets[] = $ticket;
         endforeach;

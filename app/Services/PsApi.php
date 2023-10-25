@@ -626,12 +626,15 @@ class PsApi extends API {
     /**
      * Legger til en innkommende kommunikasjon på saken
      */
-    public function addInboundCommunicationToTicket(
+    public function addCommunicationToTicket(
             Ticket $ticket,
             int $senderId,
             array|false $attachments = false,
             int|null $type = null,
-            int|null $visibility = 0
+            int|null $direction = null,
+            int|null $visibility = 0,
+            string|null $subject = null,
+            string|null $text = null
         ): Response
     {
         $uri = 'communication/?include=sender';
@@ -639,14 +642,18 @@ class PsApi extends API {
         $tempId = Str::uuid()->toString();
         // Standardmelding (2) dersom ikke annet blir spesifisert
         $type = $type ? $type : config('pureservice.comms.standard');
+        // Innkommende dersom ikke annet blir spesifisert
+        $direction = $direction ? $direction : config('pureservice.comms.direction.in');
+        // Dersom emne ikke oppgis brukes emnet fra saken
+        $subject = $subject ? $subject : $ticket->subject;
         $body['communications'] = [];
         $body['linked'] = [];
         $communication =             [
-            'direction' => config('pureservice.comms.direction.in'),
+            'direction' => $direction,
             'type' => $type,
-            'subject' => $ticket->subject,
             'ticketId' => $ticket->id,
-            'text' => $ticket->description,
+            'text' => $text,
+            'subject' => $subject,
             'visibility' => $visibility,
             'links' => [
                 'sender' => [
@@ -685,6 +692,7 @@ class PsApi extends API {
                     $uploads[] = $file;
                 endif;
             endforeach;
+            // Endrer emne og tekst for å vise vedleggene
             $subject = count($uploads).' vedlegg til innkommende forsendelse';
             $communication['subject'] = $subject;
             $communication['text'] = Blade::render('incoming/vedlegg', ['subject' => $subject, 'attachments' => $uploads]);
