@@ -266,6 +266,7 @@ class Message extends Model {
                     $this->sender_id,
                     false,
                     config('pureservice.comms.standard'),
+                    config('pureservice.comms.direction.in'),
                     config('pureservice.comms.visibility.off'),
                     'eInnsyn: Opprinnelig bestilling',
                     $emailtext
