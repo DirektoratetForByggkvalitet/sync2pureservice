@@ -11,11 +11,7 @@ use App\Models\{Company, User, Ticket, TicketCommunication};
 /**
  * Denne klassen er utdatert og er i praksis faset ut til fordel for PsApi og PsAsset
  * Den brukes fortsatt av kommandoene
- * - Innsynskrav2Pureservice
- * - Offentlige2Ps
- * - PsMailingLists
- * - SplittInnsynskrav
- * - SvarInn2Pureservice
+  * - SvarInn2Pureservice
  */
 class Pureservice {
     protected $api;

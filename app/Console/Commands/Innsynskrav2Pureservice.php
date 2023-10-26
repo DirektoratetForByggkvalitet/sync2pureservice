@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{Pureservice, Tools};
+use App\Services\{PsApi, Tools};
 use Illuminate\Support\{Str, Arr};
 
 
@@ -29,7 +29,7 @@ class Innsynskrav2Pureservice extends Command
     protected $tickets;
     protected $attachments;
 
-    protected Pureservice $ps;
+    protected PsApi $ps;
     /**
      * Execute the console command.
      *
@@ -39,24 +39,30 @@ class Innsynskrav2Pureservice extends Command
         $this->start = microtime(true);
         $this->info(class_basename($this).' v'.$this->version);
         $this->line($this->description);
-        $this->line('');
+        $this->newLine();
 
         $this->info(Tools::ts().'Starter opp...');
-        $this->line('');
-        $this->ps = new Pureservice();
+        $this->newLine();
+        $this->ps = new PsApi();
         $this->ps->setTicketOptions('innsyn');
-        $this->line(Tools::l1().'Ser etter innsynskrav...');
+        $this->line(Tools::L1.'Ser etter innsynskrav...');
 
         $AND = ' %26%26 ';
         $uri = '/ticket/';
-        $uri .= '?include=attachments';
-        $uri .= '&filter=status.name=="'.config('innsyn.search.status').'"'.
-            $AND.
-            'assignedTeam.name=="'.config('innsyn.search.team').'"'.
-            $AND.
-            'ticketType.name=="'.config('innsyn.search.ticketType').'"';
+        $query = [
+            'include' => 'attachments',
+            'filter' => 'status.name=="'.config('innsyn.search.status').'" AND '.
+                'assignedTeam.name=="'.config('innsyn.search.team').'" AND '.
+                'ticketType.name=="'.config('innsyn.search.ticketType').'"',
+        ];
+        // $uri .= '?include=attachments';
+        // $uri .= '&filter=status.name=="'.config('innsyn.search.status').'"'.
+        //     $AND.
+        //     'assignedTeam.name=="'.config('innsyn.search.team').'"'.
+        //     $AND.
+        //     'ticketType.name=="'.config('innsyn.search.ticketType').'"';
         //dd($uri);
-        if ($result = $this->ps->apiGet($uri)):
+        if ($result = $this->ps->apiQuery($uri, $query)):
             if (count($result['tickets']) > 0):
                 $this->tickets = $result['tickets'];
                 $this->attachments = $result['linked']['attachments'];
@@ -84,7 +90,7 @@ class Innsynskrav2Pureservice extends Command
                 foreach ($attachments as $a):
                     if ($a['fileName'] == 'order.xml'):
                         $response = $this->ps->apiGet('/attachment/download/'.$a['id'], true);
-                        $bestilling = simplexml_load_string($response->getBody()->getContents());
+                        $bestilling = simplexml_load_string($response->body());
                         unset($response);
                     endif;
                 endforeach;
@@ -93,27 +99,27 @@ class Innsynskrav2Pureservice extends Command
                 $this->error('Kunne ikke finne order.xml. Hopper over');
                 continue;
             endif;
-            $this->line('');
+            $this->newLine();
 
-            $this->line(Tools::l1().'Leser inn data fra innsynskravet');
+            $this->line(Tools::L1.'Leser inn data fra innsynskravet');
             $orderId = $bestilling->id->__toString();
-            $this->line(Tools::l2().'Bestillings-ID: '.$orderId);
+            $this->line(Tools::L2.'Bestillings-ID: '.$orderId);
             $orderDate = $bestilling->bestillingsdato->__toString();
-            $this->line(Tools::l2().'Bestillingsdato: '.$orderDate);
+            $this->line(Tools::L2.'Bestillingsdato: '.$orderDate);
 
             $kontaktinfo = json_decode(json_encode($bestilling->kontaktinfo), true);
             foreach ($kontaktinfo as $key => $value):
                 if (is_array($value)) $kontaktinfo[$key] = null;
             endforeach;
-            $this->line(Tools::l2().'Forsendelsesmåte: '.$kontaktinfo['forsendelsesmåte']);
-            $this->line(Tools::l2().'E-postadresse: '.$kontaktinfo['e-post']);
+            $this->line(Tools::L2.'Forsendelsesmåte: '.$kontaktinfo['forsendelsesmåte']);
+            $this->line(Tools::L2.'E-postadresse: '.$kontaktinfo['e-post']);
             if (strlen($kontaktinfo['navn']) < 3) $kontaktinfo['navn'] = $kontaktinfo['e-post'];
-            $this->line(Tools::l2().'Innsenders navn: '.$kontaktinfo['navn']);
-            $this->line(Tools::l2().'Organisasjon: '.$kontaktinfo['organisasjon']);
-            $this->line(Tools::l2().'Land: '.$kontaktinfo['land']);
-            $this->line('');
+            $this->line(Tools::L2.'Innsenders navn: '.$kontaktinfo['navn']);
+            $this->line(Tools::L2.'Organisasjon: '.$kontaktinfo['organisasjon']);
+            $this->line(Tools::L2.'Land: '.$kontaktinfo['land']);
+            $this->newLine();
 
-            $this->line(Tools::l1().'Leser inn dokumentlisten');
+            $this->line(Tools::L1.'Leser inn dokumentlisten');
             $xml_documents = [];
             $xml_documents_tmp = json_decode(json_encode($bestilling->dokumenter), true)['dokument'];
             if (isset($xml_documents_tmp['saksnr'])):
@@ -124,29 +130,29 @@ class Innsynskrav2Pureservice extends Command
             //dd($xml_documents);
             unset($bestilling, $xml_documents_tmp);
 
-            $this->line('');
-            $this->line(Tools::l1().'Henter eller registrerer sluttbruker i Pureservice');
+            $this->newLine();
+            $this->line(Tools::L1.'Henter eller registrerer sluttbruker i Pureservice');
             $company = false;
             if ($kontaktinfo['organisasjon'] != null):
                 if ($company = $this->ps->findCompany(null, $kontaktinfo['organisasjon'])):
-                    $this->line(Tools::l2().'Organisasjon finnes i Pureservice');
+                    $this->line(Tools::L2.'Organisasjon finnes i Pureservice');
                 else:
-                    $this->line(Tools::l2().'Legger til organisasjon');
+                    $this->line(Tools::L2.'Legger til organisasjon');
                     $company = $this->ps->addCompany($kontaktinfo['organisasjon']);
                 endif;
             endif;
             if ($user = $this->ps->findUser($kontaktinfo['e-post'])):
-                $this->line(Tools::l2().'Brukeren '.$user['fullName'].' finnes i Pureservice');
+                $this->line(Tools::L2.'Brukeren '.$user['fullName'].' finnes i Pureservice');
             else:
-                $this->line(Tools::l2().'Legger til brukeren');
-                $user = $this->ps->addCompanyUser($company, $kontaktinfo['e-post'], $kontaktinfo['navn']);
+                $this->line(Tools::L2.'Legger til brukeren');
+                $user = $this->ps->addCompanyUserFromInnsyn($company, $kontaktinfo['e-post'], $kontaktinfo['navn']);
             endif;
             if (!$user):
                 $this->error('Bruker finnes ikke i Pureservice. Avbryter...');
                 return Command::FAILURE;
             endif;
 
-            $this->line('');
+            $this->newLine();
             $this->line(Tools::ts().'Oppretter ett innsynskrav for hver unike sak');
             // Rydder i meldingsteksten. Tar bort linjeskift.
             $msg = preg_replace('/\\n/', '', $msg);
@@ -209,7 +215,7 @@ class Innsynskrav2Pureservice extends Command
                 $dokCount = count($requests);
                 $uri = '/ticket/';
                 $subject = 'Innsynskrav for sak '.$saknr;
-                $this->line(Tools::l2().'Emne: "'.$subject.'".');
+                $this->line(Tools::L2.'Emne: "'.$subject.'".');
                 foreach ($requests as $request):
                     if ($firstline):
                         $firstline = false; // Slik at vi ikke gjentar denne første delen for hvert dokument
@@ -247,7 +253,7 @@ class Innsynskrav2Pureservice extends Command
                         $user['id'],
                         config('pureservice.visibility.invisible'))):
                     $new_reqno = $newTicket['requestNumber'];
-                    $this->line(Tools::l2().'Opprettet saken "'.$newTicket['subject'].'" med saksnr '.$new_reqno);
+                    $this->line(Tools::L2.'Opprettet saken "'.$newTicket['subject'].'" med saksnr '.$new_reqno);
                     $this->reqNos_created[] = $new_reqno;
                 endif;
                 // Endrer sakens synlighet til synlig
@@ -256,9 +262,9 @@ class Innsynskrav2Pureservice extends Command
                     'visibility' => config('pureservice.visibility.visible'),
                     'statusId' => $ticketOptions['statusId'],
                 ];
-                if ($updated = $this->ps->apiPATCH($uri.$newTicket['id'], $body, true)):
-                    $this->line(Tools::l2().'Sak '.$new_reqno.' satt til Synlig');
-                    $this->line('');
+                if ($updated = $this->ps->apiPatch($uri.$newTicket['id'], $body, true)):
+                    $this->line(Tools::L2.'Sak '.$new_reqno.' satt til Synlig');
+                    $this->newLine();
                 endif;
             endforeach; // $aCases
 
@@ -284,12 +290,12 @@ class Innsynskrav2Pureservice extends Command
                 'solution' => $solution,
                 'ticketTypeId' => $ticketTypeId,
             ];
-            if ($updated = $this->ps->apiPATCH($uri, $body, true)):
+            if ($updated = $this->ps->apiPatch($uri, $body, true)):
                 $this->line(Tools::ts().'Det opprinnelige innsynskravet har blitt satt til løst.');
             endif;
         endforeach; // $tickets
 
-        $this->line('');
+        $this->newLine();
         $time = round(microtime(true) - $this->start, 2);
         $this->info('Ferdig, prosessen tok til sammen '.$time.' sekunder');
 

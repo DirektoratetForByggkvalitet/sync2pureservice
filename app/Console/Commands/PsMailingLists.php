@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Company;
 use Illuminate\Console\Command;
-use App\Services\{Pureservice, Tools};
+use App\Services\{PsApi, Tools};
 use Illuminate\Support\{Arr, Collection, Str};
 
 class PsMailingLists extends Command
@@ -23,7 +23,7 @@ class PsMailingLists extends Command
      */
     protected $description = 'Command description';
 
-    protected Pureservice $ps;
+    protected PsApi $ps;
     protected Collection $lists;
     protected Collection $relationshipTypes;
 
@@ -31,20 +31,26 @@ class PsMailingLists extends Command
      * Execute the console command.
      */
     public function handle() : int {
-        $this->ps = new Pureservice();
+        $this->ps = new PsApi();
         /**
          * Henter inn alle mottakerlister
          */
-        $uri = '/asset/?filter=type.name == "'.config('pureservice.dispatch.assetTypeName').'"';
-        if ($result = $this->ps->apiGet($uri)):
+        $uri = '/asset/';
+        $params = [
+            'filter' => 'type.name=="'.config('pureservice.dispatch.assetTypeName').'"',
+        ];
+        if ($result = $this->ps->apiQuery($uri, $params)):
             $this->lists = collect($result['assets']);
         else:
             $this->error('Fant ingen mottakerliste');
             return Command::FAILURE;
         endif;
 
-        $uri = '/relationshiptype/?filter=fromAssetType.name == "'.config('pureservice.dispatch.assetTypeName').'"';
-        if ($result = $this->ps->apiGet($uri)):
+        $uri = '/relationshiptype/';
+        $params = [
+            'filter' => 'fromAssetType.name=="'.config('pureservice.dispatch.assetTypeName').'"',
+        ];
+        if ($result = $this->ps->apiQuery($uri, $params)):
             $this->relationshipTypes = collect($result['relationshiptypes']);
         else:
             $this->error('Fant ingen relasjonstyper.');
@@ -58,8 +64,11 @@ class PsMailingLists extends Command
         $categories = config('pureservice.company.categoryMap');
         foreach ($categories as $code => $category):
             $list = $this->lists->firstWhere('uniqueId', $code);
-            $uri = '/company/?filter='.config('pureservice.company.categoryfield').' == "'.$category.'"';
-            $result = $this->ps->apiGet($uri);
+            $uri = '/company/';
+            $params = [
+                'filter' => config('pureservice.company.categoryfield').' == "'.$category.'"',
+            ];
+            $result = $this->ps->apiQuery($uri, $params);
             if ($list && count($result['companies']) > 0):
                 $this->line(Tools::l1().'Kobler firma av kategorien \''.$category.'\' til listen \''.$list['name'].'\'');
                 $this->relateCompaniesToList($result['companies'], $list);
@@ -74,8 +83,11 @@ class PsMailingLists extends Command
     protected function relateCompaniesToList(array $companies, array $list): void {
         $uri = '/relationship/';
         $relationshipType = $this->relationshipTypes->firstWhere('name', config('pureservice.dispatch.listRelationName.toCompany'));
-        $listRelUri = $uri . $list['id'].'/fromAsset?filter=toCompanyId != NULL AND typeId == '.$relationshipType['id'];
-        if ($listRelResult = $this->ps->apiGet($listRelUri)):
+        $listRelUri = $uri . $list['id'].'/fromAsset';
+        $params = [
+            'filter' => 'toCompanyId != NULL AND typeId == '.$relationshipType['id'],
+        ];
+        if ($listRelResult = $this->ps->apiQuery($listRelUri, $params)):
             $listRelations = collect($listRelResult['relationships']);
             $this->line(Tools::l2().'Sletter listens relasjoner til alle firma');
             $bar = $this->output->createProgressBar($listRelations->count());
@@ -105,7 +117,7 @@ class PsMailingLists extends Command
                     'fromCompany' => ['id' => $c['id']]
                 ],
             ];
-            $result = $this->ps->apiPOST($uri, $body);
+            $result = $this->ps->apiPost($uri, $body);
             $bar->advance();
         endforeach;
         $bar->finish();

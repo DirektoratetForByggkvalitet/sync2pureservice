@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{Pureservice, Tools};
+use App\Services\{PsApi, Tools};
 use Illuminate\Support\{Str, Arr};
 
 
@@ -33,7 +33,7 @@ class SplittInnsynskrav extends Command
     protected $msg;
     protected $introText;
 
-    protected Pureservice $ps;
+    protected PsApi $ps;
     /**
      * Execute the console command.
      *
@@ -46,10 +46,14 @@ class SplittInnsynskrav extends Command
 
         $this->info(Tools::ts().'Starter opp...');
         $this->reqNo = $this->argument('requestNumber');
-        $this->ps = new Pureservice();
+        $this->ps = new PsApi();
         $this->ps->setTicketOptions('innsyn');
-        $this->line(Tools::l1().'Henter vedlegg til sak '.$this->reqNo);
-        $result = $this->ps->apiGet('/attachment/?include=ticket&filter=ticket.requestNumber == '.$this->reqNo);
+        $this->line(Tools::L1.'Henter vedlegg til sak '.$this->reqNo);
+        $params = [
+            'include'=>'ticket',
+            'filter'=>'ticket.requestNumber == '.$this->reqNo,
+        ];
+        $result = $this->ps->apiQuery('/attachment/', $params);
         $attachments = $result['attachments'];
         $this->msg = $result['linked']['tickets'][0]['description'];
         $this->ticketId = $result['linked']['tickets'][0]['id'];
@@ -58,7 +62,7 @@ class SplittInnsynskrav extends Command
             foreach ($attachments as $a):
                 if ($a['fileName'] == 'order.xml'):
                     $response = $this->ps->apiGet('/attachment/download/'.$a['id'], true);
-                    $bestilling = simplexml_load_string($response->getBody()->getContents());
+                    $bestilling = simplexml_load_string($response->body());
                     unset($response);
                 endif;
             endforeach;
@@ -67,52 +71,52 @@ class SplittInnsynskrav extends Command
             $this->error('Kunne ikke finne order.xml. Avbryter...');
             return Command::FAILURE;
         endif;
-        $this->line('');
+        $this->newLine();
 
-        $this->line(Tools::l1().'Leser inn data fra innsynskravet');
+        $this->line(Tools::L1.'Leser inn data fra innsynskravet');
         $this->orderId = $bestilling->id->__toString();
-        $this->line(Tools::l2().'Bestillings-ID: '.$this->orderId);
+        $this->line(Tools::L2.'Bestillings-ID: '.$this->orderId);
         $this->orderDate = $bestilling->bestillingsdato->__toString();
-        $this->line(Tools::l2().'Bestillingsdato: '.$this->orderDate);
+        $this->line(Tools::L2.'Bestillingsdato: '.$this->orderDate);
 
         $kontaktinfo = json_decode(json_encode($bestilling->kontaktinfo), true);
         foreach ($kontaktinfo as $key => $value):
             if (is_array($value)) $kontaktinfo[$key] = null;
         endforeach;
-        $this->line(Tools::l2().'Forsendelsesmåte: '.$kontaktinfo['forsendelsesmåte']);
-        $this->line(Tools::l2().'E-postadresse: '.$kontaktinfo['e-post']);
+        $this->line(Tools::L2.'Forsendelsesmåte: '.$kontaktinfo['forsendelsesmåte']);
+        $this->line(Tools::L2.'E-postadresse: '.$kontaktinfo['e-post']);
         if (strlen($kontaktinfo['navn']) < 3) $kontaktinfo['navn'] = $kontaktinfo['e-post'];
-        $this->line(Tools::l2().'Innsenders navn: '.$kontaktinfo['navn']);
-        $this->line(Tools::l2().'Organisasjon: '.$kontaktinfo['organisasjon']);
-        $this->line(Tools::l2().'Land: '.$kontaktinfo['land']);
-        $this->line('');
+        $this->line(Tools::L2.'Innsenders navn: '.$kontaktinfo['navn']);
+        $this->line(Tools::L2.'Organisasjon: '.$kontaktinfo['organisasjon']);
+        $this->line(Tools::L2.'Land: '.$kontaktinfo['land']);
+        $this->newLine();
 
-        $this->line(Tools::l1().'Leser inn dokumentlisten');
+        $this->line(Tools::L1.'Leser inn dokumentlisten');
         $requests = json_decode(json_encode($bestilling->dokumenter), true)['dokument'];
         unset($bestilling);
 
-        $this->line('');
-        $this->line(Tools::l1().'Henter eller registrerer sluttbruker i Pureservice');
+        $this->newLine();
+        $this->line(Tools::L1.'Henter eller registrerer sluttbruker i Pureservice');
         $company = false;
         if ($kontaktinfo['organisasjon'] != null):
             if ($company = $this->ps->findCompany(null, $kontaktinfo['organisasjon'])):
-                $this->line(Tools::l2().'Organisasjon finnes i Pureservice');
+                $this->line(Tools::L2.'Organisasjon finnes i Pureservice');
             else:
-                $this->line(Tools::l2().'Legger til organisasjon');
+                $this->line(Tools::L2.'Legger til organisasjon');
                 $company = $this->ps->addCompany($kontaktinfo['organisasjon']);
             endif;
         endif;
         if ($user = $this->ps->findUser($kontaktinfo['e-post'])):
-            $this->line(Tools::l2().'Fant brukeren '.$user['fullName']);
+            $this->line(Tools::L2.'Fant brukeren '.$user['fullName']);
         else:
-            $user = $this->ps->addCompanyUser($company, $kontaktinfo['e-post'], $kontaktinfo['navn']);
+            $user = $this->ps->addCompanyUserFromInnsyn($company, $kontaktinfo['e-post'], $kontaktinfo['navn']);
         endif;
         if (!$user):
             $this->error('Bruker finnes ikke i Pureservice. Avbryter...');
             return Command::FAILURE;
         endif;
 
-        $this->line('');
+        $this->newLine();
         $this->line(Tools::ts().'Oppretter ett innsynskrav for hver unike sak');
         // Rydder i meldingsteksten. Tar bort linjeskift.
         $this->msg = preg_replace('/\\n/', '', $this->msg);
@@ -153,7 +157,7 @@ class SplittInnsynskrav extends Command
                 $saksnr = $request['saksnr'];
                 $uri = '/ticket/';
                 $subject = 'Innsynskrav for sak '.$request['saksnr'];
-                $this->line(Tools::l2().'Emne: "'.$subject.'".');
+                $this->line(Tools::L2.'Emne: "'.$subject.'".');
                 $aRequestOrders = $aDocs[$request['saksnr']];
 
                 $description = $this->introText . PHP_EOL;
@@ -187,7 +191,7 @@ class SplittInnsynskrav extends Command
                 $description .= '<p>eInnsyn-ID: '.$this->orderId.'</p>';
                 //dd($description);
                 if ($ticket = $this->ps->createTicket($subject, $description, $user['id'], config('pureservice.visibility.invisible'))):
-                    $this->line(Tools::l2().'Opprettet saken "'.$ticket['subject'].'" med saksnr '.$ticket['requestNumber']);
+                    $this->line(Tools::L2.'Opprettet saken "'.$ticket['subject'].'" med saksnr '.$ticket['requestNumber']);
                     $this->reqNos_created[] = $ticket['requestNumber'];
                 endif;
                 // Endrer sakens synlighet til synlig
@@ -196,9 +200,9 @@ class SplittInnsynskrav extends Command
                     'visibility' => config('pureservice.visibility.visible'),
                     'statusId' => $ticketOptions['statusId'],
                 ];
-                if ($updated = $this->ps->apiPATCH($uri.$ticket['id'], $body, true)):
-                    $this->line(Tools::l2().'Sak '.$ticket['requestNumber'].' satt til Synlig');
-                    $this->line('');
+                if ($updated = $this->ps->apiPatch($uri.$ticket['id'], $body, true)):
+                    $this->line(Tools::L2.'Sak '.$ticket['requestNumber'].' satt til Synlig');
+                    $this->newLine();
                 endif;
             else:
                 continue;
@@ -226,11 +230,11 @@ class SplittInnsynskrav extends Command
             'solution' => $solution,
             'ticketTypeId' => $ticketTypeId,
         ];
-        if ($updated = $this->ps->apiPATCH($uri, $body, true)):
+        if ($updated = $this->ps->apiPatch($uri, $body, true)):
             $this->line(Tools::ts().'Det opprinnelige innsynskravet har blitt satt til løst.');
         endif;
 
-        $this->line('');
+        $this->newLine();
         $time = round(microtime(true) - $this->start, 2);
         $this->info('Ferdig, prosessen tok til sammen '.$time.' sekunder');
 

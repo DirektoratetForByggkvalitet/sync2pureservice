@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{ExcelLookup, Tools, Enhetsregisteret, Pureservice};
+use App\Services\{ExcelLookup, Tools, Enhetsregisteret, PsApi};
 use App\Models\{Company, User};
 use Illuminate\Support\{Str, Arr};
 
@@ -180,7 +180,7 @@ class Offentlige2Ps extends Command
      */
     private function sync2pureservice(): void {
         $count = 0;
-        $ps = new Pureservice();
+        $ps = new PsApi();
 
         $this->newLine();
         $this->comment('Oppdaterer virksomheter mot '.config('pureservice.api_url'));

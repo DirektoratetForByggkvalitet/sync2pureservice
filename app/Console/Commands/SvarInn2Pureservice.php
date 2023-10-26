@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\{Pureservice, SvarInn, ExcelLookup, Tools};
+use App\Services\{PsApi, SvarInn, ExcelLookup, Tools};
 use Carbon\Carbon;
 use GuzzleHttp\Client as GuzzleClient;
 use ZanySoft\Zip\Facades\Zip;
@@ -15,7 +15,7 @@ class SvarInn2Pureservice extends Command {
     protected $l2 = '> ';
     protected $l3 = '  ';
     protected $start;
-    protected Pureservice $ps;
+    protected PsApi $ps;
     protected SvarInn $svarInn;
 
     /**

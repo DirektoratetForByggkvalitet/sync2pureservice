@@ -730,5 +730,32 @@ class PsApi extends API {
         endif;
         return false;
     }
+    /**
+     * Oppretter en sluttbruker for foretak/virksomhet fra innsynskrav
+     */
+    public function addCompanyUserFromInnsyn(array|false $companyInfo, string $emailaddress, string|false $userName = false): array|false {
+        $emailId = $this->findOrCreateEmailaddressId($emailaddress);
+
+        $uri = '/user/?include=emailAddress,company';
+        $body = [
+            'role' => config('pureservice.user.role_id'),
+            'emailAddressId' => $emailId,
+            'companyId' => $companyInfo ? $companyInfo['id'] : null,
+        ];
+        if ($userName):
+            $body['firstName'] = Str::beforeLast($userName, ' ');
+            $body['lastName'] = Str::afterLast($userName, ' ');
+        else:
+            $body['firstName'] = 'eFormidling';
+            $body['lastName'] = Str::limit($companyInfo['name'], 100);
+            if (config('pureservice.user.no_email_field')) $body[config('pureservice.user.no_email_field')] = 1;
+        endif;
+
+        $response = $this->apiPost($uri, $body);
+        if ($response->successful()):
+            return $response->json('users.0');
+        endif;
+        return false;
+    }
 
 }
