@@ -19,6 +19,12 @@ Pureservice Utsendelse er ment å kjøres jevnlig og har følgende hovedfunksjon
 - **Scenario 2:** Opprette kopier av utsendelse-saken og med enkeltadressater som adressat og sende ut meldingene
 - Kvittere ut og løse den opprinnelige saken
 
+### Sekundær funksjon
+
+Det å kunne svare på innkommende eFormidling-henvendelser er et scenario som kommer inn litt fra siden, og vi tror det kan være viktig. 
+
+Vi tenker å opprette en funksjon som kan hente opp saker med sluttbrukere som har eFormidling-adresser (orgnr@eformidling.pureservice.local) og sende svaret ut som eFormidling-melding.
+
 ## Opprette masseutsendelse i Pureservice ##
 
 Det å lage en masseutsendelse vil være veldig likt det å opprette en vanlig sak, med et par ekstra steg.

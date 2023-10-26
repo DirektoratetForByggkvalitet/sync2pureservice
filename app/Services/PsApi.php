@@ -173,12 +173,16 @@ class PsApi extends API {
     /**
      * Henter inn en sak fra Pureservice som en Ticket::class
      */
-    public function getTicketFromPureservice(int $id, $useRequestNumber = true): Ticket|false {
+    public function getTicketFromPureservice(int $id, $useRequestNumber = true, array|null $query = null): Ticket|false {
         $uri = 'ticket/'.$id.'/';
         if ($useRequestNumber):
             $uri .= 'requestNumber/';
         endif;
-        $response = $this->apiGet($uri, true);
+        if (is_array($query)):
+            $response = $this->apiQuery($uri, $query, true);
+        else:
+            $response = $this->apiGet($uri, true);
+        endif;
         if ($response->successful()):
             $ticket = collect($response->json('tickets'));
             return $ticket->mapInto(Ticket::class)->first();

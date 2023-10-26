@@ -45,7 +45,7 @@ class Ticket extends Model
         'created_at',
         'updated_at',
         'internal_id',
-        'eForsendelse',
+        'eFormidling',
         'action',
         'pdf'
     ];
