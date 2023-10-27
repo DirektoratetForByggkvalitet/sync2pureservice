@@ -193,6 +193,10 @@ return [
             'company' => false,
         ],
         [
+            'domain' => 'live.no',
+            'company' => false,
+        ],
+        [
             'domain' => 'gmail.com',
             'company' => false,
         ],
