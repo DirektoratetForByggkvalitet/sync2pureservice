@@ -23,7 +23,7 @@ class PSUtsending extends Command {
      */
     protected $signature = 'pureservice:utsending {--reset-db : Nullstiller databasen før kjøring}';
 
-    protected $version = '0.5';
+    protected $version = '1.0';
     /**
      * The console command description.
      *
@@ -190,9 +190,9 @@ class PSUtsending extends Command {
             $this->newLine();
 
             // Går gjennom tilknyttede virksomheter
-            $this->line(Tools::l2().'Virksomheter:');
+            $this->line(Tools::L2.'Virksomheter:');
             foreach ($t->recipientCompanies()->lazy() as $company):
-                $this->line(Tools::l3().$company->name.' - '.$company->email);
+                $this->line(Tools::L3.$company->name.' - '.$company->email);
                 if (Str::endsWith($company->email, '.local')):
                     // lokal adresse, hopper over
                     continue;
@@ -234,7 +234,8 @@ class PSUtsending extends Command {
             foreach ($ticketResults as $key => $value):
                 $results[$key] += $value;
             endforeach;
-
+            //$this->error('Debug: Avslutter etter første utsendelse');
+            //return Command::FAILURE;
          endforeach; // Ticket
 
         $this->newLine(2);

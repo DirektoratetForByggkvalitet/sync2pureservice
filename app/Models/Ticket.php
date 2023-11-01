@@ -47,12 +47,17 @@ class Ticket extends Model
         'internal_id',
         'eFormidling',
         'action',
-        'pdf'
+        'pdf',
+        'attachments',
     ];
 
     protected $properties = [
         'eForsendelse' => false,
         'pdf' => null,
+    ];
+
+    protected $casts = [
+        'attachments' => 'array',
     ];
 
 
@@ -257,7 +262,8 @@ class Ticket extends Model
     }
 
     protected function addToAttachments(array|string $additions): void {
-        $attachments = $this->attachments;
+        $attachments = is_array($this->attachments) ? $this->attachments : [];
+
         if (!is_array($additions)) $additions = [$additions];
         $save_needed = false;
         foreach ($additions as $add):
