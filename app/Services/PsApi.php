@@ -9,7 +9,8 @@ use cardinalby\ContentDisposition\ContentDisposition;
 use Illuminate\Http\Client\Response;
 
 /**
- * Versjon 2 av Pureservice API-klient, basert på Laravel sitt HTTP Client-bibliotek
+ * Versjon 2 av Pureservice API-klient.
+ * Bruker Laravel sitt HTTP Client-bibliotek i stedet for GuzzleHttp direkte
  */
 class PsApi extends API {
     protected array $ticketOptions;
@@ -184,8 +185,10 @@ class PsApi extends API {
             $response = $this->apiGet($uri, true);
         endif;
         if ($response->successful()):
-            $ticket = collect($response->json('tickets'));
-            return $ticket->mapInto(Ticket::class)->first();
+            $tickets = collect($response->json('tickets'));
+            $ticket = $tickets->mapInto(Ticket::class)->first();
+            $ticket->save();
+            return $ticket;
         else:
             return false;
         endif;
