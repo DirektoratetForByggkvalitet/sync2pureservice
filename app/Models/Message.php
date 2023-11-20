@@ -35,27 +35,112 @@ class Message extends Model {
     protected $hidden = [
         'emailtext',
     ];
-    /**
-     * Standardverdier ved oppretting
-     */
-    // protected $attributes = [
-    //     'attachment' => '[]',
-    //     'content' => '[]',
-    // ];
 
+
+/**
+ * ###########################
+ * #### FELLES-funksjoner ####
+ * ###########################
+ */
+    /**
+     * Hent ut firmaet som er avsender
+     */
     public function sender(): Company|null {
         return Company::find($this->sender_id);
     }
+
+    /**
+     * Hent ut firmaet som er mottaker
+     */
     public function receiver(): Company|null {
         return Company::find($this->receiver_id);
     }
 
+    /**
+     * Oppretter en svardato som er 30 dager i fremtiden
+     */
     public function getResponseDt(): string {
         return Carbon::now()->addDays(30)->toRfc3339String();
     }
 
+    /**
+     * Henter dokumenttypen fra content
+     */
     public function documentType() {
         return Arr::get($this->content, 'standardBusinessDocumentHeader.documentIdentification.type');
+    }
+
+    /**
+     * Oppgir nedlastingslokasjon for meldingen
+    */
+    public function downloadPath(bool $fullPath = false): string {
+        $path = config('eformidling.path.download').'/'. $this->messageId;
+        Storage::makeDirectory($path);
+        return $fullPath ? Storage::path($path) : $path;
+    }
+
+    /**
+     * Oppgir temp-lokasjon for meldingen
+    */
+    public function tempPath(bool $fullPath = false): string {
+        $path = config('eformidling.path.temp').'/'. $this->messageId;
+        Storage::makeDirectory($path);
+        return $fullPath ? Storage::path($path) : $path;
+    }
+
+    /**
+     * Sørger for at $this->attachments faktisk er et array
+     */
+    public function assureAttachments(): void {
+        $tmp = is_array($this->attachments) ? $this->attachments : [];
+        $this->attachments = $tmp;
+        $this->save();
+    }
+
+    /**
+     * Legger en fil til som vedlegg til meldingen
+     */
+    protected function addToAttachments(array|string $additions): void {
+        $attachments = $this->attachments;
+        if (!is_array($additions)) $additions = [$additions];
+        $save_needed = false;
+        foreach ($additions as $add):
+            if (!in_array($add, $attachments)):
+                $attachments[] = $add;
+                $save_needed = true;
+            endif;
+        endforeach;
+        if ($save_needed):
+            $this->attachments = $attachments;
+            $this->save();
+        endif;
+    }
+
+
+/**
+ * ##########################
+ * #### UTGÅENDE melding ####
+ * ##########################
+ */
+
+    public function getOpprettetDato(): string {
+        return Tools::atomTs();
+    }
+
+    public function getArkivertDato(): string {
+        return $this->getOpprettetDato();
+    }
+
+    public function getCreatedDTLocalString(): string {
+        return Carbon::now(config('app.timezone'))->toDateTimeLocalString();
+    }
+
+    public function getOpprettetAv(): string {
+        return 'sync2pureservice';
+    }
+
+    public function getArkivertAv(): string {
+        return $this->getOpprettetAv();
     }
 
     /**
@@ -94,6 +179,27 @@ class Message extends Model {
         $this->save();
     }
 
+    /**
+     * Oppretter arkivmelding.xml og vedlegger den til meldingen
+     */
+    public function createXmlFromTicket(Ticket|false $t = false): bool {
+        if (!$t):
+            $t = Ticket::factory()->create(['eformidling' => true, 'subject' => 'Sakens tittel', 'description' => 'Beskrivelse']);
+        endif;
+        $file = $this->tempPath().'/arkivmelding.xml';
+        if (Storage::put($file, Blade::render('xml/arkivmelding', ['msg' => $this, 'ticket' => $t]))):
+            $this->addToAttachments($file);
+            return true;
+        endif;
+        return false;
+    }
+
+
+/**
+ * #############################
+ * #### INNKOMMENDE melding ####
+ * #############################
+ */
     public function getCreatedDtHr(): string {
         if ($dt = Arr::get($this->content, 'standardBusinessDocumentHeader.documentIdentification.creationDateAndTime')):
             return Carbon::parse($dt)->locale('nb')->isoFormat('LLLL');
@@ -107,39 +213,6 @@ class Message extends Model {
         endif;
         return 'ikke oppgitt';
 
-    }
-
-    public function getOpprettetDato(): string {
-        return Tools::atomTs();
-    }
-    public function getArkivertDato(): string {
-        return $this->getOpprettetDato();
-    }
-    public function getCreatedDTLocalString(): string {
-        return Carbon::now(config('app.timezone'))->toDateTimeLocalString();
-    }
-
-    public function getOpprettetAv(): string {
-        return 'sync2pureservice';
-    }
-    public function getArkivertAv(): string {
-        return $this->getOpprettetAv();
-    }
-    /**
-     * Oppgir nedlastingslokasjon for meldingen
-    */
-    public function downloadPath(bool $fullPath = false): string {
-        $path = config('eformidling.path.download').'/'. $this->messageId;
-        Storage::makeDirectory($path);
-        return $fullPath ? Storage::path($path) : $path;
-    }
-    /**
-     * Oppgir temp-lokasjon for meldingen
-    */
-    public function tempPath(bool $fullPath = false): string {
-        $path = config('eformidling.path.temp').'/'. $this->messageId;
-        Storage::makeDirectory($path);
-        return $fullPath ? Storage::path($path) : $path;
     }
 
     /**
@@ -302,21 +375,6 @@ class Message extends Model {
     }
 
     /**
-     * Oppretter arkivmelding.xml og vedlegger den til meldingen
-     */
-    public function createXmlFromTicket(Ticket|false $t = false): bool {
-        if (!$t):
-            $t = Ticket::factory()->create(['eformidling' => true, 'subject' => 'Sakens tittel', 'description' => 'Beskrivelse']);
-        endif;
-        $file = $this->tempPath().'/arkivmelding.xml';
-        if (Storage::put($file, Blade::render('xml/arkivmelding', ['msg' => $this, 'ticket' => $t]))):
-            $this->addToAttachments($file);
-            return true;
-        endif;
-        return false;
-    }
-
-    /**
      * Leser inn arkivmelding.xml
      */
     public function readXml(): array|false {
@@ -328,14 +386,6 @@ class Message extends Model {
         return false;
     }
 
-    /**
-     * Sørger for at $this->attachments faktisk er et array
-     */
-    public function assureAttachments(): void {
-        $tmp = is_array($this->attachments) ? $this->attachments : [];
-        $this->attachments = $tmp;
-        $this->save();
-    }
 
     public function processEmailText(string $text): Collection {
         $dokText = Str::after($text, 'Dokumenter:');
@@ -359,22 +409,6 @@ class Message extends Model {
         endforeach;
 
         return collect($dokumenter);
-    }
-
-    protected function addToAttachments(array|string $additions): void {
-        $attachments = $this->attachments;
-        if (!is_array($additions)) $additions = [$additions];
-        $save_needed = false;
-        foreach ($additions as $add):
-            if (!in_array($add, $attachments)):
-                $attachments[] = $add;
-                $save_needed = true;
-            endif;
-        endforeach;
-        if ($save_needed):
-            $this->attachments = $attachments;
-            $this->save();
-        endif;
     }
 
 }

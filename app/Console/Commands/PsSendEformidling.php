@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\{Arr, Str};
 use App\Services\{Eformidling, PsApi, Tools};
-use App\Models\{Ticket, Message, Company, User};
+use App\Models\{Ticket, Message, Company, TicketCommunication, User};
 
 class PsSendEformidling extends Command
 {
@@ -46,15 +46,32 @@ class PsSendEformidling extends Command
                 $ticketUser = collect($response->json('linked.users'))->mapInto(User::class)->first();
                 $ticketUser->email = $response->json('linked.emailaddresses.0.email');
                 $ticketCompany = collect($response->json('linked.companies'))->mapInto(Company::class)->first();
+                $ticket->save();
             else:
                 $this->error('Fant ikke oppgitt saksnummer');
                 return Command::FAILURE;
             endif;
 
             //$ticket = $this->ps->getTicketFromPureservice($this->reqNo, true, $query);
-            $this->line(Tools::L1.'Behandler sak med tittel \''.$ticket->subject.'\':');
-            $this->line(Tools::L2.'Skal sendes til foretak: '.$ticketCompany->name.' - '.$ticketCompany->organizationNumber);
-            $this->line(Tools::L2.'Sluttbruker: '.$ticketUser->firstName.' '.$ticketUser->lastName.' - '.$ticketUser->email);
+            $this->line(Tools::L1.'Behandler saksnr '.$this->reqNo.' - \''.$ticket->subject.'\':');
+            if ($ticketCompany->organizationNumber):
+                $this->line(Tools::L2.'Skal sendes til foretak: '.$ticketCompany->name.' - '.$ticketCompany->organizationNumber);
+                $this->line(Tools::L2.'Sluttbruker: '.$ticketUser->firstName.' '.$ticketUser->lastName.' - '.$ticketUser->email);
+            else:
+                $this->error(Tools::L2.'Kan ikke sende med eFormidling. Foretaket '.$ticketCompany->name.' mangler organisasjonsnr.');
+                return Command::FAILURE;
+            endif;
+            // Henter inn utgående kommunikasjon eller løsningstekst.
+            $uri = '/communication/';
+            $query = [
+                'filter' => 'ticketID == '.$ticket->id. ' AND direction == '.config('pureservice.comms.direction.out'),
+                'sort' => 'modified DESC',
+            ];
+            $response = $this->ps->apiQuery($uri, $query, true);
+            if ($response->successful() && count($response->json('communications'))):
+                $communication = collect($response->json('communications'))->mapInto(TicketCommunication::class)->first();
+                $communication->save();
+            endif;
         else:
             $this->error('Ingen saksnummer oppgitt. Avbryter');
             return Command::FAILURE;
