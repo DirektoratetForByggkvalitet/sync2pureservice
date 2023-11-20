@@ -8,7 +8,7 @@ use App\Services\{Eformidling, PsApi, Tools};
 use App\Models\{Ticket, Message, Company, TicketCommunication, User};
 
 /**
- * PsSendEformidling er en kommando som er ment å kjøres fra Pureservice
+ * PsSendEformidling er en kommando som er ment å kjøres som pipeline utløst av Pureservice
  */
 class PsSendEformidling extends Command
 {
@@ -29,7 +29,6 @@ class PsSendEformidling extends Command
 
     protected PsApi $ps;
     protected Eformidling $ef;
-    protected Company $receiver;
     protected int $reqNo;
 
 
@@ -39,7 +38,7 @@ class PsSendEformidling extends Command
     public function handle() {
         if ($this->reqNo = $this->argument('requestNumber')):
             $this->ps = new PsApi();
-            // Saksdata fra Pureservice
+            // Saksdata med kommunikasjoner og mottaker fra Pureservice
             $ticketData = $this->ps->getTicketAndCommunicationsByReqNo($this->reqNo);
             if (!$ticketData):
                 $this->error('Fant ikke oppgitt saksnummer');
@@ -52,7 +51,6 @@ class PsSendEformidling extends Command
             $ticketUser = $ticketData['recipientUser'];
             unset($ticketData);
 
-            //$ticket = $this->ps->getTicketFromPureservice($this->reqNo, true, $query);
             $this->line(Tools::L1.'Behandler saksnr '.$this->reqNo.' - \''.$ticket->subject.'\':');
             if ($ticketCompany->organizationNumber):
                 $this->line(Tools::L2.'Skal sendes til foretak: '.$ticketCompany->name.' - '.$ticketCompany->organizationNumber);
@@ -64,6 +62,13 @@ class PsSendEformidling extends Command
 
             // Oppretter eFormidling-melding
             $message = $ticket->createMessage($ticketCompany);
+            $this->line(Tools::L2.'Sender meldingen med ID '.$message->messageId);
+            $this->ef = new Eformidling();
+            if ($sent = $this->ef->sendMessage($message)):
+                $this->line(Tools::L3.'Meldingen ble sendt');
+            else:
+                $this->error(Tools::L2.'Det oppsto en feil, meldingen ble ikke sendt');
+            endif;
         else:
             $this->error('Ingen saksnummer oppgitt. Avbryter');
             return Command::FAILURE;
