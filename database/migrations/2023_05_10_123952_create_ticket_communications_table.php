@@ -18,6 +18,8 @@ return new class extends Migration
             $table->integer('changeId')->nullable();
             $table->longText('text');
             $table->string('subject')->nullable();
+            $table->integer('direction')->nullable();
+            $table->integer('visibility')->nullable();
 
             $table->timestamps();
         });

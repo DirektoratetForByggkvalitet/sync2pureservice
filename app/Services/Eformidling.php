@@ -20,24 +20,22 @@ class Eformidling extends API {
     }
 
     /**
-     * Setter opp til å bruke Digdir sitt test-api for å sende meldinger (til oss selv)
+     * Mulighet til å bytte hvilket integrasjonspunkt som skal brukes
     */
-    public function switchToTestIp(): void {
-        config([
-            'eformidling.default.api' => config('eformidling.api'),
-            'eformidling.api' => config('eformidling.testapi'),
-        ]);
-        $this->setProperties();
-    }
-
-    public function switchToOriginalIp(): void {
-        if (config('eformidling.default.api', false)):
+    public function setIP(bool $useTest = false): void {
+        if ($useTest):
+            config([
+                'eformidling.default.api' => config('eformidling.api'),
+                'eformidling.api' => config('eformidling.testapi'),
+            ]);
+        elseif (config('eformidling.default.api', false)):
             config([
                 'eformidling.api' => config('eformidling.default.api'),
             ]);
-            $this->setProperties();
         endif;
+        $this->setProperties();
     }
+
 
     /**
      * Finner ut hvilke brukerIDer i Pureservice som skal knyttes til sender og receiver
@@ -302,24 +300,26 @@ class Eformidling extends API {
     }
 
     /**
-     * Sender eFormidlings-meldingen til QA-integrasjonspunktet hos Digdir
+     * Sender eFormidlings-meldingen til integrasjonspunktet
+     * - Oppretter arkivmelding på integrasjonspunktet
+     * - Laster opp vedlegg til integrasjonspunktet
+     * - Sender meldingen
      */
-    public function sendMessageWithTest(Message $message): bool {
-        $this->switchToTestIp();
-        // Bytter om sender og mottaker, slik at
-        if ($created = $this->createArkivmelding($message)):
-            $files = $this->uploadAttachments($message);
+    public function sendMessage(Message $m, bool $test = false): bool {
+        $this->setIP($test);
+
+        if ($created = $this->createArkivmelding($m)):
+            $files = $this->uploadAttachments($m);
         endif;
         if ($created):
-            $this->sendMessage($message);
+            return $this->dispatchMessage($m);
         endif;
-        $this->switchToOriginalIp();
         return false;
     }
 
-    public function createArkivmelding(Message $message): bool {
+    public function createArkivmelding(Message $m): bool {
         $uri = 'messages/out';
-        $body = $message->content;
+        $body = $m->content;
         $result = $this->apiPost($uri, $body);
         if ($result->failed()):
             return false;
@@ -330,10 +330,10 @@ class Eformidling extends API {
         return false;
     }
 
-    public function uploadAttachments(Message $message): array {
-        $uri = 'messages/out/'.$message->id;
+    public function uploadAttachments(Message $m): array {
+        $uri = 'messages/out/'.$m->id;
         $results = ['count' => 0];
-        foreach ($message->attachments as $file):
+        foreach ($m->attachments as $file):
             if (Storage::exists($file)):
                 $request = $this->prepRequest('application/json', Storage::mimeType($file));
                 $request->withHeader('Content-Disposition', ContentDisposition::create(basename($file)));
@@ -351,8 +351,8 @@ class Eformidling extends API {
     /**
      * Sender en opprettet melding til mottaker
      */
-    public function sendMessage(Message $message): bool {
-        $uri = 'messages/out/'.$message->id;
+    public function dispatchMessage(Message $m): bool {
+        $uri = 'messages/out/'.$m->id;
         $response = $this->apiPost($uri);
         return $response->successful();
     }

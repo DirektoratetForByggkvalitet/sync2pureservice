@@ -395,7 +395,6 @@ class PsApi extends API {
         return $returnClass ? collect([$returnValue])->mapInto(Company::class)->first(): $returnValue;
     }
 
-
     public function findCompanyByDomainName(string $search, bool $returnClass = true): array|false|Company {
         $cKey = $returnClass ? Str::slug($search).'_class' : Str::slug($search).'_array';
         return Cache::remember($cKey, 600, function() use ($search, $returnClass) {
@@ -761,4 +760,32 @@ class PsApi extends API {
         return false;
     }
 
+    public function getTicketAndCommunicationsByReqNo(int $reqNo): array|false {
+        $query = [
+            'include' => 'user,user.company,user.emailaddress,communication',
+        ];
+        $uri = '/ticket/'.$reqNo.'/requestNumber/';
+        $response = $this->apiQuery($uri, $query, true);
+        if ($response->successful()):
+            $ticket = collect($response->json('tickets'))->mapInto(Ticket::class)->first();
+            $ticketUser = collect($response->json('linked.users'))->mapInto(User::class)->first();
+            $ticketUser->email = $response->json('linked.emailaddresses.0.email');
+            $ticketCompany = collect($response->json('linked.companies'))->mapInto(Company::class)->first();
+            $ticketCommunications = collect($response->json('linked.communications'))
+                ->where('direction', config('pureservice.comms.direction.out'))
+                ->mapInto(TicketCommunication::class);
+            $ticket->save();
+            $result = [
+                'ticket' => $ticket,
+                'recipientCompany' => $ticketCompany,
+                'recipientUser' => $ticketUser,
+                'communications' => $ticketCommunications,
+            ];
+            return $result;
+        endif;
+
+        return false;
+
+
+    }
 }

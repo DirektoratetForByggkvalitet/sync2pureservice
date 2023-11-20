@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\{Storage, Blade};
 use Illuminate\Support\{Str, Arr, Collection};
@@ -24,16 +23,18 @@ class Message extends Model {
         'attachments',
         'messageId',
         'emailtext',
-        //'has_lock',
+        'sent',
     ];
 
     protected $casts = [
         'attachments' => 'array',
         'content' => 'array',
+        'sent' => 'bool',
     ];
 
     protected $hidden = [
         'emailtext',
+        'sent'
     ];
 
 
@@ -45,35 +46,35 @@ class Message extends Model {
     /**
      * Hent ut firmaet som er avsender
      */
-    public function sender(): Company|null {
+    public function sender() : Company|null {
         return Company::find($this->sender_id);
     }
 
     /**
      * Hent ut firmaet som er mottaker
      */
-    public function receiver(): Company|null {
+    public function receiver() : Company|null {
         return Company::find($this->receiver_id);
     }
 
     /**
      * Oppretter en svardato som er 30 dager i fremtiden
      */
-    public function getResponseDt(): string {
+    public function getResponseDt() : string {
         return Carbon::now()->addDays(30)->toRfc3339String();
     }
 
     /**
      * Henter dokumenttypen fra content
      */
-    public function documentType() {
+    public function documentType() : string {
         return Arr::get($this->content, 'standardBusinessDocumentHeader.documentIdentification.type');
     }
 
     /**
      * Oppgir nedlastingslokasjon for meldingen
     */
-    public function downloadPath(bool $fullPath = false): string {
+    public function downloadPath(bool $fullPath = false) : string {
         $path = config('eformidling.path.download').'/'. $this->messageId;
         Storage::makeDirectory($path);
         return $fullPath ? Storage::path($path) : $path;
@@ -82,7 +83,7 @@ class Message extends Model {
     /**
      * Oppgir temp-lokasjon for meldingen
     */
-    public function tempPath(bool $fullPath = false): string {
+    public function tempPath(bool $fullPath = false) : string {
         $path = config('eformidling.path.temp').'/'. $this->messageId;
         Storage::makeDirectory($path);
         return $fullPath ? Storage::path($path) : $path;
@@ -91,7 +92,7 @@ class Message extends Model {
     /**
      * Sørger for at $this->attachments faktisk er et array
      */
-    public function assureAttachments(): void {
+    public function assureAttachments() : void {
         $tmp = is_array($this->attachments) ? $this->attachments : [];
         $this->attachments = $tmp;
         $this->save();
@@ -123,30 +124,30 @@ class Message extends Model {
  * ##########################
  */
 
-    public function getOpprettetDato(): string {
+    public function getOpprettetDato() : string {
         return Tools::atomTs();
     }
 
-    public function getArkivertDato(): string {
+    public function getArkivertDato() : string {
         return $this->getOpprettetDato();
     }
 
-    public function getCreatedDTLocalString(): string {
+    public function getCreatedDTLocalString() : string {
         return Carbon::now(config('app.timezone'))->toDateTimeLocalString();
     }
 
-    public function getOpprettetAv(): string {
+    public function getOpprettetAv() : string {
         return 'sync2pureservice';
     }
 
-    public function getArkivertAv(): string {
+    public function getArkivertAv() : string {
         return $this->getOpprettetAv();
     }
 
     /**
      * Oppretter innholdet (hodet) til meldingen og lagrer i $this->content
      */
-    public function createContent(string|false $template = false) {
+    public function createContent(string|false $template = false) : void {
 
         $content = json_decode(file_get_contents(resource_path(config('eformidling.out.template'))), true);
 
@@ -171,7 +172,7 @@ class Message extends Model {
     }
 
     /** Setter 'arkivmelding.hoveddokument' i $this->content */
-    public function setMainDocument(string|false $file = false): void {
+    public function setMainDocument(string|false $file = false) : void {
         if ($file) $this->mainDocument = basename($file);
         $content = $this->content;
         Arr::set($content, 'arkivmelding.hoveddokument', $this->mainDocument);
@@ -180,7 +181,7 @@ class Message extends Model {
     }
 
     /**
-     * Oppretter arkivmelding.xml og vedlegger den til meldingen
+     * Oppretter arkivmelding.xml fra Pureservice-sak og vedlegger den til meldingen
      */
     public function createXmlFromTicket(Ticket|false $t = false): bool {
         if (!$t):
@@ -200,14 +201,14 @@ class Message extends Model {
  * #### INNKOMMENDE melding ####
  * #############################
  */
-    public function getCreatedDtHr(): string {
+    public function getCreatedDtHr() : string {
         if ($dt = Arr::get($this->content, 'standardBusinessDocumentHeader.documentIdentification.creationDateAndTime')):
             return Carbon::parse($dt)->locale('nb')->isoFormat('LLLL');
         endif;
         return 'ikke oppgitt';
     }
 
-    public function getExpectedResponseDtHr(): string {
+    public function getExpectedResponseDtHr() : string {
         if ($dt = Arr::get($this->content, 'standardBusinessDocumentHeader.businessScope.scope.0.scopeInformation.0.expectedResponseDateTime')):
             return Carbon::parse($dt)->locale('nb')->isoFormat('LLLL');
         endif;
@@ -218,7 +219,7 @@ class Message extends Model {
     /**
      * Henter ut en lesbar businessScope.scope.identifier
      */
-    public function processReadable(): string {
+    public function processReadable() : string {
         $processes = [];
         foreach (Arr::get($this->content, 'standardBusinessDocumentHeader.businessScope.scope') as $scope):
             $processes[] = $scope['identifier'];
@@ -228,7 +229,7 @@ class Message extends Model {
      /**
      * Oppretter en sak i Pureservice basert på meldingen
      */
-    public function saveToPs(PsApi|false $ps = false, bool $addAttachments = true): Ticket|false {
+    public function saveToPs(PsApi|false $ps = false, bool $addAttachments = true) : Ticket|false {
         if (!$ps):
             $ps = new PsApi();
             $ps->setTicketOptions('eformidling');
@@ -282,7 +283,7 @@ class Message extends Model {
     /**
      * Splitter innsynskrav opp slik at hver sak får sitt eget innsynskrav
      */
-    public function splittInnsynsKrav(PsApi|false $ps = false): array|false {
+    public function splittInnsynsKrav(PsApi|false $ps = false) : array|false {
         if (!$ps):
             $ps = new PsApi();
             $ps->setTicketOptions('innsynskrav');
@@ -352,7 +353,7 @@ class Message extends Model {
         return $tickets;
     }
 
-    protected function userFromKontaktinfo(array $bestilling, PsApi $ps): User {
+    protected function userFromKontaktinfo(array $bestilling, PsApi $ps) : User {
         $kontaktinfo = &$bestilling['kontaktinfo'];
         if (!$user = User::firstWhere('email', $kontaktinfo['e-post'])):
             $userData = [
@@ -378,7 +379,7 @@ class Message extends Model {
     /**
      * Leser inn arkivmelding.xml
      */
-    public function readXml(): array|false {
+    public function readXml() : array|false {
         $xmlfile = $this->downloadPath().'/arkivmelding.xml';
         if (Storage::fileExists($xmlfile)):
             $xmlData = json_decode(json_encode(simplexml_load_file(Storage::path($xmlfile))), true);
@@ -388,7 +389,7 @@ class Message extends Model {
     }
 
 
-    public function processEmailText(string $text): Collection {
+    public function processEmailText(string $text) : Collection {
         $dokText = Str::after($text, 'Dokumenter:');
         $dokArray = explode('--------------------------------------'.PHP_EOL, $dokText);
         $dokumenter = [];

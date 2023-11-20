@@ -39,21 +39,18 @@ class PsSendEformidling extends Command
     public function handle() {
         if ($this->reqNo = $this->argument('requestNumber')):
             $this->ps = new PsApi();
-            $query = [
-                'include' => 'user,user.company,user.emailaddress',
-            ];
-            $uri = '/ticket/'.$this->reqNo.'/requestNumber/';
-            $response = $this->ps->apiQuery($uri, $query, true);
-            if ($response->successful()):
-                $ticket = collect($response->json('tickets'))->mapInto(Ticket::class)->first();
-                $ticketUser = collect($response->json('linked.users'))->mapInto(User::class)->first();
-                $ticketUser->email = $response->json('linked.emailaddresses.0.email');
-                $ticketCompany = collect($response->json('linked.companies'))->mapInto(Company::class)->first();
-                $ticket->save();
-            else:
+            // Saksdata fra Pureservice
+            $ticketData = $this->ps->getTicketAndCommunicationsByReqNo($this->reqNo);
+            if (!$ticketData):
                 $this->error('Fant ikke oppgitt saksnummer');
                 return Command::FAILURE;
             endif;
+            $ticket = $ticketData['ticket'];
+            $communication = $ticketData['ticketCommunications']->sortByDesc('id')->first();
+            $communication->save();
+            $ticketCompany = $ticketData['recipientCompany'];
+            $ticketUser = $ticketData['recipientUser'];
+            unset($ticketData);
 
             //$ticket = $this->ps->getTicketFromPureservice($this->reqNo, true, $query);
             $this->line(Tools::L1.'Behandler saksnr '.$this->reqNo.' - \''.$ticket->subject.'\':');
@@ -64,17 +61,9 @@ class PsSendEformidling extends Command
                 $this->error(Tools::L2.'Kan ikke sende med eFormidling. Foretaket '.$ticketCompany->name.' mangler organisasjonsnr.');
                 return Command::FAILURE;
             endif;
-            // Henter inn utgående kommunikasjon eller løsningstekst.
-            $uri = '/communication/';
-            $query = [
-                'filter' => 'ticketID == '.$ticket->id. ' AND direction == '.config('pureservice.comms.direction.out'),
-                'sort' => 'modified DESC',
-            ];
-            $response = $this->ps->apiQuery($uri, $query, true);
-            if ($response->successful() && count($response->json('communications'))):
-                $communication = collect($response->json('communications'))->mapInto(TicketCommunication::class)->first();
-                $communication->save();
-            endif;
+
+            // Oppretter eFormidling-melding
+            $message = $ticket->createMessage($ticketCompany);
         else:
             $this->error('Ingen saksnummer oppgitt. Avbryter');
             return Command::FAILURE;
