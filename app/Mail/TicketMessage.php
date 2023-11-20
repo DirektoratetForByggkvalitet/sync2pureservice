@@ -46,7 +46,7 @@ class TicketMessage extends Mailable
      */
     public function attachments(): array {
         $attachments = [];
-        if (count($this->ticket->attachments)):
+        if ($this->ticket->attachments && count($this->ticket->attachments)):
             foreach ($this->ticket->attachments as $file):
                 $attachments[] = Attachment::fromStorage($file);
             endforeach;

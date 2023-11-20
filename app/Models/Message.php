@@ -334,6 +334,7 @@ class Message extends Model {
             // Oppretter en skjult innkommende melding med den opprinnelige bestillingen
             if (isset($emailtext)):
                 $emailtext = Str::replace("\n", "<br/>\n", $emailtext);
+                $emailtext = "<p><strong>Denne saken er en del av følgende bestilling fra eInnsyn</strong></p>\n\n" . $emailtext;
                 $ps->addCommunicationToTicket(
                     $ticket,
                     $this->sender_id,

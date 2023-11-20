@@ -37,6 +37,7 @@ class TicketFactory extends Factory
             'description' => fake()->text(200),
             'solution' => null,
             'eFormidling' => false,
+            'attachments' => [],
         ];
     }
 }

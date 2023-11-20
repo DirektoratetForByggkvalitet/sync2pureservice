@@ -47,12 +47,17 @@ class Ticket extends Model
         'internal_id',
         'eFormidling',
         'action',
-        'pdf'
+        'pdf',
+        'attachments',
     ];
 
     protected $properties = [
         'eForsendelse' => false,
         'pdf' => null,
+    ];
+
+    protected $casts = [
+        'attachments' => 'array',
     ];
 
 
@@ -85,7 +90,6 @@ class Ticket extends Model
     }
 
     public function extractRecipientsFromAsset(PsApi|Pureservice $ps, array $recipientListAssetType) : void {
-
         $uri = '/relationship/'.$this->id.'/fromTicket';
         $query = [
             'include' => 'toAsset',
@@ -136,7 +140,6 @@ class Ticket extends Model
                 endif; // $listRelations
             endforeach; // $relatedLists['linked']['assets'] as $list
         endif; // $relatedLists && count($relatedLists['relationships']
-
     }
 
     /**
@@ -210,7 +213,7 @@ class Ticket extends Model
     }
 
     /**
-     * Oppretter en melding fra saken
+     * Oppretter en eFormidling-melding fra saken
      */
     public function createMessage(Company $receiver): Message {
         $message = Message::factory()->make([
@@ -256,8 +259,33 @@ class Ticket extends Model
         return "Ukjent";
     }
 
+    /**
+     * Henter kommunikasjon på saken fra Pureservice
+     * Lagrer dem som TicketCommunication
+     */
+    public function getPsCommunications(PsApi|null $ps = null): false|array {
+        if (!$this->id) return false;
+        if (!$ps) $ps = new PsApi();
+        $uri = '/communication/';
+        $params = [
+            'include' => 'attachments',
+            'filter' => 'ticketId == '.$this->id.'',
+            'sort' => 'created desc, modified desc',
+        ];
+        $response = $ps->apiQuery($uri, $params, true);
+        if ($response->successful() && count($response->json('communications'))):
+            $comms = collect($response->json('communications'))->mapInto(TicketCommunication::class);
+            $attachments = collect($response->json('linked.attachments'));
+            $comms->each(function(TicketCommunication $comm, int $key) use ($attachments) {
+                $commAttachments = $attachments->where('links.');
+            });
+        endif;
+        return false;
+    }
+
     protected function addToAttachments(array|string $additions): void {
-        $attachments = $this->attachments;
+        $attachments = is_array($this->attachments) ? $this->attachments : [];
+
         if (!is_array($additions)) $additions = [$additions];
         $save_needed = false;
         foreach ($additions as $add):

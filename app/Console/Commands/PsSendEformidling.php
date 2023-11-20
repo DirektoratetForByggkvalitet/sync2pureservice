@@ -7,6 +7,9 @@ use Illuminate\Support\{Arr, Str};
 use App\Services\{Eformidling, PsApi, Tools};
 use App\Models\{Ticket, Message, Company, TicketCommunication, User};
 
+/**
+ * PsSendEformidling er en kommando som er ment å kjøres fra Pureservice
+ */
 class PsSendEformidling extends Command
 {
     /**
