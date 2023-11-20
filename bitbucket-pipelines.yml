@@ -102,6 +102,22 @@ pipelines:
             - echo 'Kjører svarinn2pureservice'
             - ./artisan pureservice:svarUtMottak
 
+    sendSomEformidling:
+      - step:
+          name: Henter inn sak fra Pureservice og sender kommunikasjonen via eFormidling
+          deployment: eFormidling-sender
+          size: 2x
+          caches:
+            - composer-vendor
+            - composer
+          runs-on:
+            - "self.hosted"
+          script:
+            - *install
+            - *resetDB
+            - echo "Behandler melding med saksnr $reqNo"
+            - ./artisan pureservice:eformidling ${reqNo}
+
     eFormidlingMottak:
       - step:
           name: Henter inn meldinger fra eFormidling (Altinn, Svarut, eInnsyn)
