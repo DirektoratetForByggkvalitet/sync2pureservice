@@ -165,13 +165,14 @@ class Message extends Model {
         Arr::set($content, 'standardBusinessDocumentHeader.businessScope.scope.0.identifier', $this->processIdentifier);
 
         // Forventet svartid
-        $svarTid = Carbon::now(config('app.timezone'))->addDays(30)->toAtomString();
-        Arr::set($content, 'standardBusinessDocumentHeader.businessScope.scope.0.scopeInformation.0.expectedResponseDateTime', $svarTid);
+        Arr::set($content, 'standardBusinessDocumentHeader.businessScope.scope.0.scopeInformation.0.expectedResponseDateTime', $this->getResponseDt());
         $this->content = $content;
         $this->save();
     }
 
-    /** Setter 'arkivmelding.hoveddokument' i $this->content */
+    /**
+     * Setter 'arkivmelding.hoveddokument' i $this->content
+    */
     public function setMainDocument(string|false $file = false) : void {
         if ($file) $this->mainDocument = basename($file);
         $content = $this->content;
