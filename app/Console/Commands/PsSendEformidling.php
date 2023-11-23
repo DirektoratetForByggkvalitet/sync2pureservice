@@ -28,14 +28,15 @@ class PsSendEformidling extends Command
     protected string $version = '1.0';
 
     protected PsApi $ps;
-    protected Eformidling $ef;
     protected int $reqNo;
+    protected Ticket $ticket;
 
 
     /**
      * Execute the console command.
      */
     public function handle() {
+        $sent = false;
         if ($this->reqNo = $this->argument('requestNumber')):
             $this->ps = new PsApi();
             // Saksdata med kommunikasjoner og mottaker fra Pureservice
@@ -44,34 +45,49 @@ class PsSendEformidling extends Command
                 $this->error('Fant ikke oppgitt saksnummer');
                 return Command::FAILURE;
             endif;
-            $ticket = $ticketData['ticket'];
-            $communication = $ticketData['ticketCommunications']->sortByDesc('id')->first();
-            $communication->save();
-            $ticketCompany = $ticketData['recipientCompany'];
-            $ticketUser = $ticketData['recipientUser'];
-            unset($ticketData);
 
-            $this->line(Tools::L1.'Behandler saksnr '.$this->reqNo.' - \''.$ticket->subject.'\':');
-            if ($ticketCompany->organizationNumber):
-                $this->line(Tools::L2.'Skal sendes til foretak: '.$ticketCompany->name.' - '.$ticketCompany->organizationNumber);
-                $this->line(Tools::L2.'Sluttbruker: '.$ticketUser->firstName.' '.$ticketUser->lastName.' - '.$ticketUser->email);
-            else:
-                $this->error(Tools::L2.'Kan ikke sende med eFormidling. Foretaket '.$ticketCompany->name.' mangler organisasjonsnr.');
-                return Command::FAILURE;
-            endif;
-
-            // Oppretter eFormidling-melding
-            $message = $ticket->createMessage($ticketCompany);
-            $this->line(Tools::L2.'Sender meldingen med ID '.$message->messageId);
-            $this->ef = new Eformidling();
-            if ($sent = $this->ef->sendMessage($message)):
-                $this->line(Tools::L3.'Meldingen ble sendt');
-            else:
+            $sent = $this->sendTicketWithEformidling($ticketData);
+            if ($sent):
                 $this->error(Tools::L2.'Det oppsto en feil, meldingen ble ikke sendt');
+                return Command::FAILURE;
             endif;
         else:
             $this->error('Ingen saksnummer oppgitt. Avbryter');
             return Command::FAILURE;
         endif;
+
+        if ($sent):
+            $this->line(Tools::L3.'Meldingen ble sendt');
+            $solvedId = $this->ps->getEntityId('status', 'Lukket');
+        endif;
+    }
+
+    public function sendTicketWithEformidling(array $ticketData): bool {
+        $this->ticket = $ticketData['ticket'];
+        $communication = $ticketData['ticketCommunications']->sortByDesc('id')->first();
+        $communication->save();
+        $ticketCompany = $ticketData['recipientCompany'];
+        $ticketUser = $ticketData['recipientUser'];
+        unset($ticketData);
+
+        $this->line(Tools::L1.'Behandler saksnr '.$this->reqNo.' - \''.$this->ticket->subject.'\':');
+        if ($ticketCompany->organizationNumber):
+            $this->line(Tools::L2.'Skal sendes til foretak: '.$ticketCompany->name.' - '.$ticketCompany->organizationNumber);
+            $this->line(Tools::L2.'Sluttbruker: '.$ticketUser->firstName.' '.$ticketUser->lastName.' - '.$ticketUser->email);
+        else:
+            $this->error(Tools::L2.'Kan ikke sende med eFormidling. Foretaket '.$ticketCompany->name.' mangler organisasjonsnr.');
+            return false;
+        endif;
+
+        // Oppretter eFormidling-melding
+        $message = $this->ticket->createMessage($ticketCompany);
+        $this->line(Tools::L2.'Sender meldingen med ID '.$message->messageId);
+        $ef = new Eformidling();
+        if ($sent = $ef->sendMessage($message)):
+            return true;
+        else:
+            return false;
+        endif;
+
     }
 }
