@@ -37,6 +37,8 @@ De enkelte innsynskravene vil også inneholde en skjult kommunikasjon (som vises
 
 Vi arbeider aktivt for å etablere en metodikk for sending av meldinger fra Pureservice til eFormidling, men dette er noe som vil ta litt tid å få på plass. Dette vil bli inkludert som en del av [masseutsending-funksjonen](utsendelse.md).
 
+Vi har også på vei funksjonalitet for å automatisk sende svar på saker som har kommet fra eFormidling ut gjennom eFormidling. Dette er litt tricky, all den tid Pureservice alltid vil forsøke å svare på e-post. Løsningen ligger i å overvåke ikke leverte e-poster og sende dem ut via eFormidling dersom de er adresserte til en eFormidling-adresse (xxx@eformidling.pureservice.local). Dette vil bli en egen artisan-kommando.
+
 # Oppsett for kjøring #
 
 Det er en rekke miljøvariabler som må settes for at eFormidling skal fungere i sync2pureservice. Noen av disse har fallbacks, og vil falle tilbake til andre miljøvariabler eller standardverdier dersom de ikke er satt.

@@ -321,7 +321,7 @@ class Eformidling extends API {
         $uri = 'messages/out';
         $body = $m->content;
         $result = $this->apiPost($uri, $body);
-        if ($result->failed()):
+        if (!$result->successful()):
             return false;
         else:
             return true;
@@ -331,15 +331,15 @@ class Eformidling extends API {
     }
 
     public function uploadAttachments(Message $m): array {
-        $uri = 'messages/out/'.$m->id;
+        $uri = 'messages/out/'.$m->messageId;
         $results = ['count' => 0];
         foreach ($m->attachments as $file):
-            if (Storage::exists($file)):
+            if (Storage::exists($file) && basename($file) != 'arkivmelding.xml'):
                 $request = $this->prepRequest('application/json', Storage::mimeType($file));
-                $request->withHeader('Content-Disposition', ContentDisposition::create(basename($file)));
-                $request->withBody(base64_encode(file_get_contents(Storage::path($file))), Storage::mimeType($file));
+                $request->withHeader('Content-Disposition', ContentDisposition::create(basename($file))->format());
+                $request->withBody(base64_encode(Storage::get($file)), Storage::mimeType($file));
                 $result = $request->put($uri);
-                $results[$file] = $result->sucessful();
+                $results[$file] = $result->successful();
                 $results['count']++;
                 //$result = $this->apiPost($uri, $stream, 'application/json', Storage::mimeType($file));
             endif;
@@ -352,7 +352,7 @@ class Eformidling extends API {
      * Sender en opprettet melding til mottaker
      */
     public function dispatchMessage(Message $m): bool {
-        $uri = 'messages/out/'.$m->id;
+        $uri = 'messages/out/'.$m->messageId;
         $response = $this->apiPost($uri);
         return $response->successful();
     }

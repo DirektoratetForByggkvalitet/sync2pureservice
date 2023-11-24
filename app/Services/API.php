@@ -177,8 +177,7 @@ class API {
     /**
      * POST-forespørsel mot APIet
      */
-    public function apiPost
-        (
+    public function apiPost (
             string $uri,
             mixed $body = null,
             string|null $accept = null,
@@ -196,8 +195,7 @@ class API {
     /**
      * PATCH-forespørsel mot APIet
      */
-    public function apiPatch
-        (
+    public function apiPatch (
             string $uri,
             array $body,
             string|null $contentType = 'auto',

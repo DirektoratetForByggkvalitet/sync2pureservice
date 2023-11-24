@@ -137,9 +137,13 @@ class PsApi extends API {
      * @param   array   $userId         Sluttbrukers ID
      * @param   mixed   $visibility     Synlighetskode, standard = 2 (usynlig)
     */
-    public function createTicket(
+    public function createTicket (
         string $subject,
-        string $description, int $userId, int $visibility = 2, bool $returnClass = true): array|false|Ticket {
+        string $description,
+        int $userId,
+        int $visibility = 2,
+        bool $returnClass = true
+    ): array|false|Ticket {
         //if ($this->ticketOptions == []) $this->setTicketOptions();
         $uri = '/ticket';
         $ticket = [
@@ -194,6 +198,19 @@ class PsApi extends API {
         endif;
     }
 
+    public function downloadAttachmentsById(array $attachmentIds, string $dlPath = 'pureservice'): array|false {
+        $downloadedFiles = [];
+        foreach ($attachmentIds as $id):
+            $uri = '/attachment/download/'.$id;
+            $tmpFile = 'id_'.$id.'.tmp';
+            $response = $this->apiGet($uri, true, '*/*', null, Storage::path($tmpFile));
+            $cd = ContentDisposition::parse($response->header('content-disposition'));
+            $dlFile = $dlPath . '/' . $cd->getFileName();
+            Storage::move($tmpFile, $dlFile);
+            $downloadedFiles[] = $dlFile;
+        endforeach;
+        return count($downloadedFiles) ? $downloadedFiles : false;
+    }
 
     /**
      * Laster opp vedlegg til en sak i Pureservice
@@ -709,7 +726,7 @@ class PsApi extends API {
     }
 
 
-    public function uploadAttachmentToTicket(
+    public function uploadAttachmentToTicket (
         string $file,
         Ticket $ticket,
         bool $visible = true
@@ -762,30 +779,38 @@ class PsApi extends API {
 
     public function getTicketAndCommunicationsByReqNo(int $reqNo): array|false {
         $query = [
-            'include' => 'user,user.company,user.emailaddress,communication',
+            'include' => 'user,user.company,user.emailaddress,communications,status,attachments',
         ];
         $uri = '/ticket/'.$reqNo.'/requestNumber/';
         $response = $this->apiQuery($uri, $query, true);
         if ($response->successful()):
             $ticket = collect($response->json('tickets'))->mapInto(Ticket::class)->first();
+            $ticketCompany = collect($response->json('linked.companies'))->mapInto(Company::class)->first();
             $ticketUser = collect($response->json('linked.users'))->mapInto(User::class)->first();
             $ticketUser->email = $response->json('linked.emailaddresses.0.email');
-            $ticketCompany = collect($response->json('linked.companies'))->mapInto(Company::class)->first();
             $ticketCommunications = collect($response->json('linked.communications'))
-                ->where('direction', config('pureservice.comms.direction.out'))
+                ->whereNotIn('type', [
+                    config('pureservice.comms.internal'),
+                    config('pureservice.comms.description'),
+                    config('pureservice.comms.history')
+                ])
                 ->mapInto(TicketCommunication::class);
-            $ticket->save();
+            $ticketStatus = [
+                'id' => $response->json('linked.statuses.0.id'),
+                'name' => $response->json('linked.statuses.0.name'),
+            ];
+            $attachments = collect($response->json('linked.attachments'));
             $result = [
                 'ticket' => $ticket,
                 'recipientCompany' => $ticketCompany,
                 'recipientUser' => $ticketUser,
                 'communications' => $ticketCommunications,
+                'ticketStatus' => $ticketStatus,
             ];
             return $result;
         endif;
 
         return false;
-
-
     }
+
 }

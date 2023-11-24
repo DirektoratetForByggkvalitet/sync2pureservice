@@ -243,11 +243,34 @@ class Ticket extends Model
     public function getStatus(PsApi|null $ps = null): string {
         if ($this->statusId):
             if (!$ps) $ps = new PsApi();
-            return $ps->getEntityNameById('status', $this->statusId, 'userDisplayName');
+            return $ps->getEntityNameById('status', $this->statusId);
         endif;
-        return "Ukjent";
+        return 'Ukjent';
     }
+    /**
+     * Setter status på saken til status oppgitt som tekst eller int (statusId)
+     * Valgfri løsningstekst, hvis hensikten er å løse saken
+     */
+    public function changeStatus(PsApi|null $ps = null, string|null $status = null, string|null $solution = null): Ticket {
+        if (!$ps) $ps = new PsApi();
+        $status = $status ? $this->statusId : $ps->getEntityId('status', $status);
+        $this->statusId = $status;
+        $uri = '/ticket/'.$this->id;
+        $body = [
+            'statusId' => $status,
+        ];
+        // Oppgitt løsning overstyrer eventuell løsningstekst i saken
+        if ($solution):
+            $body['solution'] = $solution;
+            $this->solution = $solution;
+        elseif ($this->solution):
+            $body['solution'] = $this->solution;
+        endif;
 
+        $response = $ps->apiPatch($uri, $body);
+
+        return $this;
+    }
     /**
      * Returnerer sakstype på saken fra Pureservice
      */

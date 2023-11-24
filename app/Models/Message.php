@@ -101,7 +101,7 @@ class Message extends Model {
     /**
      * Legger en fil til som vedlegg til meldingen
      */
-    protected function addToAttachments(array|string $additions): void {
+    public function addToAttachments(array|string $additions): void {
         $attachments = $this->attachments;
         if (!is_array($additions)) $additions = [$additions];
         $save_needed = false;
@@ -146,6 +146,14 @@ class Message extends Model {
 
     /**
      * Oppretter innholdet (hodet) til meldingen og lagrer i $this->content
+     *
+     * Typisk rekkefølge:
+     * 1. createContent
+     * 2. setMainDocument
+     * 3. addToAttachments
+     * 4. createXmlFromTicket
+     *
+     * Meldingen kan sendes
      */
     public function createContent(string|false $template = false) : void {
 
@@ -188,7 +196,7 @@ class Message extends Model {
         if (!$t):
             $t = Ticket::factory()->create(['eformidling' => true, 'subject' => 'Sakens tittel', 'description' => 'Beskrivelse']);
         endif;
-        $file = $this->tempPath().'/arkivmelding.xml';
+        $file = $this->downloadPath().'/arkivmelding.xml';
         if (Storage::put($file, Blade::render('xml/arkivmelding', ['msg' => $this, 'ticket' => $t]))):
             $this->addToAttachments($file);
             return true;

@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('subject')->nullable();
             $table->integer('direction')->nullable();
             $table->integer('visibility')->nullable();
+            $table->json('attachments')->nullable();
+            $table->json('attachmentIds')->nullable();
 
             $table->timestamps();
         });
