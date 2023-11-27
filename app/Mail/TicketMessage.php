@@ -14,11 +14,16 @@ class TicketMessage extends Mailable
     use Queueable, SerializesModels;
 
     /**
-     * Create a new message instance.
+     * Oppretter en ny e-postmelding fra en sak
+     * Det er også mulig å oppgi
+     * $subject, $content og $attachments for å overstyre saksdataene
      */
     public function __construct(
-        public Ticket $ticket,
-        public bool $includeFonts = false
+        public Ticket|null $ticket = null,
+        public bool $includeFonts = false,
+        public string|null $subject = null,
+        public string|null $content = null,
+        public array|null $attachments = null,
     ) {}
 
     /**
@@ -26,7 +31,7 @@ class TicketMessage extends Mailable
      */
     public function envelope(): Envelope {
         return new Envelope(
-            subject: $this->ticket->emailSubject()
+            subject: $this->subject ? $this->subject : $this->ticket->emailSubject()
         );
     }
 
@@ -35,7 +40,7 @@ class TicketMessage extends Mailable
      */
     public function content(): Content {
         return new Content(
-            view: 'message'
+            view: $this->content ? 'rawmessage' : 'message'
         );
     }
 
@@ -46,8 +51,9 @@ class TicketMessage extends Mailable
      */
     public function attachments(): array {
         $attachments = [];
-        if ($this->ticket->attachments && count($this->ticket->attachments)):
-            foreach ($this->ticket->attachments as $file):
+        $attachmentArray = $this->attachments ? $this->attachments : $this->ticket->attachments;
+        if (count($attachmentArray)):
+            foreach ($attachmentArray as $file):
                 $attachments[] = Attachment::fromStorage($file);
             endforeach;
         endif;

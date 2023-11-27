@@ -2,8 +2,8 @@
     @php
         $title = $ticket->subject;
         $requestNumber = $ticket->requestNumber;
-        $content = $ticket->communications()->first()->text;
-        $includeFonts = isset($includeFonts) ? $includeFonts : false;
+        $content = $content ? $content : $ticket->communications()->first()->text;
+        $includeFonts = $includeFonts ? $includeFonts : false;
     @endphp
 @endif
 <!DOCTYPE html>
