@@ -21,6 +21,7 @@ class PsApi extends API {
         $this->setProperties();
     }
 
+
     /**
      * Universell funksjon som henter ut et objekt fra Pureservice basert på IDnr
      * @param string $entity    Objektnavnet, f.eks. 'status'
@@ -191,6 +192,9 @@ class PsApi extends API {
         if ($response->successful()):
             $tickets = collect($response->json('tickets'));
             $ticket = $tickets->mapInto(Ticket::class)->first();
+            if ($existing = Ticket::firstWhere('id', $ticket->id)):
+                $ticket = $existing;
+            endif;
             $ticket->save();
             return $ticket;
         else:

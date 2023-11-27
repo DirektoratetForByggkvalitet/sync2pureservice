@@ -17,15 +17,15 @@ class Utsending extends Command
      *
      * @var string
      */
-    protected $signature = 'pureservice:psutsending';
+    protected string $signature = 'pureservice:psutsending';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Sjekker Pureservice for utgående meldinger som skal ut via eFormidling, og sender dem';
-    protected $version = '1.0';
+    protected string $description = 'Henter ut masseutsendelser som skal sendes med e-post og eFormidling, samt utgående meldinger som skal sendes med eFormidling';
+    protected string $version = '1.0';
     protected float $start;
     protected Collection $messages;
     protected PsApi $api;
@@ -73,15 +73,14 @@ class Utsending extends Command
             $this->info(Tools::L1.'Ingen meldinger ble funnet.');
             return Command::SUCCESS;
         endif;
-        $this->messages = $messages->filter(function (array &$item, int $key) {
-            if ($item['to'] == config('pureservice.dispatch.address_email') || $item['to'] == config('pureservice.dispatch.address_ef')):
-                $item['dispatch'] = true;
-                return true;
-            elseif (Str::endsWith($item['to'], config('pureservice.user.ef_domain'))):
-                $item['dispatch'] = false;
+        $this->messages = $messages->filter(function (array $item, int $key) {
+            if ($item['to'] == config('pureservice.dispatch.address_email') ||
+                $item['to'] == config('pureservice.dispatch.address_ef') ||
+                Str::endsWith($item['to'], config('pureservice.user.ef_domain'))):
                 return true;
             endif;
         });
+        unset($messages);
         $msgCount = $this->messages->count();
         if ($msgCount == 0):
             $this->info(Tools::L1.'Fant ingen meldinger som kan sendes med eFormidling');
@@ -106,10 +105,9 @@ class Utsending extends Command
                 $msgAttachments = $this->api->downloadAttachmentsById($attachmentIds, $dlPath);
             endif;
 
-            if ($email['dispatch']):
+            if ($email['to'] == config('pureservice.dispatch.address_email') ||
+                $email['to'] == config('pureservice.dispatch.address_ef')):
                 // Dette er en masseutsendelse
-                // Skal vi prioritere eFormidling?
-                $eFormidling = ($email['to'] == config('pureservice.dispatch.address_ef'));
                 // Henter inn mottakerne fra mottakerlister
                 $recipients = $ticket->extractRecipientsFromAsset($this->api, $this->recipientListAssetType);
             else:
@@ -119,8 +117,11 @@ class Utsending extends Command
                 $recipients = collect([$receiver]);
                 unset($receiver);
             endif;
+            // Skal vi foretrekke eFormidling?
+            $preferEformidling = (Str::endsWith($email['to'], config('pureservice.user.ef_domain')));
             foreach ($recipients as $receiver):
-                $sendViaEformidling = $eFormidling;
+                // Forsendelseskanal kan endre seg for hver mottaker
+                $sendViaEformidling = $preferEformidling;
                 if ($receiver instanceof User):
                     $isUser = true;
                     $sendViaEformidling = false;
@@ -167,9 +168,9 @@ class Utsending extends Command
             // Merker meldingen som sendt i Pureservice
             $uri = '/email/'.$email['id'];
             $body = [
-                'status' => 0,
+                'status' => config('pureservice.email.status.delivered'),
             ];
-            $response = $this->api->apiPatch($uri, $body);
+            $response = $this->api->apiPatch($uri, $body, 'auto', '*/*');
             if ($response->successful()):
                 $this->line(Tools::L2.'Meldingen ble merket sendt i Pureservice');
             endif;
