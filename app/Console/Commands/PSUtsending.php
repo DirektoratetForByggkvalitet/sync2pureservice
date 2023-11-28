@@ -21,7 +21,7 @@ class PSUtsending extends Command {
      *
      * @var string
      */
-    protected $signature = 'pureservice:utsending {--reset-db : Nullstiller databasen før kjøring}';
+    protected $signature = 'pureservice:psutsending {--reset-db : Nullstiller databasen før kjøring}';
 
     protected $version = '1.0';
     /**
@@ -67,7 +67,7 @@ class PSUtsending extends Command {
                 '" AND ticket.status.name == "' .
                 config('pureservice.dispatch.status') . '"',
         ];
-        $result = $this->ps->apiGet($uri, false, null, $query);
+        $result = $this->ps->apiQuery($uri, $query);
 
         // Hvis ingen blir funnet, stopper vi videre behandling.
         if (count($result['communications']) == 0):

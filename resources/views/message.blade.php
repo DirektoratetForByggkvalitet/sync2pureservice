@@ -1,9 +1,13 @@
+@php
+    use Illuminate\Support\{Str, Arr, Collection};
+@endphp
 @if (isset($ticket))
     @php
         $title = $ticket->subject;
         $requestNumber = $ticket->requestNumber;
-        $content = $ticket->communications()->first()->text;
-        $includeFonts = isset($includeFonts) ? $includeFonts : false;
+        $contents = $contents ? $contents : $ticket->communications()->first()->text;
+        //if (Str::contains($content, '<img src='))
+        $includeFonts = $includeFonts ? $includeFonts : false;
     @endphp
 @endif
 <!DOCTYPE html>
@@ -30,7 +34,7 @@
             <h2>{{ $title }}</h2>
         @endif
 
-{!! $content !!}
+{!! $contents !!}
 
     </div>
 

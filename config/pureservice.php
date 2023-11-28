@@ -78,6 +78,7 @@ return [
         'internal' => 1,
         'standard' => 2,
         'description' => 7,
+        'history' => 6,
         'solution' => 50,
         'custom' => 9,
         'direction' => [
@@ -88,6 +89,13 @@ return [
         'visibility' => [
             'off' => 0,
             'on' => 1,
+        ],
+    ],
+    'email' => [
+        'status' => [
+            'received' => 0,
+            'sent' => 4,
+            'failed' => 5,
         ],
     ],
     'visibility' => [
@@ -105,6 +113,7 @@ return [
         'priority' => env('PURESERVICE_TICKET_PRIORITY', 'Normal'),
         'status' => env('PURESERVICE_TICKET_STATUS', 'Ny'),
         'status_solved' => env('PURESERVICE_TICKET_SOLVED_STATUS', 'Løst'),
+        'status_closed' => env('PURESERVICE_TICKET_CLOSED_STATUS', 'Lukket'),
         'requestType' => env('PURESERVICE_TICKET_REQUEST_TYPE','Ticket'),
     ],
     'innsynskrav' => [
@@ -151,7 +160,7 @@ return [
     ],
     // Oppsett for PSUtsendelse
     'dispatch' => [
-        'address_ef' => env('PURESERVICE_DISPATCH_EF', 'ut@eforsendelse.pureservice.local'),
+        'address_ef' => env('PURESERVICE_DISPATCH_EF', 'ut@eformidling.pureservice.local'),
         'address_email' => env('PURESERVICE_DISPATCH_EMAIL', 'ut@e-post.pureservice.local'),
         'commTypeName' => env('PURESERVICE_DISPATCH_COMMTYPE_NAME', 'Utsendelse - innhold'),
         'status' => env('PURESERVICE_DISPATCH_STATUS', 'Til ekspedering'),

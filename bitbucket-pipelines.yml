@@ -164,13 +164,15 @@ pipelines:
           artifacts:
             - "**/target/*.zip"
 
-    masseutsendelse:
+    utsending:
       - step:
-          deployment: utsendelse
-          name: Ser etter masseutsendelser i PS og sørger for å sende dem
+          deployment: utsending
+          name: Sender eFormidling-meldinger og masseutsendelser
           caches:
             - composer
             - composer-vendor
+          runs-on:
+            - "self.hosted"
           script:
             - *install
             - *resetDB

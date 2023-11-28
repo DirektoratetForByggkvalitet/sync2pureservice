@@ -1,0 +1,15 @@
+{
+  "target": {
+    "type": "pipeline_ref_target",
+    "ref_type": "branch",
+    "ref_name": "master",
+    "selector": {
+      "type": "custom",
+      "pattern": "sendSomEformidling"
+    }
+  },
+  "variables": {
+    "key": "reqNo",
+    "value": "{{Ticket.Current.RequestNumber}}"
+  }
+}

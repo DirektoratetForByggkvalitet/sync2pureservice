@@ -22,6 +22,9 @@ class TicketCommunicationFactory extends Factory
             'changeId' => null,
             'text' => fake()->text(200),
             'subject' => null,
+            'direction' => config('pureservice.comms.direction.in'),
+            'visibility' => 0,
+            'senderId' => null,
         ];
     }
 }

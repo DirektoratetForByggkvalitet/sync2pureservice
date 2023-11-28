@@ -7,7 +7,7 @@
     $receiver = $msg->receiver();
     $ticketStatus = $ticket->getStatus();
 @endphp
-<?xml version="1.0" encoding="utf-8"?>
+{!! '<'.'?xml version="1.0" encoding="utf-8"?>' !!}
 <arkivmelding xmlns="http://www.arkivverket.no/standarder/noark5/arkivmelding"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.arkivverket.no/standarder/noark5/arkivmelding/arkivmelding.xsd">
@@ -33,17 +33,17 @@
             <journalposttype>{{ $ticket->getType() }}</journalposttype>
             <journalstatus>{{ $ticketStatus }}</journalstatus>
             <beskrivelse>
-                {{ $ticket->description }}
+                Se hoveddokumentet for innhold.
             </beskrivelse>
             <virksomhetsspesifikkeMetadata>
                 <INC>{{ $ticket->requestNumber }}</INC>
             </virksomhetsspesifikkeMetadata>
 
-        @foreach ($msg->attachments as $doc)
-            @if (Str::endsWith($doc, 'arkivmelding.xml'))
-                @continue
-            @endif
-            @php($docNo++)
+@foreach ($msg->attachments as $doc)
+    @if (Str::endsWith($doc, 'arkivmelding.xml'))
+        @continue
+    @endif
+    @php($docNo++)
 
             <dokumentbeskrivelse>
                 <dokumenttype>{{ Storage::mimeType($doc) }}</dokumenttype>
@@ -52,11 +52,11 @@
                 <opprettetDato>{{ Tools::atomTs(Storage::lastModified($doc)) }}</opprettetDato>
                 <opprettetAv>{{ $msg->getOpprettetAv() }}</opprettetAv>
                 <tilknyttetRegistreringSom>
-                @if (basename($doc) == $msg->mainDocument)
+@if (basename($doc) == $msg->mainDocument)
                     {{ config('eformidling.arkivmelding.mainDocument') }}
-                @else
-                    {{ config('eformidling.arkivmelding.mainDocument') }}
-                @endif
+@else
+                    {{ config('eformidling.arkivmelding.attachment') }}
+@endif
                 </tilknyttetRegistreringSom>
                 <dokumentnummer>{{ $docNo }}</dokumentnummer>
                 <tilknyttetDato>{{ $msg->getOpprettetDato() }}</tilknyttetDato>
@@ -69,7 +69,7 @@
                     <referanseDokumentfil>{{ Tools::fileNameFromStoragePath($doc) }}</referanseDokumentfil>
                 </dokumentobjekt>
             </dokumentbeskrivelse>
-        @endforeach
+@endforeach
 
         </basisregistrering>
     </mappe>

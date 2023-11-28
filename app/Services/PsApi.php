@@ -9,7 +9,8 @@ use cardinalby\ContentDisposition\ContentDisposition;
 use Illuminate\Http\Client\Response;
 
 /**
- * Versjon 2 av Pureservice API-klient, basert på Laravel sitt HTTP Client-bibliotek
+ * Versjon 2 av Pureservice API-klient.
+ * Bruker Laravel sitt HTTP Client-bibliotek i stedet for GuzzleHttp direkte
  */
 class PsApi extends API {
     protected array $ticketOptions;
@@ -19,6 +20,7 @@ class PsApi extends API {
         $this->setCKey('pureservice');
         $this->setProperties();
     }
+
 
     /**
      * Universell funksjon som henter ut et objekt fra Pureservice basert på IDnr
@@ -136,9 +138,13 @@ class PsApi extends API {
      * @param   array   $userId         Sluttbrukers ID
      * @param   mixed   $visibility     Synlighetskode, standard = 2 (usynlig)
     */
-    public function createTicket(
+    public function createTicket (
         string $subject,
-        string $description, int $userId, int $visibility = 2, bool $returnClass = true): array|false|Ticket {
+        string $description,
+        int $userId,
+        int $visibility = 2,
+        bool $returnClass = true
+    ): array|false|Ticket {
         //if ($this->ticketOptions == []) $this->setTicketOptions();
         $uri = '/ticket';
         $ticket = [
@@ -184,13 +190,31 @@ class PsApi extends API {
             $response = $this->apiGet($uri, true);
         endif;
         if ($response->successful()):
-            $ticket = collect($response->json('tickets'));
-            return $ticket->mapInto(Ticket::class)->first();
+            $tickets = collect($response->json('tickets'));
+            $ticket = $tickets->mapInto(Ticket::class)->first();
+            if ($existing = Ticket::firstWhere('id', $ticket->id)):
+                $ticket = $existing;
+            endif;
+            $ticket->save();
+            return $ticket;
         else:
             return false;
         endif;
     }
 
+    public function downloadAttachmentsById(array $attachmentIds, string $dlPath = 'pureservice'): array|false {
+        $downloadedFiles = [];
+        foreach ($attachmentIds as $id):
+            $uri = '/attachment/download/'.$id;
+            $tmpFile = 'id_'.$id.'.tmp';
+            $response = $this->apiGet($uri, true, '*/*', null, Storage::path($tmpFile));
+            $cd = ContentDisposition::parse($response->header('content-disposition'));
+            $dlFile = $dlPath . '/' . $cd->getFileName();
+            Storage::move($tmpFile, $dlFile);
+            $downloadedFiles[] = $dlFile;
+        endforeach;
+        return count($downloadedFiles) ? $downloadedFiles : false;
+    }
 
     /**
      * Laster opp vedlegg til en sak i Pureservice
@@ -363,6 +387,12 @@ class PsApi extends API {
     }
 
     public function findCompany(string|null $orgNo=null, string|null $companyName=null, bool $returnClass = false): Company|array|false {
+        if ($returnClass && (
+            ($orgNo && $company = Company::firstWhere('organizationNumber', $orgNo)) ||
+            ($companyName && $company = Company::firstWhere('name', $companyName))
+        )):
+            return $company;
+        endif;
         $uri = '/company/';
         $query = [
             'include'=> 'phonenumber,emailAddress',
@@ -391,7 +421,6 @@ class PsApi extends API {
         endif;
         return $returnClass ? collect([$returnValue])->mapInto(Company::class)->first(): $returnValue;
     }
-
 
     public function findCompanyByDomainName(string $search, bool $returnClass = true): array|false|Company {
         $cKey = $returnClass ? Str::slug($search).'_class' : Str::slug($search).'_array';
@@ -707,7 +736,7 @@ class PsApi extends API {
     }
 
 
-    public function uploadAttachmentToTicket(
+    public function uploadAttachmentToTicket (
         string $file,
         Ticket $ticket,
         bool $visible = true
@@ -758,4 +787,54 @@ class PsApi extends API {
         return false;
     }
 
+    public function getTicketAndCommunicationsByReqNo(int $reqNo): array|false {
+        $query = [
+            'include' => 'user,user.company,user.emailaddress,communications,status,attachments',
+        ];
+        $uri = '/ticket/'.$reqNo.'/requestNumber/';
+        $response = $this->apiQuery($uri, $query, true);
+        if ($response->successful()):
+            $ticket = collect($response->json('tickets'))->mapInto(Ticket::class)->first();
+            $ticketCompany = collect($response->json('linked.companies'))->mapInto(Company::class)->first();
+            $ticketUser = collect($response->json('linked.users'))->mapInto(User::class)->first();
+            $ticketUser->email = $response->json('linked.emailaddresses.0.email');
+            $ticketCommunications = collect($response->json('linked.communications'))
+                ->whereNotIn('type', [
+                    config('pureservice.comms.internal'),
+                    config('pureservice.comms.description'),
+                    config('pureservice.comms.history')
+                ])
+                ->mapInto(TicketCommunication::class);
+            $ticketStatus = [
+                'id' => $response->json('linked.statuses.0.id'),
+                'name' => $response->json('linked.statuses.0.name'),
+            ];
+            $attachments = collect($response->json('linked.attachments'));
+            $result = [
+                'ticket' => $ticket,
+                'recipientCompany' => $ticketCompany,
+                'recipientUser' => $ticketUser,
+                'communications' => $ticketCommunications,
+                'ticketStatus' => $ticketStatus,
+            ];
+            return $result;
+        endif;
+
+        return false;
+    }
+
+    /**
+     * Setter status på en e-postmelding i Pureservice
+     * @param int $id ID til e-postmeldingen
+     * @param int $status Status som meldingen skal ha. Standard er 4 = sendt.
+     */
+    public function setEmailStatus(int $id, int|null $status = null) : bool {
+        $uri = '/email/'.$id;
+        $status = $status ? $status : config('pureservice.email.status.sent');
+        $body = [
+            'status' => $status,
+        ];
+        $response = $this->apiPatch($uri, $body, 'application/json', '*/*');
+        return $response->successful();
+    }
 }

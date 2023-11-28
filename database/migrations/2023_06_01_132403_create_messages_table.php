@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('mainDocument')->nullable();
             $table->longText('emailtext')->nullable();
             $table->json('attachments')->nullable()->default('[]');
+            $table->boolean('sent')->default(false);
             $table->timestamps();
         });
     }

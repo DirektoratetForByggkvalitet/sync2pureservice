@@ -89,59 +89,59 @@ class Ticket extends Model
         return $this->subject . ' ' . $this->getTicketSlug();
     }
 
-    public function extractRecipientsFromAsset(PsApi|Pureservice $ps, array $recipientListAssetType) : void {
-
+    /**
+     * Returnerer array over mottakere som er koblet til mottakerlister
+     */
+    public function extractRecipientsFromAsset(PsApi $ps, array $recipientListAssetType, bool $returnList = false): Collection|false {
+        $recipientList = [];
         $uri = '/relationship/'.$this->id.'/fromTicket';
         $query = [
             'include' => 'toAsset',
             'filter' => 'toAsset.typeId == '.$recipientListAssetType['id'],
         ];
-        $relatedLists = $ps->apiQuery($uri, $query);
-        if (count($relatedLists['relationships']) > 0):
-            foreach ($relatedLists['linked']['assets'] as $list):
-                // Henter ut mottakerlistens relaterte bruker og firma,
-                // og kobler dem til saken som mottakere
-                $uri = '/relationship/'.$list['id'].'/fromAsset';
+        $response = $ps->apiQuery($uri, $query, true);
+        if ($response->successful() && count($response->json('relationships'))):
+            $lists = $response->json('linked.assets');
+            unset($response);
+            foreach ($lists as $l):
+                $uri = '/relationship/'.$l['id'].'/fromAsset';
                 $query = [
                     'include' => 'toUser,toCompany,toUser.emailaddresses,toCompany.emailaddresses',
                     'filter' => 'toTicketId == null',
                 ];
-                if ($listRelations = $ps->apiQuery($uri, $query)):
-                    // 1. Legger sluttbrukere som er relatert til mottakerlisten til saken
-                    if (isset($listRelations['linked']['users']) && count($listRelations['linked']['users'])):
-                        $users = collect($listRelations['linked']['users'])
+                $response = $ps->apiQuery($uri, $query, true);
+                if ($response->successful()):
+                    $userEmails = collect($response->json('linked.emailaddresses'));
+                    $users = collect($response->json('linked.users'))
                         ->mapInto(User::class)
-                        ->each(function (User $user, int $key) use ($listRelations) {
-                            if ($email = collect($listRelations['linked']['emailaddresses'])->firstWhere('userId', $user->id)):
-                                $user->email = $email['email'];
+                        ->each(function (User $user, int $key) use ($userEmails, &$recipientList){
+                            if ($mail = $userEmails->firstWhere('userId', $user->id)):
+                                $user->email = $mail['email'];
                             endif;
                             if ($existing = User::firstWhere('id', $user->id)):
                                 $user = $existing;
                             endif;
                             $user->save();
                             $this->recipients()->attach($user);
+                            $recipientList[] = $user;
                         });
-                        unset($users);
-                    endif;
-
-                    // 2. Legger firma som er relatert til mottakerlisten til saken
-                    if (isset($listRelations['linked']['companies']) && count($listRelations['linked']['companies'])):
-                        $companies = collect($listRelations['linked']['companies'])
+                    $companyEmails = collect($response->json('linked.companyemailaddresses'));
+                    $companies = collect($response->json('linked.companies'))
                         ->mapInto(Company::class)
-                        ->each(function (Company $company, int $key) use ($listRelations) : void {
-                            if ($email = collect($listRelations['linked']['companyemailaddresses'])->firstWhere('companyId', $company->id)):
-                                $company->email = $email['email'];
+                        ->each(function (Company $company, int $key) use ($companyEmails, &$recipientList) {
+                            if ($mail = $companyEmails->firstWhere('companyId', $company->id)):
+                                $company->email = $mail['email'];
                             endif;
                             if ($existing = Company::firstWhere('id', $company->id)) $company = $existing;
                             $company->save();
                             $this->recipientCompanies()->attach($company);
+                            $recipientList[] = $company;
                         });
-                        unset($companies);
-                    endif;
-                endif; // $listRelations
-            endforeach; // $relatedLists['linked']['assets'] as $list
-        endif; // $relatedLists && count($relatedLists['relationships']
-
+                endif;
+            endforeach;
+            return collect($recipientList);
+        endif;
+        return false;
     }
 
     /**
@@ -215,7 +215,7 @@ class Ticket extends Model
     }
 
     /**
-     * Oppretter en melding fra saken
+     * Oppretter en eFormidling-melding fra saken
      */
     public function createMessage(Company $receiver): Message {
         $message = Message::factory()->make([
@@ -245,11 +245,34 @@ class Ticket extends Model
     public function getStatus(PsApi|null $ps = null): string {
         if ($this->statusId):
             if (!$ps) $ps = new PsApi();
-            return $ps->getEntityNameById('status', $this->statusId, 'userDisplayName');
+            return $ps->getEntityNameById('status', $this->statusId);
         endif;
-        return "Ukjent";
+        return 'Ukjent';
     }
+    /**
+     * Setter status på saken til status oppgitt som tekst eller int (statusId)
+     * Valgfri løsningstekst, hvis hensikten er å løse saken
+     */
+    public function changeStatus(PsApi|null $ps = null, string|null $status = null, string|null $solution = null): Ticket {
+        if (!$ps) $ps = new PsApi();
+        $status = $status ? $this->statusId : $ps->getEntityId('status', $status);
+        $this->statusId = $status;
+        $uri = '/ticket/'.$this->id;
+        $body = [
+            'statusId' => $status,
+        ];
+        // Oppgitt løsning overstyrer eventuell løsningstekst i saken
+        if ($solution):
+            $body['solution'] = $solution;
+            $this->solution = $solution;
+        elseif ($this->solution):
+            $body['solution'] = $this->solution;
+        endif;
 
+        $response = $ps->apiPatch($uri, $body);
+
+        return $this;
+    }
     /**
      * Returnerer sakstype på saken fra Pureservice
      */
@@ -259,6 +282,30 @@ class Ticket extends Model
             return $ps->getEntityNameById('tickettype', $this->ticketTypeId);
         endif;
         return "Ukjent";
+    }
+
+    /**
+     * Henter kommunikasjon på saken fra Pureservice
+     * Lagrer dem som TicketCommunication
+     */
+    public function getPsCommunications(PsApi|null $ps = null): false|array {
+        if (!$this->id) return false;
+        if (!$ps) $ps = new PsApi();
+        $uri = '/communication/';
+        $params = [
+            'include' => 'attachments',
+            'filter' => 'ticketId == '.$this->id.'',
+            'sort' => 'created desc, modified desc',
+        ];
+        $response = $ps->apiQuery($uri, $params, true);
+        if ($response->successful() && count($response->json('communications'))):
+            $comms = collect($response->json('communications'))->mapInto(TicketCommunication::class);
+            $attachments = collect($response->json('linked.attachments'));
+            $comms->each(function(TicketCommunication $comm, int $key) use ($attachments) {
+                $commAttachments = $attachments->where('links.');
+            });
+        endif;
+        return false;
     }
 
     protected function addToAttachments(array|string $additions): void {

@@ -22,10 +22,13 @@ class MessageFactory extends Factory
             'receiver_id' => null,
             'content' => '[]',
             'mainDocument' => null,
-            'processIdentifier' => config('eformidling.process_pre').config('eformidling.out.type').config('eformidling.process_post'),
+            'processIdentifier' => config('eformidling.process_pre').
+                config('eformidling.out.type').':'.
+                config('eformidling.out.process').
+                config('eformidling.process_post'),
             'conversationId' => Str::orderedUuid()->toString(),
             'messageId' => Str::orderedUuid()->toString(),
-            'documentType' => 'arkivmelding',
+            'documentType' => config('eformidling.out.type'),
             'documentStandard' => config('eformidling.out.standard'),
         ];
     }

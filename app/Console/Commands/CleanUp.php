@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\{Storage};
+use App\Services\Tools;
 
 class CleanUp extends Command {
     /**
@@ -23,13 +24,16 @@ class CleanUp extends Command {
     /**
      * Execute the console command.
      */
-    public function handle()
-    {
+    public function handle() {
         $this->info('### NULLSTILLER DATABASEN ###');
         $this->call('migrate:fresh', ['--force' => true]);
         $this->newLine();
-        $this->info('Rydder opp mapper');
+        $this->info(Tools::L1.'Rydder opp mapper');
+        $this->line(Tools::L2.config('eformidling.path.download'));
         Storage::deleteDirectory(config('eformidling.path.download'));
+        $this->line(Tools::L2.config('eformidling.path.temp'));
         Storage::deleteDirectory(config('eformidling.path.temp'));
+        $this->line(Tools::L2.config('pureservice.api.dlPath'));
+        Storage::deleteDirectory(config('pureservice.api.dlPath'));
     }
 }

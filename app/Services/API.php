@@ -177,8 +177,7 @@ class API {
     /**
      * POST-forespørsel mot APIet
      */
-    public function apiPost
-        (
+    public function apiPost (
             string $uri,
             mixed $body = null,
             string|null $accept = null,
@@ -196,26 +195,25 @@ class API {
     /**
      * PATCH-forespørsel mot APIet
      */
-    public function apiPatch
-        (
+    public function apiPatch (
             string $uri,
-            array $body,
+            mixed $body,
             string|null $contentType = 'auto',
-            bool $returnBool = false,
+            mixed $returnOptions = false,
             null|string $toFile = null
         ): Response|bool
     {
         $uri = $this->resolveUri($uri);
-        $accept = $this->myConf('api.accept', 'application/json');
+        $accept = Str::contains($returnOptions, '/') ? $returnOptions : $this->myConf('api.accept', 'application/json');
         //$contentType = $contentType ? $contentType : $this->myConf('api.contentType', $accept);
         $response = $this->prepRequest($accept, $contentType, $toFile)->patch($uri, $body);
-        return $returnBool ? $response->successful() : $response;
+        return $returnOptions === true ? $response->successful() : $response;
     }
 
     /**
      * PUT-forespørsel mot APIet
      */
-    public function apiPut(string $uri, array $body, string|null $contentType = null, bool $returnBool = false) : Response|bool {
+    public function apiPut(string $uri, mixed $body, string|null $contentType = null, bool $returnBool = false) : Response|bool {
         $uri = $this->resolveUri($uri);
         $accept = $this->myConf('api.accept');
         $contentType = $contentType ? $contentType : $accept;
@@ -227,7 +225,7 @@ class API {
     /**
      * DELETE-forespørsel mot APIet
      */
-    public function apiDelete($uri, array $body = [], string|null $contentType = null): bool {
+    public function apiDelete($uri, mixed $body = [], string|null $contentType = null): bool {
         $uri = $this->resolveUri($uri);
         $accept = $this->myConf('api.accept');
         $contentType = $contentType ? $contentType : $accept;
