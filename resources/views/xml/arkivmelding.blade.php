@@ -7,7 +7,7 @@
     $receiver = $msg->receiver();
     $ticketStatus = $ticket->getStatus();
 @endphp
-<?xml version="1.0" encoding="utf-8"?>
+{!! '<'.'?xml version="1.0" encoding="utf-8"?>' !!}
 <arkivmelding xmlns="http://www.arkivverket.no/standarder/noark5/arkivmelding"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.arkivverket.no/standarder/noark5/arkivmelding/arkivmelding.xsd">
