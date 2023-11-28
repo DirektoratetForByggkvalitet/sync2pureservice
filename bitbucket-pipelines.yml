@@ -166,7 +166,7 @@ pipelines:
 
     utsending:
       - step:
-          deployment: utsendelse
+          deployment: utsending
           name: Sender eFormidling-meldinger og masseutsendelser
           caches:
             - composer
