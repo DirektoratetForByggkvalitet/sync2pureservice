@@ -337,7 +337,7 @@ class Eformidling extends API {
                 $request = $this->prepRequest('application/json', Storage::mimeType($file));
                 $request->withHeader('Content-Disposition', ContentDisposition::create(basename($file))->format());
                 if (basename($file) != 'arkivmelding.xml'):
-                    $request->withBody(base64_encode(Storage::get($file)), Storage::mimeType($file));
+                    $request->withBody(Storage::readStream($file), Storage::mimeType($file));
                 else:
                     $request->withBody(Storage::get($file), Storage::mimeType($file));
                 endif;

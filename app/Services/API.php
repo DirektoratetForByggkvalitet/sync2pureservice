@@ -207,7 +207,7 @@ class API {
         $accept = Str::contains($returnOptions, '/') ? $returnOptions : $this->myConf('api.accept', 'application/json');
         //$contentType = $contentType ? $contentType : $this->myConf('api.contentType', $accept);
         $response = $this->prepRequest($accept, $contentType, $toFile)->patch($uri, $body);
-        return $returnOptions == true ? $response->successful() : $response;
+        return $returnOptions === true ? $response->successful() : $response;
     }
 
     /**

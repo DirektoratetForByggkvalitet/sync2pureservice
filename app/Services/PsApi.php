@@ -387,6 +387,12 @@ class PsApi extends API {
     }
 
     public function findCompany(string|null $orgNo=null, string|null $companyName=null, bool $returnClass = false): Company|array|false {
+        if ($returnClass && (
+            ($orgNo && $company = Company::firstWhere('organizationNumber', $orgNo)) ||
+            ($companyName && $company = Company::firstWhere('name', $companyName))
+        )):
+            return $company;
+        endif;
         $uri = '/company/';
         $query = [
             'include'=> 'phonenumber,emailAddress',
@@ -817,4 +823,18 @@ class PsApi extends API {
         return false;
     }
 
+    /**
+     * Setter status på en e-postmelding i Pureservice
+     * @param int $id ID til e-postmeldingen
+     * @param int $status Status som meldingen skal ha. Standard er 4 = sendt.
+     */
+    public function setEmailStatus(int $id, int|null $status = null) : bool {
+        $uri = '/email/'.$id;
+        $status = $status ? $status : config('pureservice.email.status.sent');
+        $body = [
+            'status' => $status,
+        ];
+        $response = $this->apiPatch($uri, $body, 'application/json', '*/*');
+        return $response->successful();
+    }
 }

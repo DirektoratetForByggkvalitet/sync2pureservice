@@ -17,14 +17,14 @@ class Utsending extends Command
      *
      * @var string
      */
-    protected string $signature = 'pureservice:psutsending';
+    protected $signature = 'pureservice:psutsending';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected string $description = 'Henter ut masseutsendelser som skal sendes med e-post og eFormidling, samt utgående meldinger som skal sendes med eFormidling';
+    protected $description = 'Henter ut masseutsendelser som skal sendes med e-post og eFormidling, samt utgående meldinger som skal sendes med eFormidling';
     protected string $version = '1.0';
     protected float $start;
     protected Collection $messages;
@@ -55,8 +55,9 @@ class Utsending extends Command
         $this->recipientListAssetType = $this->api->getEntityByName('assettype', config('pureservice.dispatch.assetTypeName'));
 
         $uri = '/email/';
+        $failedStatus = config('pureservice.email.status.failed');
         $params = [
-            'filter' => 'status == 5',
+            'filter' => 'status == '.$failedStatus,
             'sort' => 'created DESC',
             'include' => 'attachments',
         ];
@@ -150,8 +151,14 @@ class Utsending extends Command
                     $message->createContent();
                     $message->setMainDocument($mainDocument);
                     $message->createXmlFromTicket($ticket);
-                    $sent = $this->ef->sendMessage($message);
-                    $this->line(Tools::L3.'Sendt med eFormidling');
+                    // Oppretter og sender meldingen på integrasjonspunktet
+                    $this->line(Tools::L3.'Oppretter forsendelse i eFormidling');
+                    $created = $this->ef->createArkivmelding($message);
+                    $this->line(Tools::L3.'Laster opp vedlegg');
+                    $this->ef->uploadAttachments($message);
+                    //$sent = $this->ef->sendMessage($message);
+                    $this->line(Tools::L3.'Sender meldingen');
+                    $this->ef->dispatchMessage($message);
                     $this->results['eFormidling']++;
                 else:
                     // Sendes som e-post
@@ -166,13 +173,11 @@ class Utsending extends Command
                 endif;
             endforeach; // $recipients
             // Merker meldingen som sendt i Pureservice
-            $uri = '/email/'.$email['id'];
-            $body = [
-                'status' => config('pureservice.email.status.delivered'),
-            ];
-            $response = $this->api->apiPatch($uri, $body, 'auto', '*/*');
-            if ($response->successful()):
+
+            if ($sent = $this->api->setEmailStatus($email['id'], config('pureservice.email.status.sent'))):
                 $this->line(Tools::L2.'Meldingen ble merket sendt i Pureservice');
+            else:
+                $this->error(Tools::L2.'Meldingen kunne ikke merkes som sendt i Pureservice');
             endif;
             $this->newLine(2);
         }); // $this->messages->each()
@@ -180,7 +185,7 @@ class Utsending extends Command
         $this->info('### Ferdig ###');
         $this->info('Operasjonen ble fullført på '.round(microtime(true) - $this->start, 0).' sekunder');
         $this->line(Tools::L2.'Antall eFormidling-forsendelser: '.$this->results['eFormidling']);
-        $this->line(Tools::L2.'Antall e-post sendt: '.$this->results['e-post']);
+        $this->line(Tools::L2.'Antall e-post sendt: '.$this->results['email']);
         $this->line(Tools::L2.'Antall manglende adresser: '.$this->results['skipped']);
         $this->line(Tools::L2.'Antall saker: '.$this->results['saker']);
         return Command::SUCCESS;

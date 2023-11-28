@@ -116,7 +116,7 @@ class Ticket extends Model
                         ->mapInto(User::class)
                         ->each(function (User $user, int $key) use ($userEmails, &$recipientList){
                             if ($mail = $userEmails->firstWhere('userId', $user->id)):
-                                $user->mail = $mail;
+                                $user->email = $mail['email'];
                             endif;
                             if ($existing = User::firstWhere('id', $user->id)):
                                 $user = $existing;
@@ -130,7 +130,7 @@ class Ticket extends Model
                         ->mapInto(Company::class)
                         ->each(function (Company $company, int $key) use ($companyEmails, &$recipientList) {
                             if ($mail = $companyEmails->firstWhere('companyId', $company->id)):
-                                $company->mail = $mail;
+                                $company->email = $mail['email'];
                             endif;
                             if ($existing = Company::firstWhere('id', $company->id)) $company = $existing;
                             $company->save();

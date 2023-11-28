@@ -1,8 +1,12 @@
+@php
+    use Illuminate\Support\{Str, Arr, Collection};
+@endphp
 @if (isset($ticket))
     @php
         $title = $ticket->subject;
         $requestNumber = $ticket->requestNumber;
         $content = $content ? $content : $ticket->communications()->first()->text;
+        if (Str::contains($content, '<img src='))
         $includeFonts = $includeFonts ? $includeFonts : false;
     @endphp
 @endif
