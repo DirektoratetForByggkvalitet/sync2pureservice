@@ -21,7 +21,7 @@ class PSUtsending extends Command {
      *
      * @var string
      */
-    protected $signature = 'pureservice:utsending {--reset-db : Nullstiller databasen før kjøring}';
+    protected $signature = 'pureservice:psutsending {--reset-db : Nullstiller databasen før kjøring}';
 
     protected $version = '1.0';
     /**

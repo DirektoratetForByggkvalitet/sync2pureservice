@@ -17,7 +17,7 @@ class Utsending extends Command
      *
      * @var string
      */
-    protected $signature = 'pureservice:psutsending';
+    protected $signature = 'pureservice:utsending';
 
     /**
      * The console command description.
