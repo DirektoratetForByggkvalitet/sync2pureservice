@@ -5,8 +5,8 @@
     @php
         $title = $ticket->subject;
         $requestNumber = $ticket->requestNumber;
-        $content = $content ? $content : $ticket->communications()->first()->text;
-        if (Str::contains($content, '<img src='))
+        $contents = $contents ? $contents : $ticket->communications()->first()->text;
+        //if (Str::contains($content, '<img src='))
         $includeFonts = $includeFonts ? $includeFonts : false;
     @endphp
 @endif
@@ -34,7 +34,7 @@
             <h2>{{ $title }}</h2>
         @endif
 
-{!! $content !!}
+{!! $contents !!}
 
     </div>
 
