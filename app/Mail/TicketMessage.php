@@ -21,9 +21,9 @@ class TicketMessage extends Mailable
     public function __construct(
         public Ticket|null $ticket = null,
         public bool $includeFonts = false,
-        public string|null $subject = null,
-        public string|null $content = null,
-        public array|null $attachments = null,
+        public string|null $title = null,
+        public string|null $contents = null,
+        public array|null $attachFiles = null,
     ) {}
 
     /**
@@ -31,7 +31,7 @@ class TicketMessage extends Mailable
      */
     public function envelope(): Envelope {
         return new Envelope(
-            subject: $this->subject ? $this->subject : $this->ticket->emailSubject()
+            subject: $this->title ? $this->title : $this->ticket->emailSubject()
         );
     }
 
@@ -40,7 +40,7 @@ class TicketMessage extends Mailable
      */
     public function content(): Content {
         return new Content(
-            view: $this->content ? 'rawmessage' : 'message'
+            view: $this->contents ? 'rawmessage' : 'message'
         );
     }
 
@@ -51,7 +51,7 @@ class TicketMessage extends Mailable
      */
     public function attachments(): array {
         $attachments = [];
-        $attachmentArray = $this->attachments ? $this->attachments : $this->ticket->attachments;
+        $attachmentArray = $this->attachFiles ? $this->attachFiles : $this->ticket->attachments;
         if (count($attachmentArray)):
             foreach ($attachmentArray as $file):
                 $attachments[] = Attachment::fromStorage($file);
