@@ -270,7 +270,7 @@ class PsApi extends API {
         ];
     }
 
-    public function solveWithAttachment(Ticket $ticket, string $solution, null|string $file = null) {
+    public function solveWithAttachment(Ticket $ticket, string $solution, null|string $file = null, array|null $additionalAttachments = null) {
         // Finner ID for løst-status
         $statusId = $this->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
 
@@ -279,30 +279,37 @@ class PsApi extends API {
             if (!$ticket->pdf) $ticket->makePdf();
             $file = $ticket->pdf;
         endif;
-
+        // $attachments = [$file];
+        // if ($additionalAttachments):
+        //     array_merge($attachments, $additionalAttachments);
+        // endif;
         $uri = '/ticket/'.$ticket->id.'/';
+        // Gjenåpner allerede løst sak, og endrer synlighet til å ikke sende løsningskvittering
+        $statusInProgress = $this->getEntityId('status', $this->myConf('dispatch.status_in_progress'));
+        $body = [
+            'statusId' => $statusInProgress,
+            'visibility' => $this->myConf('visibility.no_receipt'),
+        ];
+        $reopened = $this->apiPatch($uri, $body, null, '*/*');
 
         // return $this->apiPatch($uri, $body, 'application/json');
-        $fileId = 'file-'.Str::ulid();
 
-        $res = $this->apiGet($uri.'?include=attachments');
+        $params = ['include' => 'attachments'];
+        $res = $this->apiQuery($uri, $params, false);
 
         $ticketData = $res['tickets'][0];
         if (!isset($ticketData['links']['attachments'])):
             $ticketData['links']['attachments'] = [];
         endif;
+
         if (isset($ticketData['links']['attachments']['ids'])):
-            foreach ($ticketData['links']['attachments']['uids'] as $attach_id):
+            foreach ($ticketData['links']['attachments']['ids'] as $attach_id):
                 $ticketData['links']['attachments'][] = [
                     'id' => $attach_id,
                     'type' => 'attachment',
                 ];
             endforeach;
         endif;
-        $ticketData['links']['attachments'][] = [
-            'temporaryId' => $fileId,
-            'type' => 'attachment',
-        ];
 
         $ticketData['solution'] = $solution;
         // Setter sakens status
@@ -317,6 +324,8 @@ class PsApi extends API {
 
         unset($res);
 
+        // Legger til vedlegg
+        $tempId = 'file-'.Str::ulid()->toRfc4122();
         $linked['attachments'][] = [
             'name' => Str::beforeLast(basename($file), '.'),
             'fileName' => basename($file),
@@ -325,7 +334,7 @@ class PsApi extends API {
             'bytes' => base64_encode(Storage::get($file)),
             'isVisible' => true,
             'ticketId' => $ticket->id,
-            'temporaryId' => $fileId,
+            'temporaryId' => $tempId,
             'isPartofCurrentSolution' => true,
             'links' => [
                 'ticket' => [
@@ -334,15 +343,48 @@ class PsApi extends API {
                 ],
             ],
         ];
+        $ticketData['links']['attachments'][] = [
+            'temporaryId' => $tempId,
+            'type' => 'attachment',
+        ];
+        // if (count($attachments)):
+        //     foreach($attachments as $att):
+        //         $tempId = 'file-'.Str::ulid()->toRfc4122();
+        //         $linked['attachments'][] = [
+        //             'name' => Str::beforeLast(basename($att), '.'),
+        //             'fileName' => basename($att),
+        //             'size' => $this->human_filesize(Storage::size($att)),
+        //             'contentType' => Storage::mimeType($att),
+        //             'bytes' => base64_encode(Storage::get($att)),
+        //             'isVisible' => true,
+        //             'ticketId' => $ticket->id,
+        //             'temporaryId' => $tempId,
+        //             'isPartofCurrentSolution' => true,
+        //             'links' => [
+        //                 'ticket' => [
+        //                     'type' => 'ticket',
+        //                     'id' => $ticket->id,
+        //                 ],
+        //             ],
+
+        //         ];
+        //         $ticketData['links']['attachments'][] = [
+        //             'temporaryId' => $tempId,
+        //             'type' => 'attachment',
+        //         ];
+        //     endforeach;
+        // endif;
         $body = [
             'tickets' => [
                 $ticketData,
             ],
-           'linked' => $linked,
+            'linked' => $linked,
         ];
         //dd($body);
-        $uri .= '?include=communications,communications.attachments,communications.sender,recipientsCc,communications.recipients,communications.recipientsCc';
+        // $uri .= '?include=communications,communications.attachments,communications.sender,recipientsCc,communications.recipients,communications.recipientsCc';
+        $uri .= '?include=attachments';
         return $this->apiPut($uri, $body);
+
     }
 
     /**

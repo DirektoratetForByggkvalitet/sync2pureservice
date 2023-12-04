@@ -180,7 +180,7 @@ class Message extends Model {
 
     /**
      * Setter 'arkivmelding.hoveddokument' i $this->content
-    */
+     */
     public function setMainDocument(string|false $file = false) : void {
         if ($file) $this->mainDocument = basename($file);
         $content = $this->content;
@@ -235,6 +235,7 @@ class Message extends Model {
         endforeach;
         return implode(', ', $processes);
     }
+
      /**
      * Oppretter en sak i Pureservice basert på meldingen
      */

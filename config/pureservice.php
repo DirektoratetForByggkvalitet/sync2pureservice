@@ -114,6 +114,7 @@ return [
         'status' => env('PURESERVICE_TICKET_STATUS', 'Ny'),
         'status_solved' => env('PURESERVICE_TICKET_SOLVED_STATUS', 'Løst'),
         'status_closed' => env('PURESERVICE_TICKET_CLOSED_STATUS', 'Lukket'),
+        'status_in_progress' => env('PURESERVICE_TICKET_STATUS_OPEN', 'Under arbeid'),
         'requestType' => env('PURESERVICE_TICKET_REQUEST_TYPE','Ticket'),
     ],
     'innsynskrav' => [
@@ -165,6 +166,7 @@ return [
         'commTypeName' => env('PURESERVICE_DISPATCH_COMMTYPE_NAME', 'Utsendelse - innhold'),
         'status' => env('PURESERVICE_DISPATCH_STATUS', 'Til ekspedering'),
         'finishStatus' => env('PURESERVICE_DISPATCH_SOLVED_STATUS', 'Løst'),
+        'status_in_progress' => env('PURESERVICE_TICKET_STATUS_OPEN', 'Under arbeid'),
         'assetTypeName' => env('PURESERVICE_DISPATCH_LIST_ASSETNAME', 'Mottakerliste'),
         'listRelationName' => [
             'toCompany' => env('PURESERVICE_DISPATCH_LINK_TO_COMPANY', 'Inneholder firma'),

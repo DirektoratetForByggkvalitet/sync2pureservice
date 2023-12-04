@@ -196,6 +196,8 @@ class Ticket extends Model
         $path = config('pureservice.api.dlPath');
         $path .= '/'.$this->requestNumber;
 
+        Storage::createDirectory($path);
+
         return $full ? Storage::path($path): $path;
     }
 
