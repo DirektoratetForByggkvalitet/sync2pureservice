@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\{Arr, Str, Collection};
-use Illuminate\Support\Facades\{Storage, Mail};
+use Illuminate\Support\Facades\{Storage, Mail, Blade};
 use App\Services\{Eformidling, PsApi, Tools};
 use App\Models\{Message, Company, User};
 use App\Mail\TicketMessage;
@@ -25,20 +25,22 @@ class Utsending extends Command
      * @var string
      */
     protected $description = 'Henter ut masseutsendelser som skal sendes med e-post og eFormidling, samt utgående meldinger som skal sendes med eFormidling';
-    protected string $version = '1.0';
+    protected string $version = '1.1';
     protected float $start;
     protected Collection $messages;
     protected PsApi $api;
     protected Eformidling $ef;
     protected Company $sender;
     protected array $results = [
+        'recipients' => 0,
         'eFormidling' => 0,
         'email' => 0,
         'skipped' => 0,
         'saker' => 0,
     ];
     protected array $recipientListAssetType;
-    /**
+
+    /*
      * Execute the console command.
      */
     public function handle(): int {
@@ -100,6 +102,9 @@ class Utsending extends Command
             $dlPath = $ticket->getDownloadPath();
             // Hoveddokument, brukes av eFormidling
             $mainDocument = $dlPath.'/melding.pdf';
+            // Oppretter hoveddokumentet (meldingen)
+            PDF::loadHTML($email['html'])->save(Storage::path($mainDocument));
+
             $msgAttachments = [];
             $attachmentIds = $email['links']['attachments']['ids'];
             if (count($attachmentIds)):
@@ -120,6 +125,7 @@ class Utsending extends Command
             endif;
             // Skal vi foretrekke eFormidling?
             $preferEformidling = (Str::endsWith($email['to'], config('pureservice.user.ef_domain')));
+            $this->results['recipients'] = $recipients->count();
             foreach ($recipients as $receiver):
                 // Forsendelseskanal kan endre seg for hver mottaker
                 $sendViaEformidling = $preferEformidling;
@@ -143,11 +149,10 @@ class Utsending extends Command
                         'sender_id' => $this->sender->id,
                         'receiver_id' => $receiver->id,
                     ]);
-                    // Oppretter hoveddokumentet (meldingen)
-                    PDF::loadHTML($email['html'])->save(Storage::path($mainDocument));
-                    $msgAttachments[] = $mainDocument;
+                    $tmpAttachments = $msgAttachments;
+                    $tmpAttachments[] = $mainDocument;
 
-                    $message->attachments = $msgAttachments;
+                    $message->attachments = $tmpAttachments;
                     $message->createContent();
                     $message->setMainDocument($mainDocument);
                     $message->createXmlFromTicket($ticket);
@@ -174,11 +179,19 @@ class Utsending extends Command
             endforeach; // $recipients
             // Merker meldingen som sendt i Pureservice
 
+            $solution = Blade::render('report', [
+                'results' => $this->results,
+                'method' => $preferEformidling ? 'eFormidling' : 'e-post',
+            ]);
+            $this->api->solveWithAttachment($ticket, $solution, $mainDocument);
+
             if ($sent = $this->api->setEmailStatus($email['id'], config('pureservice.email.status.sent'))):
                 $this->line(Tools::L2.'Meldingen ble merket sendt i Pureservice');
             else:
                 $this->error(Tools::L2.'Meldingen kunne ikke merkes som sendt i Pureservice');
             endif;
+
+
             $this->newLine(2);
         }); // $this->messages->each()
 

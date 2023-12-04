@@ -1,12 +1,11 @@
 <h2>Rapport etter utsending</h2>
-
 <p>
-    Hovedkanal for utsendingen var {{ $ticket->eFormidling ? 'eFormidling' : 'e-post' }}.
+    Hovedkanal for utsendingen var {{ $method }}.
     Resultatet ble som følger:
 </p>
 <ul>
-    <li>Totalt antall mottakere: {{ $ticket->recipients()->count() + $ticket->recipientCompanies()->count() }}</li>
-    <li>E-poster sendt: {{ $results['e-post'] }}</li>
+    <li>E-poster sendt: {{ $results['email'] }}</li>
     <li>eFormidling-forsendelser: {{ $results['eFormidling'] }}</li>
-    <li>Mottakere med ugyldige adresser: {{ $results['ikke sendt'] }}</li>
+    <li>Mottakere med ugyldige adresser: {{ $results['skipped'] }}</li>
+    <li><strong>Totalt antall mottakere: {{ $results['recipients'] }}</strong></li>
 </ul>
