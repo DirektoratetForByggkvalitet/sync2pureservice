@@ -183,7 +183,7 @@ class Utsending extends Command
                 'results' => $this->results,
                 'method' => $preferEformidling ? 'eFormidling' : 'e-post',
             ]);
-            $this->api->solveWithAttachment($ticket, $solution, $mainDocument, $msgAttachments);
+            $this->api->solveWithAttachment($ticket, $solution, $mainDocument);
 
             if ($sent = $this->api->setEmailStatus($email['id'], config('pureservice.email.status.sent'))):
                 $this->line(Tools::L2.'Meldingen ble merket sendt i Pureservice');
