@@ -270,9 +270,10 @@ class PsApi extends API {
         ];
     }
 
-    public function solveWithAttachment(Ticket $ticket, string $solution, null|string $file = null) {
+    public function solveWithAttachment(Ticket $ticket, string $solution, null|string $file = null, bool $keepVisibility = false) {
         // Finner ID for løst-status
         $statusId = $this->getEntityId('status', config('pureservice.dispatch.finishStatus', 'Løst'));
+        $inProgressId = $this->getEntityId('status', config('pureservice.dispatch.status_in_progress', 'Under arbeid'));
 
         // Sjekker at vedlegget eksisterer
         if (!$file || !Storage::exists($file)):
@@ -281,6 +282,15 @@ class PsApi extends API {
         endif;
 
         $uri = '/ticket/'.$ticket->id.'/';
+
+        if (!$keepVisibility):
+            // Endrer status og synlighet på saken
+            $body = [
+                'visibility' => $this->myConf('visibility.no_receipt'),
+                'statusId' => $inProgressId,
+            ];
+            $this->apiPatch($uri, $body, null, '*/*');
+        endif;
 
         // return $this->apiPatch($uri, $body, 'application/json');
         $fileId = 'file-'.Str::ulid();
