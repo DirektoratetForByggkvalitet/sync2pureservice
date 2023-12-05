@@ -11,7 +11,7 @@ Funksjonen bruker oppsett fra config/enhetsregisteret.php til å søke opp følg
 
 Den mellomlagrer virksomheten i en intern database. For å gi praktisk nytte i Pureservice opprettes det også brukere for virksomhetene i samme database:
 
-- SvarUt-bruker basert på virksomhetens organisasjonsnummer
+- eFormidling-bruker basert på virksomhetens organisasjonsnummer
 - Postmottak-bruker for virksomheten, basert på en Excel-fil med mapping mellom virksomhet og e-postadresse.
 
 Med databasen befolket kjøres en jobb mot Pureservice sitt API, der skriptet oppretter virksomheter og brukere. Dersom virksomhet og/eller bruker finnes i Pureservice fra før av blir dataene oppdaterte.

@@ -35,9 +35,7 @@ De enkelte innsynskravene vil også inneholde en skjult kommunikasjon (som vises
 
 ## Utgående meldinger ##
 
-Vi arbeider aktivt for å etablere en metodikk for sending av meldinger fra Pureservice til eFormidling, men dette er noe som vil ta litt tid å få på plass. Dette vil bli inkludert som en del av [masseutsending-funksjonen](utsendelse.md).
-
-Vi har også på vei funksjonalitet for å automatisk sende svar på saker som har kommet fra eFormidling ut gjennom eFormidling. Dette er litt tricky, all den tid Pureservice alltid vil forsøke å svare på e-post. Løsningen ligger i å overvåke ikke leverte e-poster og sende dem ut via eFormidling dersom de er adresserte til en eFormidling-adresse (xxx@eformidling.pureservice.local). Dette vil bli en egen artisan-kommando.
+Også utgående meldinger kan nå sendes via eFormidling. Dette er litt tricky, all den tid Pureservice alltid vil forsøke å svare på e-post. Løsningen ligger i å overvåke ikke leverte e-poster og sende dem ut via eFormidling dersom de er adresserte til en eFormidling-adresse (xxx@eformidling.pureservice.local). Dette er inkludert som en del av [Pureservice Utsending](utsendelse.md).
 
 # Oppsett for kjøring #
 
@@ -61,7 +59,7 @@ Vi kan forøvrig anbefale å sette opp integrasjonspunktet i nettskyen, og har l
 | DPE_TICKET_TYPE | Innsynskrav | Sakstypen som skal brukes for innsynskrav. **Må defineres i Pureservice**. Det er også lurt å legge et tjenestenivå på denne sakstypen, siden det er lovpålagt å besvare innsynskravet innen tre arbeidsdager. |
 | DPE_TICKET_TEAM | verdien fra PURESERVICE_TICKET_TEAM | Navn på Pureservice-teamet som skal få innsynskrav. **Må defineres i Pureservice** |
 | DPE_TICKET_ZONE | verdien fra PURESERVICE_TICKET_ZONE | Navn på samhandlingssonen i Pureservice som skal få innsynskrav. **Må defineres i Pureservice** |
-| DPE_TICKET_SOURCE | Innsynskrav | Kilden som skal brukes for innsynskrav. **Må defineres i Pureservice** |
+| DPE_TICKET_SOURCE | Innsynskrav | Navn på kilden som skal brukes for innsynskrav. **Må defineres i Pureservice** |
 | DPE_TICKET_PRIORITY | Høy | Prioritet for innsynkravet. Det er lurt å kombinere dette med tjenestenivå på sakstypen Innsynskrav |
 | DPE_TICKET_VISIBILITY | 1 | Synlighet for sakens sluttbruker. 0 = synlig, 1 = synlig uten kvittering, 2 = ikke synlig |
 
@@ -69,11 +67,11 @@ Vi kan forøvrig anbefale å sette opp integrasjonspunktet i nettskyen, og har l
 
 | Variabel | Standardverdi | Kommentar |
 |----|----|----|
-| EF_SELF_ID |  | Din virksomhet sitt organisasjonsnr, angitt som 1234567879 |
+| EF_SELF_ID |  | Din virksomhet sitt organisasjonsnr, angitt som 1234567879. Dette brukes for å sette avsender på utgående meldinger |
 | EF_SYSTEM_ID | vilkårlig UUID | ID som sync2pureservice skal bruke som SystemID på utgående meldinger. Det anbefales å bruke en UUID som verdi, f.eks. '720808bd-d3a7-40bc-a13d-8f0020c15cc3' |
 | EF_TICKET_ZONE | verdien fra PURESERVICE_TICKET_ZONE | Navn på samhandlingssone som skal motta eFormidling-meldinger. **Må defineres i Pureservice** |
 | EF_TICKET_TEAM | verdien fra PURESERVICE_TICKET_TEAM | Navn på teamet som skal motta eFormidling-meldinger. **Må defineres i Pureservice** |
 | EF_TICKET_SOURCE | eFormidling | Navnet på kilden som skal brukes for eFormidling-meldinger. **Må defineres i Pureservice** |
 | EF_TICKET_TYPE | verdien fra PURESERVICE_TICKET_TYPE | Sakstypen som skal brukes for eFormidling-meldinger |
-| EF_TICKET_VISIBILITY | 2 | Synlighet for sakens sluttbruker. 0 = synlig, 1 = synlig uten kvittering, 2 = ikke synlig. Det gir egentlig kun mening å la denne stå som standard, siden Pureservice ikke kan sende e-post tilbake til avsenderen uansett |
+| EF_TICKET_VISIBILITY | 2 | Synlighet for sakens sluttbruker. 0 = synlig, 1 = synlig uten kvittering, 2 = ikke synlig. Det gir mest mening å la denne stå som stå med standardverdi, siden det ikke gir mening å sende autosvar via eFormidling (der mottak kvitteres automatisk) |
 
