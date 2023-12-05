@@ -13,7 +13,7 @@ Pureservice Utsendelse kan understøtte to forskjellige scenarier for masseutsen
 
 Pureservice Utsendelse er ment å kjøres jevnlig og har følgende hovedfunksjon:
 
-- Finne masseutsendelser som er klare for utsendelse i Pureservice
+- Finne masseutsendelser som er er sendt ut fra Pureservice
 - Tolke [mottakerlister](mailinglists.md) som er koblet til sakene
 - **Scenario 1:** Formatere og sende ut e-posten som er lagt inn som melding i saken til adressatene
 - **Scenario 2:** Opprette kopier av utsendelse-saken og med enkeltadressater som adressat og sende ut meldingene
@@ -21,37 +21,22 @@ Pureservice Utsendelse er ment å kjøres jevnlig og har følgende hovedfunksjon
 
 ### Sekundær funksjon
 
-Det å kunne svare på innkommende eFormidling-henvendelser er et scenario som kommer inn litt fra siden, og vi tror det kan være viktig. 
+Innkommende meldinger fra eFormidling fører til at det blir opprettet en eFormidling-sluttbruker for virksomheten som er avsender. Denne sluttbrukeren har typisk en e-postadresse som er [orgnr]@eformidling.pureservice.local. 
 
-Vi tenker å opprette en funksjon som kan hente opp saker med sluttbrukere som har eFormidling-adresser (orgnr@eformidling.pureservice.local) og sende svaret ut som eFormidling-melding.
-
-## Opprette masseutsendelse i Pureservice ##
-
-Det å lage en masseutsendelse vil være veldig likt det å opprette en vanlig sak, med et par ekstra steg.
-
-1. Opprett en sak med en beskrivelse og tittel. Saken kobles til en sluttbruker som angir forsendelsesmåte (se under)
-2. Sett klassifisering slik den skal være (sakstype og kategorier)
-3. Koble saken til mottakerlisten(e) som skal brukes som mottakere
-4. Skriv den utgående meldingen som en selvopprettet kommunikasjonstype ("Til utsending"). Legg eventuelle vedlegg til i saken
-5. Sett status for masseutsendelse etter ønsket metode (scenario 1 eller 2)
-
+Hvis saksbehandler svarer på en slik sak vil meldingen ende opp som ulevert i Pureservice, fordi e-post ikke kan leveres til en slik fiktiv adresse. Den sekundære funksjonen til Pureservice Utsending blir derfor å ta tak i slike uleverte meldinger og sende dem ut via eFormidling.
 
 ## Oppsett i Pureservice ##
 
 For at en sak skal behandles som en masseutsendelse trenger man i utgangspunktet bare å opprette noen fiktive sluttbrukere i Pureservice, en kommunikasjonstype og noen statuser.
 
-Sluttbrukerne brukes til å angi om sync2pureservice skal foretrekke e-post eller eFormidling som kanal for utsending av innholdet. *Utsending vie eFormidling er fortsatt under utvikling, og kan ikke brukes enda.*
-
-Ved enveis utsendelse kan man også velge mellom utsending via e-post eller gjennom eFormidling. Dette er dog ikke klart enda.
+Sluttbrukerne brukes til å angi om sync2pureservice skal foretrekke e-post eller eFormidling som kanal for utsending av innholdet.
 
 | Variabel | Standardverdi | Kommentar |
 |----|----|----|
 | PURESERVICE_DISPATCH_EMAIL | ut@e-post.pureservice.local | Sluttbruker som angir at forsendelsen skal ut med e-post |
 | PURESERVICE_DISPATCH_EF | ut@eformidling.pureservice.local | Sluttbruker som brukes til å angi masseutsending med eFormidling som medium |
-| PURESERVICE_DISPATCH_COMMTYPE_NAME | Utsendelse - innhold | Navnet på kommunikasjonstypen som skal brukes til utsendelsesteksten |
-| PURESERVICE_DISPATCH_STATUS | Til ekspedering | Navnet på statusen som skal settes på saken for å utløse utsending (**scenario 1**) |
-| PURESERVICE_121_STATUS | Klar til splitt | Navnet på statusen som skal settes på saken for å utløse oppretting av nye saker (**scenario 2**) |
 | PURESERVICE_DISPATCH_SOLVED_STATUS | Løst | Status som settes på saken når utsendingen er ferdig |
+| PURESERVICE_TICKET_STATUS_OPEN | Under arbeid | Status som settes på saken mens den behandles av Pureservice Utsending |
 
 Miljøvariablene over kommer i tillegg til [de som brukes for selve mottakerlistene](mailingliste.md).
 
@@ -84,3 +69,22 @@ Sync2pureservice er satt opp med e-postmetoden 'failover', der vi prioriterer 's
 | MICROSOFT_GRAPH_CLIENT_ID | | App-ID for en Microsoft Graph-klient definert i Azure AD |
 | MICROSOFT_GRAPH_CLIENT_SECRET | | Hemmelighet (passord) for Microsoft Graph-klienten |
 | MICROSOFT_GRAPH_TENANT_ID | | Tenant-ID for Azure AD |
+
+## Utseende på utsendingene ##
+
+For å bestemme hvordan utsendinger og sluttrapport ser ut bruker vi to Laravel Blade-maler. Disse befinner seg under resources/views 
+- **rawmessage.blade.php**: Denne trenger ikke å endres på, da den bare inkluderer den ferdig formaterte meldingen fra Pureservice. Utseende på meldingene setter man ved å endre på malene i Pureservice. 
+- **report.blade.php**: Dette er malen for sluttrapporten. Her kan man endre på tekst og formatering som man ønsker.
+
+
+## Opprette masseutsendelse i Pureservice ##
+
+Det å lage og utføre en masseutsendelse vil være veldig likt det å opprette en vanlig sak, med et par ekstra steg.
+
+1. Opprett en sak med en beskrivelse og tittel. Saken kobles til en sluttbruker som angir forsendelsesmåte (se under)
+2. Sett klassifisering slik den skal være (sakstype og kategorier)
+3. Koble saken til mottakerlisten(e) som skal brukes som mottakere
+4. Opprett en ny melding i saken som er selve utsendingen. Legg til eventuelle vedlegg, og send meldingen.
+5. Meldingen vil etter hvert bli markert med en trekant i Pureservice, og står som 'ikke levert'.
+
+Det siste punktet er det som utløser at Pureservice Utsending kan finne utsendingen og levere den.

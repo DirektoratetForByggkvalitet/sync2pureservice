@@ -96,6 +96,7 @@ class Utsending extends Command
         $this->sender->save();
         $this->messages->each(function (array $email, int $key) {
             $ticket = $this->api->getTicketFromPureservice($email['requestId'], false);
+            $autocloseTicket = false;
             $this->results['saker']++;
             $this->line(Tools::L1.'Behandler melding med emne \''.$email['subject'].'\'');
             // Laster ned vedlegg til meldingen
@@ -116,6 +117,7 @@ class Utsending extends Command
                 // Dette er en masseutsendelse
                 // Henter inn mottakerne fra mottakerlister
                 $recipients = $ticket->extractRecipientsFromAsset($this->api, $this->recipientListAssetType);
+                $autocloseTicket = true;
             else:
                 $toRegNo = Str::before($email['to'], '@');
                 $receiver = $this->api->findCompany($toRegNo, null, true);
@@ -177,14 +179,15 @@ class Utsending extends Command
                     $this->results['email']++;
                 endif;
             endforeach; // $recipients
+            if ($autocloseTicket):
+                $solution = Blade::render('report', [
+                    'results' => $this->results,
+                    'method' => $preferEformidling ? 'eFormidling' : 'e-post',
+                ]);
+                $this->api->solveWithAttachment($ticket, $solution, $mainDocument);
+                $this->line(Tools::L2.'Saken har blitt kvittert ut i Pureservice');
+            endif;
             // Merker meldingen som sendt i Pureservice
-
-            $solution = Blade::render('report', [
-                'results' => $this->results,
-                'method' => $preferEformidling ? 'eFormidling' : 'e-post',
-            ]);
-            $this->api->solveWithAttachment($ticket, $solution, $mainDocument);
-
             if ($sent = $this->api->setEmailStatus($email['id'], config('pureservice.email.status.sent'))):
                 $this->line(Tools::L2.'Meldingen ble merket sendt i Pureservice');
             else:
