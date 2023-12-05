@@ -156,7 +156,9 @@ class Company extends Model {
 
     public function getEfUser(): User {
         if ($this->id):
-            if (!$efUser = $this->users()->firstWhere('email', $this->getEformidlingEmail())):
+            if ($efUser = $this->users()->firstWhere('email', $this->getEformidlingEmail())):
+                return $efUser;
+            else:
                 $efUser = $this->users()->create([
                     'firstName' => 'eFormidling',
                     'lastName' => $this->name,
@@ -166,10 +168,6 @@ class Company extends Model {
             endif;
         endif;
         return $efUser;
-    }
-
-    public function getSvarUtEmail() {
-        return $this->organizationNumber.'@'.config('pureservice.user.dummydomain');
     }
 
     public function getEformidlingEmail() {
