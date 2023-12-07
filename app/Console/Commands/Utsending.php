@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\{Arr, Str, Collection};
+use Illuminate\Support\{Str, Collection};
 use Illuminate\Support\Facades\{Storage, Mail, Blade};
 use App\Services\{Eformidling, PsApi, Tools};
 use App\Models\{Message, Company, User};

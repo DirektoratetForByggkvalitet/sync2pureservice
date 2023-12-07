@@ -7,8 +7,7 @@ use App\Services\{ExcelLookup, Tools, Enhetsregisteret, PsApi};
 use App\Models\{Company, User};
 use Illuminate\Support\{Str, Arr};
 
-class Offentlige2Ps extends Command
-{
+class Offentlige2Ps extends Command {
     /**
      * The name and signature of the console command.
      *
@@ -23,22 +22,22 @@ class Offentlige2Ps extends Command
      *
      * @var string
      */
-    protected $description = 'Importerer offentlige instanser inn i Pureservice, ved å opprette dem som firma, samt SvarUt- og postmottak-brukere';
+    protected $description = 'Importerer offentlige instanser inn i Pureservice, ved å opprette dem som firma, samt eFormidling- og postmottak-brukere';
 
-    protected $start;
+    protected float $start;
 
-    protected $foundBrreg = 0;
-    protected $addedToDB = 0;
-    protected $brrCounters = [];
+    protected int $foundBrreg = 0;
+    protected int $addedToDB = 0;
+    protected array $brrCounters = [];
 
-    protected $usersProcessed= 0;
-    protected $usersUpdated = 0;
-    protected $usersCreated = 0;
-    protected $usersInDB = 0;
+    protected int $usersProcessed= 0;
+    protected int $usersUpdated = 0;
+    protected int $usersCreated = 0;
+    protected int $usersInDB = 0;
 
-    protected $companiesProcessed = 0;
-    protected $companiesUpdated = 0;
-    protected $companiesCreated = 0;
+    protected int $companiesProcessed = 0;
+    protected int $companiesUpdated = 0;
+    protected int $companiesCreated = 0;
 
     /**
      * Execute the console command.
@@ -77,7 +76,7 @@ class Offentlige2Ps extends Command
         $this->info('######################################');
         $this->newLine();
         if ($this->option('no-sync')):
-            $this->comment('Hoppet over synkronisering fordi \'--nops\' ble oppgitt');
+            $this->comment('Hoppet over synkronisering med Pureservice fordi \'--no-sync\' ble oppgitt');
         else:
             $this->sync2Pureservice();
         endif;
@@ -93,6 +92,10 @@ class Offentlige2Ps extends Command
                 ['Brukerkontoer', User::count(), $this->usersProcessed],
             ]
         );
+        if ($noEmails = Company::where('email', null)):
+            $this->newLine(2);
+        endif;
+
         $this->info('Operasjonen kjørte i '.round(microtime(true) - $this->start, 0).' sekunder');
         return Command::SUCCESS;
     }
@@ -132,7 +135,7 @@ class Offentlige2Ps extends Command
         // Behandler enhetene som ble funnet og mellomlagrer dem i databasen
     }
 
-    protected function storeCompanies(array $companies, $overliggende = null) {
+    protected function storeCompanies(array $companies, $overliggende = null): void {
         $eData = ExcelLookup::loadData(); // Collection eller null
         foreach ($companies as $company):
             if (Str::contains($company['navn'], "under forhåndsregistrering", true)) continue;
@@ -178,7 +181,7 @@ class Offentlige2Ps extends Command
     /**
      * Oppretter eller endrer på virksomhet og bruker i Pureservice
      */
-    private function sync2pureservice(): void {
+    protected function sync2pureservice(): void {
         $count = 0;
         $ps = new PsApi();
 
