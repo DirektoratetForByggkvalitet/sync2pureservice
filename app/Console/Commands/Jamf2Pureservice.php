@@ -253,7 +253,7 @@ class Jamf2Pureservice extends Command {
     protected function removeRelationships($assetId) {
         $relationships = $this->psApi->getAssetRelationships($assetId)['relationships'];
         foreach ($relationships as $rel):
-            $uri = '/relationship/'.$rel['id'].'/delete';
+            $uri = '/relationship/'.$rel['id'];
             $this->psApi->apiDelete($uri);
         endforeach;
         return true;
