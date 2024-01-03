@@ -71,7 +71,6 @@ pipelines:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: jamf2pureservice
           caches:
-            - laravel-cache
             - composer
             - composer-vendor
           runs-on:
@@ -207,7 +206,6 @@ pipelines:
           caches:
             - composer-vendor
             - composer
-            - laravel-cache
           runs-on:
             - "self.hosted"
           script:
