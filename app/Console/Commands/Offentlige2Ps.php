@@ -103,26 +103,27 @@ class Offentlige2Ps extends Command {
     /**
      * Importerer instanser fra Enhetsregisteret og mellomlagrer dem i databasen
      */
-    protected function importFraEnhetsregisteret(string|array $aUri, $resolveUnderlaying = false) : void {
-        if (!is_array($aUri)) $aUri = ['url' => $aUri];
+    protected function importFraEnhetsregisteret(string|array $aParams, $resolveUnderlaying = false) : void {
+        if (!is_array($aParams)) $aUri = ['parametre' => $aParams];
         $brApi = new Enhetsregisteret();
         // Søker opp enheter fra enhetsregisteret
-        foreach ($aUri as $name => $uri):
+        foreach ($aParams as $name => $params):
             $this->newLine();
-            $this->line(Tools::l1().'Behandler '.Str::headline($name));
-            $result = $brApi->apiGet($uri);
+            $this->line(Tools::L1.'Behandler '.Str::headline($name));
+            $result = $brApi->apiQuery('enheter', $params);
             $this->foundBrreg += Arr::get($result, 'page.totalElements');
             $this->brrCounters[$name] = Arr::get($result, 'page.totalElements');
             if ($this->foundBrreg > 0):
                 $this->storeCompanies(Arr::get($result, '_embedded.enheter'));
-                if ($resolveUnderlaying && Str::contains($uri, 'STAT')):
-                    $underlings = [];
+                if ($resolveUnderlaying && $params['organisasjonsform'] == 'STAT'):
                     foreach ($result['_embedded']['enheter'] as $main):
                         $this->newLine();
-                        $this->info(Tools::l2().'Finner underliggende virksomheter for '.$main['navn'].' - '.$main['organisasjonsnummer']);
+                        $this->info(Tools::L2.'Finner underliggende virksomheter for '.$main['navn'].' - '.$main['organisasjonsnummer']);
                         $this->newLine();
-                        $addr = Str::replace('[ORGNR]', $main['organisasjonsnummer'], config('enhetsregisteret.underliggende'));
-                        $res = $brApi->apiGet($addr);
+
+                        $params = config('enhetsregisteret.underliggende');
+                        $params['overordnetEnhet'] = Str::replace('[ORGNR]', $main['organisasjonsnummer'], $params['overordnetEnhet']);
+                        $res = $brApi->apiQuery('enheter', $params);
                         $this->foundBrreg += Arr::get($res, 'page.totalElements');
                         $this->brrCounters[$name] += Arr::get($res, 'page.totalElements');
                         if (Arr::get($res, 'page.totalElements') > 0) $this->storeCompanies(Arr::get($res, '_embedded.enheter'), $main['navn'].' - '.$main['organisasjonsnummer']);
@@ -139,11 +140,11 @@ class Offentlige2Ps extends Command {
         $eData = ExcelLookup::loadData(); // Collection eller null
         foreach ($companies as $company):
             if (Str::contains($company['navn'], "under forhåndsregistrering", true)) continue;
-            $this->info(Tools::l1().$company['navn'].' - '. $company['organisasjonsnummer']);
+            $this->info(Tools::L1.$company['navn'].' - '. $company['organisasjonsnummer']);
             if ($newCompany = Company::firstWhere('organizationNumber', $company['organisasjonsnummer'])):
-                $this->comment(Tools::l2().'Fant virksomheten i DB');
+                $this->comment(Tools::L2.'Fant virksomheten i DB');
             else:
-                $this->comment(Tools::l2().'Lagrer virksomheten i DB');
+                $this->comment(Tools::L2.'Lagrer virksomheten i DB');
                 $fields = [
                     'name' => Str::replace(' Og ', ' og ', Str::replace(' I ', ' i ', Str::title(Str::squish($company['navn'])))),
                     'organizationNumber' => Str::squish($company['organisasjonsnummer']),
