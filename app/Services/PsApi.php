@@ -1,9 +1,11 @@
 <?php
 
+
+
 namespace App\Services;
-use App\Models\{Ticket, TicketCommunication, User, Company, Message};
+use App\Models\{Ticket, TicketCommunication, User, Company, Message, PsStatus};
 use Carbon\Carbon;
-use Illuminate\Support\{Str, Arr};
+use Illuminate\Support\{Str, Arr, Collection};
 use Illuminate\Support\Facades\{Storage, Blade, Cache};
 use cardinalby\ContentDisposition\ContentDisposition;
 use Illuminate\Http\Client\Response;
@@ -14,13 +16,31 @@ use Illuminate\Http\Client\Response;
  */
 class PsApi extends API {
     protected array $ticketOptions;
-    protected array $statuses;
+    protected array|Collection $statuses;
 
     public function __construct() {
         $this->setCKey('pureservice');
         $this->setProperties();
     }
 
+    public function fetchStatuses(string $key = 'Ticket'): void {
+        $uri = 'status';
+        $params = [
+            'filter' => '!disabled AND requesttype.key == "'.$key.'"',
+        ];
+        $response = $this->apiQuery($uri, $params, true);
+        if ($response->successful()):
+            $this->statuses = collect($response->json('statuses'))->mapInto(PsStatus::class);
+        endif;
+    }
+
+    public function findStatus(string $search, bool $returnClass = false): PsStatus|int|false {
+        if ($status = $this->statuses->firstWhere('name', $search)):
+            return $returnClass ? $status : $status->id;
+        else:
+            return false;
+        endif;
+    }
 
     /**
      * Universell funksjon som henter ut et objekt fra Pureservice basert på IDnr
