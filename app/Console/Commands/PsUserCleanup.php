@@ -126,7 +126,7 @@ class PsUserCleanup extends Command {
                 if (isset($newName)):
                     $psUser->firstName = Str::title($newName[0]);
                     $psUser->lastName = Str::title($newName[1]);
-                    if ($this->debug) $this->line(Tools::L3.' Navn endres til \''.$psUser->firstName.' '.$psUser->lastName.'\'');
+                    $this->line(Tools::L3.' Navn endres til \''.$psUser->firstName.' '.$psUser->lastName.'\'');
                     $this->report['Navn endret']++;
                 endif;
                 if ($companyChanged):
