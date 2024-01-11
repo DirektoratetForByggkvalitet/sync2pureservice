@@ -61,15 +61,24 @@ class Utsending extends Command
         $uri = '/email/';
         $failedStatus = config('pureservice.email.status.failed');
         $params = [
-            'filter' => 'status == '.$failedStatus,
+            //'filter' => 'status == '.$failedStatus,
             'sort' => 'created DESC',
             'include' => 'attachments',
         ];
-        /*
+
         $waitingStatusId = $this->api->findStatus(config('pureservice.ticket.staus_message_sent'));
-        $params['filter'] = 'direction == 1 AND request.statusId == '.$waitingStatusId;
-        $params['filter'] .= ' AND (to ==';
-        */
+        $params['filter'] = 'direction == 1 AND '.
+            'request.statusId == '.$waitingStatusId. ' AND '.
+            '('.
+                'to == '.Str::wrap($this->myConf('dispatch.address.ef'), '"').
+                ' OR '.
+                'to == '.Str::wrap($this->myConf('dispatch.address.email'),'"').
+                ' OR '.
+                'to == '.Str::wrap($this->myConf('dispatch.address.email_121'),'"').
+                ' OR '.
+                'to.contains('.Str::wrap($this->myConf('dispatch.ef_domain'), '"').')'.
+            ')';
+
 
         $response = $this->api->apiQuery($uri, $params, true);
 
@@ -78,26 +87,27 @@ class Utsending extends Command
             return Command::FAILURE;
         endif;
 
-        $messages = collect($response->json('emails'));
-        if ($messages->count() == 0):
+        $this->messages = collect($response->json('emails'));
+        $msgCount = $this->messages->count();
+        if ($msgCount == 0):
             $this->info(Tools::L1.'Ingen meldinger ble funnet.');
             return Command::SUCCESS;
         endif;
-        $this->messages = $messages->filter(function (array $item, int $key) {
-            if ($item['to'] == config('pureservice.dispatch.address_email') ||
-                $item['to'] == config('pureservice.dispatch.address_ef') ||
-                Str::endsWith($item['to'], config('pureservice.user.ef_domain'))):
-                return true;
-            endif;
-        });
-        unset($messages);
-        $msgCount = $this->messages->count();
+        // $this->messages = $messages->filter(function (array $item, int $key) {
+        //     if ($item['to'] == config('pureservice.dispatch.address_email') ||
+        //         $item['to'] == config('pureservice.dispatch.address_ef') ||
+        //         Str::endsWith($item['to'], config('pureservice.user.ef_domain'))):
+        //         return true;
+        //     endif;
+        // });
+        // unset($messages);
+
         if ($msgCount == 0):
-            $this->info(Tools::L1.'Fant ingen meldinger som kan sendes med eFormidling');
+            $this->info(Tools::L1.'Fant ingen meldinger som kan sendes');
             return Command::SUCCESS;
         endif;
 
-        $this->info(Tools::L1.'Fant '.$msgCount.' melding(er) som skal sendes med eFormidling');
+        $this->info(Tools::L1.'Fant '.$msgCount.' melding(er) som skal sendes');
         $this->ef = new Eformidling();
         $this->sender = $this->api->getSelfCompany();
         $this->sender->save();
@@ -119,44 +129,46 @@ class Utsending extends Command
                 $msgAttachments = $this->api->downloadAttachmentsById($attachmentIds, $dlPath);
             endif;
 
-            if ($email['to'] == config('pureservice.dispatch.address_email') ||
-                $email['to'] == config('pureservice.dispatch.address_ef')):
+            if (in_array($email['to'], $this->myConf('dispatch.address'))):
                 // Dette er en masseutsendelse
                 // Henter inn mottakerne fra mottakerlister
                 $recipients = $ticket->extractRecipientsFromAsset($this->api, $this->recipientListAssetType);
                 $autocloseTicket = true;
+                // Sjekker om vi skal opprette nye saker per mottaker
+                $createNewTickets = $email['to'] == $this->myConf('dispatch.address.email_121');
             else:
                 $toRegNo = Str::before($email['to'], '@');
-                $receiver = $this->api->findCompany($toRegNo, null, true);
-                $receiver->save();
-                $recipients = collect([$receiver]);
-                unset($receiver);
+                if ($recipient = $this->api->findCompany($toRegNo, null, true)):
+                    if ($dbcompany = Company::firstWhere('id', $recipient->id)):
+                        $recipient = $dbcompany;
+                    endif;
+                    $recipient->save();
+                    $recipients = collect([$recipient]);
+                    unset($recipient);
+                endif;
             endif;
             // Skal vi foretrekke eFormidling?
-            $preferEformidling = (Str::endsWith($email['to'], config('pureservice.user.ef_domain')));
+            $preferEformidling = (Str::endsWith($email['to'], $this->myConf('dispatch.ef_domain')));
             $this->results['recipients'] = $recipients->count();
-            foreach ($recipients as $receiver):
+            foreach ($recipients as $recipient):
                 // Forsendelseskanal kan endre seg for hver mottaker
                 $sendViaEformidling = $preferEformidling;
-                if ($receiver instanceof User):
-                    $isUser = true;
+                $isUser = $recipient instanceof User;
+                if ($isUser):
                     $sendViaEformidling = false;
-                    $this->line(Tools::L2.'Adressert til \''.$receiver->firstName.' '. $receiver->lastName.'\' - '.$receiver->email);
+                    $this->line(Tools::L2.'Adressert til \''.$recipient->firstName.' '. $recipient->lastName.'\' - '.$recipient->email);
                 else:
-                    $isUser = false;
-                    if (!$receiver->organizationNumber):
-                        $sendViaEformidling = false;
-                    endif;
+                    $sendViaEformidling = $recipient->organizationNumber ? true : false;
                     if ($sendViaEformidling):
-                        $this->line(Tools::L2.'Adressert til \''.$receiver->name.'\' - '.$receiver->organizationNumber);
+                        $this->line(Tools::L2.'Adressert til \''.$recipient->name.'\' - '.$recipient->organizationNumber);
                     else:
-                        $this->line(Tools::L2.'Adressert til \''.$receiver->name.'\' - '.$receiver->email);
+                        $this->line(Tools::L2.'Adressert til \''.$recipient->name.'\' - '.$recipient->email);
                     endif;
                 endif;
                 if ($sendViaEformidling):
                     $message = Message::factory()->create([
                         'sender_id' => $this->sender->id,
-                        'receiver_id' => $receiver->id,
+                        'recipient_id' => $recipient->id,
                     ]);
                     $tmpAttachments = $msgAttachments;
                     $tmpAttachments[] = $mainDocument;
@@ -174,14 +186,38 @@ class Utsending extends Command
                     $this->line(Tools::L3.'Sender meldingen');
                     $this->ef->dispatchMessage($message);
                     $this->results['eFormidling']++;
+                elseif ($createNewTickets):
+                    // Oppretter sak per mottaker og sender meldingen fra Pureservice
+                    $newTicket = $ticket->replicate(['id', 'requestNumber', 'userId', 'emailAddress', 'attachments']);
+                    if (!$psRecipient = $this->api->findUser($recipient->email, true)):
+                        if (!$isUser): // Mottaker er et foretak
+                            if (!$user = $recipient->users()->firstWhere('email', $recipient->email)):
+                                $user = $recipient->users()->create([
+                                    'firstName' => 'Postmottak',
+                                    'lastName' => $recipient->name,
+                                    'email' => $recipient->email,
+                                ]);
+                            endif;
+                            $user->save();
+                        endif;
+                        $psRecipient = $user->addOrUpdatePS($this->api);
+                        unset($user);
+                    else: // Bruker som ikke finnes i PS
+                        $psRecipient = $recipient->addOrUpdatePS($this->api);
+                    endif;
+                    $newTicket->userId = $psRecipient->id;
+                    $newTicket->visibility = config('pureservice.visibility.no_receipt');
+                    $newTicket->statusId = $this->api->findStatus(config('pureservice.ticket.status_in_progress'));
+                    $newTicket = $newTicket->addOrUpdatePS($this->api);
+                    
                 else:
                     // Sendes som e-post
-                    if (!$receiver->email):
+                    if (!$recipient->email):
                         $this->results['skipped']++;
                         $this->error(Tools::L3.'Kan ikke sendes. E-postadresse mangler');
                         continue;
                     endif;
-                    Mail::to($receiver->email)->send(new TicketMessage($ticket, false, $email['subject'], $email['html'], $msgAttachments));
+                    Mail::to($recipient->email)->send(new TicketMessage($ticket, false, $email['subject'], $email['html'], $msgAttachments));
                     $this->line(Tools::L3.'Sendt med e-post');
                     $this->results['email']++;
                 endif;

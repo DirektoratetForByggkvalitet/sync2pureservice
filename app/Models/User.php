@@ -52,7 +52,7 @@ class User extends Model
      * @param Pureservice $ps   Pureservice-instans
      * @param bool $noEmail     Angir om brukeren skal ha noemail-feltet satt til 1
      */
-    public function addOrUpdatePS(PsApi $ps, bool $noEmail = false): bool|array {
+    public function addOrUpdatePS(PsApi $ps, bool $noEmail = false): User|array {
         $update = false;
         if ($psUser = $ps->findUser($this->email)):
             // Brukeren finnes i Pureservice
@@ -84,7 +84,9 @@ class User extends Model
             // Oppdaterer brukeren i Pureservice
             $uri = '/user/'.$psUser['id'];
             //$body['id'] = $psUser['id'];
-            return $ps->apiPatch($uri, $body, null, true);
+            if ($ps->apiPatch($uri, $body, null, true)):
+                return $this;
+            endif;
             //return $ps->apiPut($uri, $body, null, true);
         endif;
 
@@ -98,7 +100,7 @@ class User extends Model
             if ($response->successful() && $response->json('users.0')):
                     $this->id = $response->json('users.0.id');
                     $this->save();
-                return true;
+                return $this;
             else:
                 return $response->json();
             endif;

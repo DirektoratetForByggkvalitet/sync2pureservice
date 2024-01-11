@@ -220,7 +220,7 @@ class PsApi extends API {
             if ($existing = Ticket::firstWhere('id', $ticket->id)):
                 $ticket = $existing;
             endif;
-            $ticket->save();
+            //$ticket->save();
             return $ticket;
         else:
             return false;

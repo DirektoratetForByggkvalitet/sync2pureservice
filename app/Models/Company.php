@@ -45,7 +45,7 @@ class Company extends Model {
     /**
      * Synkroniserer virksomheten i Pureservice
      */
-    public function addOrUpdatePS(PsApi $ps) : bool {
+    public function addOrUpdatePS(PsApi $ps) : bool|Company {
         $update = false;
         $emailId = false;
         $phoneId = false;
@@ -111,7 +111,7 @@ class Company extends Model {
             $uri = '/company/'.$this->id;
             // $body['id'] = $this->id;
             if (isset($body['id'])) unset($body['id']);
-            return $ps->apiPatch($uri, $body, null, true);
+            if ($ps->apiPatch($uri, $body, null, true)) return $this;
         endif;
 
         if (!$psCompany):
@@ -125,7 +125,7 @@ class Company extends Model {
                 if (count($companies) > 0):
                     $this->id = $companies[0]['id'];
                     $this->save();
-                    return true;
+                    return $this;
                 endif;
             endif;
         endif;

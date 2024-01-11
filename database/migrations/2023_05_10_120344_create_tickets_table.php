@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('tickets', function (Blueprint $table) {
             $table->id('internal_id');
-            $table->integer('id')->unique();
-            $table->integer('requestNumber')->unique();
+            $table->integer('id')->nullable();
+            $table->integer('requestNumber')->nullable();
             $table->integer('assignedAgentId')->nullable();
             $table->integer('assignedTeamId')->nullable();
             $table->integer('assignedDepartmentId')->nullable();
