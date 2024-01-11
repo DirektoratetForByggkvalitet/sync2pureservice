@@ -39,6 +39,7 @@ class Utsending extends Command
         'saker' => 0,
     ];
     protected array $recipientListAssetType;
+    protected array $ticketsCreated = [];
 
     /*
      * Execute the console command.
@@ -209,7 +210,7 @@ class Utsending extends Command
                     $newTicket->visibility = config('pureservice.visibility.no_receipt');
                     $newTicket->statusId = $this->api->findStatus(config('pureservice.ticket.status_in_progress'));
                     $newTicket = $newTicket->addOrUpdatePS($this->api);
-                    
+                    $this->ticketsCreated[] = $newTicket;
                 else:
                     // Sendes som e-post
                     if (!$recipient->email):
