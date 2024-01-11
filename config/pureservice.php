@@ -115,6 +115,7 @@ return [
         'status_solved' => env('PURESERVICE_TICKET_SOLVED_STATUS', 'Løst'),
         'status_closed' => env('PURESERVICE_TICKET_CLOSED_STATUS', 'Lukket'),
         'status_in_progress' => env('PURESERVICE_TICKET_STATUS_OPEN', 'Under arbeid'),
+        'staus_message_sent' => env('PURESERVICE_TICKET_STATUS_SENT', 'Venter - sluttbruker'),
         'requestType' => env('PURESERVICE_TICKET_REQUEST_TYPE','Ticket'),
     ],
     'innsynskrav' => [

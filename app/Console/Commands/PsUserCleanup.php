@@ -44,7 +44,7 @@ class PsUserCleanup extends Command {
         $this->line($this->description);
         $this->newLine(2);
 
-        $this->debug = config('app.debug');
+        $this->debug = true; // config('app.debug');
         $this->report = [
             'Antall brukere' => 0,
             'Navn endret' => 0,
