@@ -102,6 +102,7 @@ class PsUserCleanup extends Command {
             $email = $this->emailAddresses->firstWhere('userId', $psUser->id);
             $psUser->email = $email['email'];
             $fullName = $psUser->firstName.' '.$psUser->lastName;
+            $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
             if (Str::contains($fullName, ['@', '.com', '.biz', '.net', '.ru']) || $psUser->firstName == '' || $psUser->lastName == ''):
                 $newName = Tools::nameFromEmail($psUser->email);
                 $updateMe = true;
@@ -122,7 +123,7 @@ class PsUserCleanup extends Command {
             endif;
             if ($updateMe):
                 $this->changeCount++;
-                $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
+
                 if (isset($newName)):
                     $psUser->firstName = Str::title($newName[0]);
                     $psUser->lastName = Str::title($newName[1]);
