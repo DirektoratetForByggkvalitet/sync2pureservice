@@ -162,8 +162,11 @@ return [
     ],
     // Oppsett for PSUtsendelse
     'dispatch' => [
-        'address_ef' => env('PURESERVICE_DISPATCH_EF', 'ut@eformidling.pureservice.local'),
-        'address_email' => env('PURESERVICE_DISPATCH_EMAIL', 'ut@e-post.pureservice.local'),
+        'address' => [
+            'ef' => env('PURESERVICE_DISPATCH_EF', 'ut@eformidling.pureservice.local'),
+            'email' => env('PURESERVICE_DISPATCH_EMAIL', 'ut@e-post.pureservice.local'),
+            'email_121' => env('PURESERVICE_DISPATCH_EMAIL_121', 'ut-121@e-post.pureservice.local'),
+        ],
         'finishStatus' => env('PURESERVICE_DISPATCH_SOLVED_STATUS', 'Løst'),
         'status_in_progress' => env('PURESERVICE_TICKET_STATUS_OPEN', 'Under arbeid'),
         'assetTypeName' => env('PURESERVICE_DISPATCH_LIST_ASSETNAME', 'Mottakerliste'),

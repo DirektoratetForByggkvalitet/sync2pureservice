@@ -25,7 +25,7 @@ class Utsending extends Command
      * @var string
      */
     protected $description = 'Henter ut masseutsendelser som skal sendes med e-post og eFormidling, samt utgående meldinger som skal sendes med eFormidling';
-    protected string $version = '1.1';
+    protected string $version = '2.0';
     protected float $start;
     protected Collection $messages;
     protected PsApi $api;
@@ -52,6 +52,7 @@ class Utsending extends Command
         $this->info(Tools::ts().'Kobler til Pureservice');
         $this->comment(Tools::l3().'Bruker '.config('pureservice.api.url'));
         $this->api = new PsApi();
+        $this->api->fetchStatuses();
 
         // Henter inn AssetType for mottakerlistene
         $this->recipientListAssetType = $this->api->getEntityByName('assettype', config('pureservice.dispatch.assetTypeName'));
@@ -64,7 +65,11 @@ class Utsending extends Command
             'sort' => 'created DESC',
             'include' => 'attachments',
         ];
-        //$params['filter'] = 'direction == 1 AND request.statusId';
+        /*
+        $waitingStatusId = $this->api->findStatus(config('pureservice.ticket.staus_message_sent'));
+        $params['filter'] = 'direction == 1 AND request.statusId == '.$waitingStatusId;
+        $params['filter'] .= ' AND (to ==';
+        */
 
         $response = $this->api->apiQuery($uri, $params, true);
 
