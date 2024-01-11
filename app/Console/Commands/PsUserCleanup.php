@@ -94,17 +94,13 @@ class PsUserCleanup extends Command {
         $this->changeCount = 0;
         $this->info(Tools::L1.'Vi fant '.$userCount.' sluttbrukere. Starter behandling...');
         $this->newLine();
-        $bar = null;
-        if (!$this->debug):
-            $bar = $this->output->createProgressBar($this->psUsers->count());
-            $bar->start();
-        endif;
-        $this->psUsers->lazy()->each(function (User $psUser, int $key) use ($bar) {
+        $this->psUsers->lazy()->each(function (User $psUser, int $key) {
+            $fullName = $psUser->firstName.' '.$psUser->lastName;
+            $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
             $updateMe = false;
             $companyChanged = false;
             $email = $this->emailAddresses->firstWhere('userId', $psUser->id);
             $psUser->email = $email['email'];
-            $fullName = $psUser->firstName.' '.$psUser->lastName;
             if (Str::contains($fullName, ['@', '.com', '.biz', '.net', '.ru']) || $psUser->firstName == '' || $psUser->lastName == ''):
                 $newName = Tools::nameFromEmail($psUser->email);
                 $updateMe = true;
@@ -125,27 +121,22 @@ class PsUserCleanup extends Command {
             endif;
             if ($updateMe):
                 $this->changeCount++;
-                if ($this->debug) $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
+                //if ($this->debug) $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
                 if (isset($newName)):
                     $psUser->firstName = Str::title($newName[0]);
                     $psUser->lastName = Str::title($newName[1]);
-                    if ($this->debug) $this->line(Tools::L3.' Navn endres til \''.$psUser->firstName.' '.$psUser->lastName.'\'');
+                    $this->line(Tools::L3.' Navn endres til \''.$psUser->firstName.' '.$psUser->lastName.'\'');
                     $this->report['Navn endret']++;
                 endif;
                 if ($companyChanged):
-                    if ($this->debug) $this->line(Tools::L3.' Kobles til virksomheten \''.$company->name.'\'');
+                    $this->line(Tools::L3.' Kobles til virksomheten \''.$company->name.'\'');
                     $this->report['Koblet til firma']++;
                 endif;
                 // Oppdater brukeren i Pureservice
                 $psUser->addOrUpdatePS($this->ps);
-                if ($this->debug) $this->newLine();
             endif;
-            if (!$this->debug) $bar->advance();
+            $this->newLine();
         });
-        if (!$this->debug):
-            $bar->finish();
-            $this->newLine(2);
-        endif;
 
         $this->info('####');
         $this->line('Sluttrapport');
