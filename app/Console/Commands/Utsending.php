@@ -60,10 +60,11 @@ class Utsending extends Command
         $uri = '/email/';
         $failedStatus = config('pureservice.email.status.failed');
         $params = [
+            'filter' => 'status == '.$failedStatus,
             'sort' => 'created DESC',
             'include' => 'attachments',
         ];
-        $params['filter'] = 'direction == 1 AND request.statusId';
+        //$params['filter'] = 'direction == 1 AND request.statusId';
 
         $response = $this->api->apiQuery($uri, $params, true);
 
