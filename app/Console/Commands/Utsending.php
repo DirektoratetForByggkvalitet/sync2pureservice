@@ -37,6 +37,7 @@ class Utsending extends Command
         'email' => 0,
         'skipped' => 0,
         'saker' => 0,
+        'sakerOpprettet' => [],
     ];
     protected array $recipientListAssetType;
     protected array $ticketsCreated = [];
@@ -210,7 +211,7 @@ class Utsending extends Command
                     $newTicket->visibility = config('pureservice.visibility.no_receipt');
                     $newTicket->statusId = $this->api->findStatus(config('pureservice.ticket.status_in_progress'));
                     $newTicket = $newTicket->addOrUpdatePS($this->api);
-                    $this->ticketsCreated[] = $newTicket;
+                    $this->results['sakerOpprettet'][] = $newTicket;
                 else:
                     // Sendes som e-post
                     if (!$recipient->email):
