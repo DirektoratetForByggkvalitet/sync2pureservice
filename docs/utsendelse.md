@@ -21,22 +21,23 @@ Pureservice Utsendelse er ment å kjøres jevnlig og har følgende hovedfunksjon
 
 ### Sekundær funksjon
 
-Innkommende meldinger fra eFormidling fører til at det blir opprettet en eFormidling-sluttbruker for virksomheten som er avsender. Denne sluttbrukeren har typisk en e-postadresse som er [orgnr]@eformidling.pureservice.local. 
+Innkommende meldinger fra eFormidling fører til at det blir opprettet en eFormidling-sluttbruker for virksomheten som er avsender. Denne sluttbrukeren har typisk en e-postadresse som ender med 'pureservice.local' (kan endres, se nedenfor). 
 
 Hvis saksbehandler svarer på en slik sak vil meldingen ende opp som ulevert i Pureservice, fordi e-post ikke kan leveres til en slik fiktiv adresse. Den sekundære funksjonen til Pureservice Utsending blir derfor å ta tak i slike uleverte meldinger og sende dem ut via eFormidling.
 
 ## Oppsett i Pureservice ##
 
-For at en sak skal behandles som en masseutsendelse trenger man i utgangspunktet bare å opprette noen fiktive sluttbrukere i Pureservice, en kommunikasjonstype og noen statuser.
+For at en sak skal behandles som en masseutsendelse trenger man i utgangspunktet bare å opprette noen fiktive sluttbrukere i Pureservice og noen statuser.
 
 Sluttbrukerne brukes til å angi om sync2pureservice skal foretrekke e-post eller eFormidling som kanal for utsending av innholdet.
 
 | Variabel | Standardverdi | Kommentar |
 |----|----|----|
+| PURESERVICE_EF_DOMAIN | pureservice.local | Domene som brukes til å identifisere eFormidling-sluttbrukere, f.eks. '[orgnr]@eformidling.pureservice.local' |
 | PURESERVICE_DISPATCH_EMAIL | ut@e-post.pureservice.local | Sluttbruker som angir at forsendelsen skal ut med e-post |
 | PURESERVICE_DISPATCH_EF | ut@eformidling.pureservice.local | Sluttbruker som brukes til å angi masseutsending med eFormidling som medium |
 | PURESERVICE_DISPATCH_SOLVED_STATUS | Løst | Status som settes på saken når utsendingen er ferdig |
-| PURESERVICE_TICKET_STATUS_OPEN | Under arbeid | Status som settes på saken mens den behandles av Pureservice Utsending |
+| PURESERVICE_TICKET_STATUS_SENT | Venter - sluttbruker | Status som brukes for å finne saker med utgående meldinger |
 
 Miljøvariablene over kommer i tillegg til [de som brukes for selve mottakerlistene](mailingliste.md).
 
@@ -52,19 +53,19 @@ Mottakerlistene til utsendelsene må opprettes som Assets i Pureservice. Her er 
 
 Laravel støtter flere mulige oppsett for utsending av e-post. [Mer om dette her](https://laravel.com/docs/10.x/mail).
 
-Sync2pureservice er satt opp med e-postmetoden 'failover', der vi prioriterer 'smtp', og faller tilbake på 'microsoft-graph' hvis SMTP feiler. Dette kan endres ved å endre på MAIL_MAILER.
+Sync2pureservice er satt opp med e-postmetoden 'failover', der vi prioriterer 'microsoft-graph', og faller tilbake på 'smtp' hvis SMTP feiler. Dette kan endres/byttes ved å endre på MAIL_MAILER eller på rekkefølgen i [config/mail.php](../config/mail.php.
 
 | Variabel | Standardverdi | Kommentar |
 |----|----|----|
 | MAIL_MAILER | failover | Velger rammeverk for e-postutsending. Vi bruker failover-metoden angitt i [config/mail.php](../config/mail.php) som standard. |
 | MAIL_HOST | | E-posttjener for utsending gjennom SMTP-tjener |
 | MAIL_PORT | 587 | Port for SMTP |
-| MAIL_ENCRYPTION | tls | Krypteringsinnstilling for SMTP |
+| MAIL_ENCRYPTION | tls | Krypteringsinnstilling for SMTP, anbefalt |
 | MAIL_USERNAME | | Brukernavn for SMTP-autentisering |
 | MAIL_PASSWORD | | Passord for SMTP-autentisering |
-| MAIL_EHLO_DOMAIN | f.eks. sync2pureservice.dibk.cloud | Hva sync2pureservice kaller seg når den sender e-post til SMTP-tjeneren |
-| MAIL_FROM_ADDRESS | f.eks. ikkesvar@dibk.no | Avsender-adressen som brukes for utsending |
-| MAIL_FROM_NAME | f.eks. 'Direktoratet for byggkvalitet' | Navnet som brukes som avsender. Husk å bruke ' når navnet inneholder mellomrom, som vist i eksemplet |
+| MAIL_EHLO_DOMAIN | sync2pureservice.pureservice.com | Hva sync2pureservice kaller seg når den sender e-post til SMTP-tjeneren |
+| MAIL_FROM_ADDRESS | noreply@pureservice.local | Avsender-adressen som brukes for utsending |
+| MAIL_FROM_NAME | sync2pureservice | Navnet som brukes som avsender. Husk å bruke single-quotes (') hvis navnet inneholder mellomrom |
 | MAIL_REPLYTO_ADDRESS | post@dibk.no | Reply-to-adressen som brukes. Dette skal fungere slik at mottakeren kan klikke på Svar-knappen og sende svaret til denne adressen i stedet for MAIL_FROM_ADDRESS |
 | MICROSOFT_GRAPH_CLIENT_ID | | App-ID for en Microsoft Graph-klient definert i Azure AD |
 | MICROSOFT_GRAPH_CLIENT_SECRET | | Hemmelighet (passord) for Microsoft Graph-klienten |
@@ -73,7 +74,7 @@ Sync2pureservice er satt opp med e-postmetoden 'failover', der vi prioriterer 's
 ## Utseende på utsendingene ##
 
 For å bestemme hvordan utsendinger og sluttrapport ser ut bruker vi to Laravel Blade-maler. Disse befinner seg under resources/views 
-- **rawmessage.blade.php**: Denne trenger ikke å endres på, da den bare inkluderer den ferdig formaterte meldingen fra Pureservice. Utseende på meldingene setter man ved å endre på malene i Pureservice. 
+- **rawmessage.blade.php**: Denne trenger ikke å endres på, da den bare inkluderer den ferdig formaterte meldingen fra Pureservice. Utseende på de utgående meldingene endrer man ved å endre på malene i Pureservice. 
 - **report.blade.php**: Dette er malen for sluttrapporten. Her kan man endre på tekst og formatering som man ønsker.
 
 

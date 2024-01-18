@@ -162,7 +162,7 @@ return [
     ],
     // Oppsett for Utsending
     'dispatch' => [
-        'ef_domain' => 'pureservice.local',
+        'ef_domain' => env('PURESERVICE_EF_DOMAIN', 'pureservice.local'),
         'address' => [
             'ef' => env('PURESERVICE_DISPATCH_EF', 'ut@eformidling.pureservice.local'),
             'email' => env('PURESERVICE_DISPATCH_EMAIL', 'ut@e-post.pureservice.local'),

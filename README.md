@@ -4,21 +4,23 @@ Vi har bygd en kommandolinje-basert Laravel-applikasjon for å utvide funksjonal
 
 - [jamf2pureservice](docs/jamf2pureservice.md) - synkroniserer maskiner og mobilenheter i Jamf Pro med ressurser i Pureservice
 - [eFormidling](docs/eformidling.md) - Henter inn meldinger gjennom integrasjonspunkt fra Altinn, eInnsyn og SvarUt inn i Pureservice
-- [svarinn2pureservice](docs/svarinn2pureservice.md) - fungerer som SvarUt-mottak for Pureservice (erstattes av eFormidling)
-- [offentlige2ps](docs/offentlige2ps.md) - importerer kommuner og statlige instanser inn som firma og sluttbrukere i Pureservice
-- [utsendelse](docs/utsendelse.md) - Håndterer masseutsendelser fra Pureservice
-- [cleanUpUsers](docs/clenupusers.md) - Går gjennom sluttbrukere og korrigerer brukerinfo
+- [utsendelse](docs/utsendelse.md) - Håndterer masseutsendelser og utgående eFormidling fra Pureservice
+- [offentlige2ps](docs/offentlige2ps.md) - Importerer kommuner og statlige instanser fra BRREG inn som firma og sluttbrukere i Pureservice
+- [cleanUpUsers](docs/cleanupusers.md) - Går gjennom sluttbrukere og korrigerer brukerinfo
+
+## Utdaterte funksjoner (kan virke fremdeles)
+
+- [svarinn2pureservice](docs/svarinn2pureservice.md) - Fungerer som SvarUt-mottak for Pureservice (erstattet av [eFormidling](docs/eformidling.md))
 
 ## Under utvikling
 
-Vi jobber fortsatt med utvikling av sync2pureservice. Følgende er under utvikling:
+Vi videreutvikler og fikser stadig på koden til sync2pureservice. Følgende er under utvikling:
 
-- Utsendelse via eFormidling: Foreløpig fungerer det kun med utsendelse gjennom e-post
 - Masseutsendelse som oppretter enkeltsaker i Pureservice (scenario 2)
 
 ## Kjøring i Bitbucket Pipelines
 
-Vi har lagt opp til at funksjonene kan kjøres i Bitbucket Pipelines. Da bruker vi et egenkomponert Docker-image, [dibk/sync2pureservice](https://hub.docker.com/r/dibk/sync2pureservice), som inneholder korrekt PHP-versjon (8.2.x) og de tilleggene vi trenger (gd, opcache og zip, samt composer). Vårt image bygges fra denne koden hver søndag, og er tilgjengelig både for AMD64 og ARM64.
+Vi har lagt opp til at funksjonene skal kunne kjøres i Bitbucket Pipelines. Da bruker vi et egenkomponert Docker-image, [dibk/sync2pureservice](https://hub.docker.com/r/dibk/sync2pureservice), som inneholder korrekt PHP-versjon (8.x) og de tilleggene vi trenger (gd, opcache og zip, samt composer). Vårt image bygges fra vår [Dockerfile](Dockerfile) hver søndag, og er tilgjengelig både for AMD64 og ARM64.
 
 Det er også fullt mulig å kjøre sync2pureservice med det offisielle [php:alpine fra Docker Hub](https://hub.docker.com/_/php). I så fall kan du bruke [installasjonsskriptet](scripts/php-install-alpine.sh) til å installere de nødvendige tilleggene før kjøring. Det tar et par minutter å sette opp, så vi vil anbefale å bruke vårt ferdige eller ditt eget ferdigbygde. Alt er tilgjengelig i kildekoden.
 
@@ -26,7 +28,7 @@ Det er også fullt mulig å kjøre sync2pureservice med det offisielle [php:alpi
 
 Det er fullt mulig å kjøre skriptene lokalt på egen maskin. I så fall trenger du et oppsett som inneholder følgende:
 
-- [PHP 8.2.x](https://php.net)
+- [PHP 8.x](https://php.net)
 - [Composer](https://getcomposer.org/)
 - PHP-tilleggene gd, opcache og zip
 

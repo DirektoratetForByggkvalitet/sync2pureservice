@@ -56,10 +56,10 @@ return [
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
-            'local_domain' => env('MAIL_EHLO_DOMAIN'),
+            'local_domain' => env('MAIL_EHLO_DOMAIN', 'sync2pureservice.pureservice.com'),
             'from' => [
-                'address' => env('MAIL_FROM_ADDRESS'),
-                'name' => env('MAIL_FROM_NAME'),
+                'address' => env('MAIL_FROM_ADDRESS', 'noreply@pureservice.local'),
+                'name' => env('MAIL_FROM_NAME', 'sync2pureservice'),
             ],
             'replyTo' => [
                 'address' => env('MAIL_REPLYTO_ADDRESS', env('MAIL_FROM_ADDRESS')),

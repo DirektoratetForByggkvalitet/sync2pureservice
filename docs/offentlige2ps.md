@@ -20,7 +20,7 @@ Med databasen befolket kjøres en jobb mot Pureservice sitt API, der skriptet op
 
 For at funksjonen skal kunne kjøre innenfor PHP sine minnebegrensninger bruker denne funksjonen databasen SQLite til å mellomlagre dataene før de lastes opp til Pureservice. Bruk `./artisan migrate:fresh` for å nullstille og klargjøre databasen (som ligger i database/database.db) før den tas i bruk.
 
-Den medfølgende Excel-filen storage/virksomheter.xlsx brukes til å mappe mellom virksomhetens orgnr og e-postadresse. Fila inneholder per nå alle kommuner, fylkeskommuner, samt statlige virksomheter og underliggende statlige virksomheter. Utenom orgnr og e-post brukes ikke det øvrige innholdet i fila, da resten hentes direkte fra BRREG.
+Den medfølgende Excel-filen [storage/virksomheter.xlsx](../storage/virksomheter.xlsx) brukes til å mappe mellom virksomhetens orgnr og e-postadresse. Fila inneholder per nå alle kommuner, fylkeskommuner, samt statlige virksomheter og underliggende statlige virksomheter, oppdatert for 01.01.2024. Foruten orgnr og e-post brukes ikke det øvrige innholdet i fila, det hentes direkte fra BRREG.
 
 ### Egendefinerte felter i Pureservice ###
 
