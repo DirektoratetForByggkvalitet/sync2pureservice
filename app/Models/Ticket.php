@@ -326,4 +326,33 @@ class Ticket extends Model
             $this->save();
         endif;
     }
+
+    /**
+     * Legger til saken i Pureservice, eller oppdaterer eksisterende sak
+     */
+    public function addOrUpdatePS(PsApi $ps): Ticket|null {
+        $add = true;
+        if ($this->id):
+            $add = false;
+            $psTicket = $ps->getTicketFromPureservice($this->id, false);
+            // Mer kode for å eventuelt samkjøre data?
+            $this->requestNumber = $psTicket->requestNumber;
+        endif;
+        $body = $this->toArray();
+        $uri = '/ticket/';
+        if ($add):
+            $response = $ps->apiPost($uri, $body);
+            if ($response->successful()):
+                $this->id = $response->json('tickets.0.id');
+                $this->requestNumber = $response->json('tickets.0.requestNumber');
+                $this->save();
+                return $this;
+            endif;
+        else:
+            $uri .= $this->id;
+            $response = $ps->apiPatch($uri, $body);
+            if ($response->successful()) return $this;
+        endif;
+        return null;
+    }
 }

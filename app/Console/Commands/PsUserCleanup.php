@@ -94,15 +94,13 @@ class PsUserCleanup extends Command {
         $this->changeCount = 0;
         $this->info(Tools::L1.'Vi fant '.$userCount.' sluttbrukere. Starter behandling...');
         $this->newLine();
-        $bar = null;
-
         $this->psUsers->lazy()->each(function (User $psUser, int $key) {
+            $fullName = $psUser->firstName.' '.$psUser->lastName;
+            $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
             $updateMe = false;
             $companyChanged = false;
             $email = $this->emailAddresses->firstWhere('userId', $psUser->id);
             $psUser->email = $email['email'];
-            $fullName = $psUser->firstName.' '.$psUser->lastName;
-            $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
             if (Str::contains($fullName, ['@', '.com', '.biz', '.net', '.ru']) || $psUser->firstName == '' || $psUser->lastName == ''):
                 $newName = Tools::nameFromEmail($psUser->email);
                 $updateMe = true;
@@ -123,7 +121,7 @@ class PsUserCleanup extends Command {
             endif;
             if ($updateMe):
                 $this->changeCount++;
-
+                //if ($this->debug) $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
                 if (isset($newName)):
                     $psUser->firstName = Str::title($newName[0]);
                     $psUser->lastName = Str::title($newName[1]);
@@ -136,8 +134,8 @@ class PsUserCleanup extends Command {
                 endif;
                 // Oppdater brukeren i Pureservice
                 $psUser->addOrUpdatePS($this->ps);
-                $this->newLine();
             endif;
+            $this->newLine();
         });
 
         $this->info('####');

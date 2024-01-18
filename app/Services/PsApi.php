@@ -23,7 +23,7 @@ class PsApi extends API {
         $this->setProperties();
     }
 
-    public function fetchStatuses(string $key = 'Ticket'): void {
+    public function fetchStatuses(string $key = 'Ticket', bool $return = false): null|Collection {
         $uri = 'status';
         $params = [
             'filter' => '!disabled AND requesttype.key == "'.$key.'"',
@@ -32,6 +32,7 @@ class PsApi extends API {
         if ($response->successful()):
             $this->statuses = collect($response->json('statuses'))->mapInto(PsStatus::class);
         endif;
+        return $return ? $this->statuses : null;
     }
 
     public function findStatus(string $search, bool $returnClass = false): PsStatus|int|false {
@@ -40,6 +41,10 @@ class PsApi extends API {
         else:
             return false;
         endif;
+    }
+
+    public function getStatuses(): Collection|false {
+        return isset($this->statuses) ? $this->statuses: false;
     }
 
     /**
@@ -215,7 +220,7 @@ class PsApi extends API {
             if ($existing = Ticket::firstWhere('id', $ticket->id)):
                 $ticket = $existing;
             endif;
-            $ticket->save();
+            //$ticket->save();
             return $ticket;
         else:
             return false;

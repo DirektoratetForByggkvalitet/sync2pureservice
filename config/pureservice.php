@@ -115,7 +115,7 @@ return [
         'status_solved' => env('PURESERVICE_TICKET_SOLVED_STATUS', 'Løst'),
         'status_closed' => env('PURESERVICE_TICKET_CLOSED_STATUS', 'Lukket'),
         'status_in_progress' => env('PURESERVICE_TICKET_STATUS_OPEN', 'Under arbeid'),
-        'staus_message_sent' => env('PURESERVICE_TICKET_STATUS_SENT', 'Venter - sluttbruker'),
+        'status_message_sent' => env('PURESERVICE_TICKET_STATUS_SENT', 'Venter - sluttbruker'),
         'requestType' => env('PURESERVICE_TICKET_REQUEST_TYPE','Ticket'),
     ],
     'innsynskrav' => [
@@ -160,10 +160,14 @@ return [
             'ORGL' => 'Underliggende statlig virksomhet',
         ],
     ],
-    // Oppsett for PSUtsendelse
+    // Oppsett for Utsending
     'dispatch' => [
-        'address_ef' => env('PURESERVICE_DISPATCH_EF', 'ut@eformidling.pureservice.local'),
-        'address_email' => env('PURESERVICE_DISPATCH_EMAIL', 'ut@e-post.pureservice.local'),
+        'ef_domain' => 'pureservice.local',
+        'address' => [
+            'ef' => env('PURESERVICE_DISPATCH_EF', 'ut@eformidling.pureservice.local'),
+            'email' => env('PURESERVICE_DISPATCH_EMAIL', 'ut@e-post.pureservice.local'),
+            'email_121' => env('PURESERVICE_DISPATCH_EMAIL_121', 'ut-121@e-post.pureservice.local'),
+        ],
         'finishStatus' => env('PURESERVICE_DISPATCH_SOLVED_STATUS', 'Løst'),
         'status_in_progress' => env('PURESERVICE_TICKET_STATUS_OPEN', 'Under arbeid'),
         'assetTypeName' => env('PURESERVICE_DISPATCH_LIST_ASSETNAME', 'Mottakerliste'),
