@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\{Str, Collection};
 use Illuminate\Support\Facades\{Storage, Mail, Blade};
 use App\Services\{Eformidling, PsApi, Tools};
-use App\Models\{Message, Company, User, Ticket};
+use App\Models\{Message, Company, User, Ticket, TicketCommunication};
 use App\Mail\TicketMessage;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
@@ -206,6 +206,7 @@ class Utsending extends Command
                     elseif ($createNewTickets):
                         // Oppretter sak per mottaker og sender meldingen fra Pureservice
                         $newTicket = $ticket->replicate(['id', 'requestNumber', 'userId', 'emailAddress', 'attachments']);
+                        $communication = $this->api->getCommunication($email['id'], true);
                         if (!$psRecipient = $this->api->findUser($recipient->email, true)):
                             if (!$isUser): // Mottaker er et foretak
                                 if (!$user = $recipient->users()->firstWhere('email', $recipient->email)):
@@ -227,6 +228,7 @@ class Utsending extends Command
                         $newTicket->statusId = $this->api->findStatus(config('pureservice.ticket.status_in_progress'));
                         $newTicket = $newTicket->addOrUpdatePS($this->api);
                         $this->results['sakerOpprettet'][] = $newTicket;
+                        // Oppretter og sender meldingen som skal sendes ut
                     else:
                         // Sendes som e-post
                         if (!$recipient->email):

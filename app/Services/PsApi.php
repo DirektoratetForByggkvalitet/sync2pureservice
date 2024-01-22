@@ -691,13 +691,28 @@ class PsApi extends API {
 
         return false;
     }
+
+    public function getCommunication(int $id, bool $useMessageId = false): TicketCommunication|null {
+        $uri = '/communication/';
+        $params = [];
+        if ($useMessageId):
+            $params['filter'] = 'messageId == '.$id;
+        else:
+            $uri .= $id;
+        endif;
+        $response = $this->apiQuery($uri, $params, true);
+        if ($response->successful()):
+            return collect($response->json('communications'))->mapInto(TicketCommunication::class)->first();
+        endif;
+        return null;
+    }
     /**
-     * Legger til en innkommende kommunikasjon på saken
+     * Legger til en innkommende eller utgående kommunikasjon på saken
      */
     public function addCommunicationToTicket(
             Ticket $ticket,
             int $senderId,
-            array|false $attachments = false,
+            array|null $attachments = null,
             int|null $type = null,
             int|null $direction = null,
             int|null $visibility = 0,
