@@ -343,6 +343,7 @@ class Message extends Model {
             $description = Blade::render(config('eformidling.in.innsynskrav'), ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject, 'docMetadata' => $docMetadata]);
             $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true);
             // Oppretter en skjult innkommende melding med den opprinnelige bestillingen
+            /** Slått av inntil videre
             if (isset($emailtext)):
                 $emailtext = Str::replace("\n", "<br/>\n", $emailtext);
                 $emailtext = "<p><strong>Denne saken er en del av følgende bestilling fra eInnsyn</strong></p>\n\n" . $emailtext;
@@ -358,6 +359,7 @@ class Message extends Model {
                 );
                 //$ps->createInternalNote(Str::replace("\n", "<br/>\n", $emailtext), $ticket['id'], 'Opprinnelig bestilling', false);
             endif;
+            */
             $tickets[] = $ticket;
         endforeach;
         return $tickets;
