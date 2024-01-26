@@ -48,6 +48,16 @@ class User extends Model
     }
 
     /**
+     * Henter en bruker fra Pureservice, basert på ID eller e-postadresse
+     * Dersom brukeren allerede ligger i lokal database blir ikke Pureservice kontaktet
+     */
+    public static function createFromPs(string|int $search, PsApi|null $ps = null): User|null {
+        if ($res = self::firstWhere('id', $search) || $res = self::firstWhere('email', $search)) return $res;
+        if (!$ps) $ps = new PsApi();
+        return $ps->getCompanyOrUser($search);
+    }
+
+    /**
      * Synker brukeren med Pureservice
      * @param Pureservice $ps   Pureservice-instans
      * @param bool $noEmail     Angir om brukeren skal ha noemail-feltet satt til 1

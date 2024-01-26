@@ -381,6 +381,51 @@ class PsApi extends API {
     }
 
     /**
+     * Slår opp en bruker eller et firma i Pureservice, basert på ID eller e-postadresse
+     */
+    public function getCompanyOrUser(int|string $search, $isCompany = false): Company|User|null {
+        if ($isCompany):
+            $uri = '/companyemailaddress/';
+            $params = [
+                'include' => 'company',
+                'limit' => 1,
+            ];
+            if (is_int($search)):
+               $params['filter'] = 'companyId == '.$search;
+            else:
+                $params['filter'] = 'email == "'.$search.'"';
+            endif;
+            $response = $this->apiQuery($uri, $params, true);
+            if ($response->successful()):
+                $res = collect($response->json('linked.companies'))->mapInto(Company::class)->first();
+                $res->email = $response->json('companyemailaddresses.0.email');
+                $res->save();
+                return $res;
+            endif;
+        else:
+            $uri = '/emailaddress/';
+            $params = [
+                'include' => 'user',
+                'limit' => 1,
+            ];
+            if (is_int($search)):
+                $params['filter'] = 'userId == '.$search;
+            else:
+                $params['filter'] = 'email == "'.$search.'"';
+            endif;
+            $response = $this->apiQuery($uri, $params, true);
+            if ($response->successful()):
+                $res = collect($response->json('linked.users'))->mapInto(User::class)->first();
+                $res->email = $response->json('emailaddresses.0.email');
+                $res->save();
+                return $res;
+            endif;
+
+        endif;
+        return null;
+    }
+
+    /**
      * Finner en bruker basert på e-postadressen.
      * Siden én bruker kan ha flere e-postadresser er det viktig at man søker etter e-postadresse-objekter,
      * og inkluderer brukeren, fremfor å søke etter brukeren.
@@ -692,7 +737,7 @@ class PsApi extends API {
         return false;
     }
 
-    public function getCommunication(int $id, bool $useMessageId = false): TicketCommunication|null {
+    public function getCommunication(int $id, bool $useMessageId = false, bool $returnClass = false): TicketCommunication|null|array {
         $uri = '/communication/';
         $params = [];
         if ($useMessageId):
@@ -702,7 +747,7 @@ class PsApi extends API {
         endif;
         $response = $this->apiQuery($uri, $params, true);
         if ($response->successful()):
-            return collect($response->json('communications'))->mapInto(TicketCommunication::class)->first();
+            return $returnClass ? $response->json('communications.0') : collect($response->json('communications'))->mapInto(TicketCommunication::class)->first();
         endif;
         return null;
     }

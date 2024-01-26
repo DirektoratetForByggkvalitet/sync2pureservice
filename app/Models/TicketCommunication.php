@@ -73,14 +73,4 @@ class TicketCommunication extends Model
         return $attachments ? true : false;
     }
 
-    public function addToPS(PsApi|null $ps): null|TicketCommunication {
-        if (!$this->id):
-            // Oppretter kommunikasjonen i Pureservice
-        endif;
-        if ($this->id):
-            return $this;
-        endif;
-        return null;
-    }
-
 }

@@ -128,6 +128,7 @@ class Utsending extends Command
             else:
                 $ticket->save();
                 $autocloseTicket = false;
+                $massScenario = false;
                 $this->results['saker']++;
                 $this->line(Tools::L1.'Behandler melding med emne \''.$email['subject'].'\'');
                 // Laster ned vedlegg til meldingen
@@ -144,14 +145,18 @@ class Utsending extends Command
                 endif;
 
                 if (in_array($email['to'], config('pureservice.dispatch.address'))):
-                    // Dette er en masseutsendelse
+                    // Dette er en masseutsendelse, scenario 1: én til mange
+                    $massScenario = 1;
                     // Henter inn mottakerne fra mottakerlister
                     $this->line(Tools::L2.'Masseutsending: Henter inn mottakere');
                     $recipients = $ticket->extractRecipientsFromAsset($this->api, $this->recipientListAssetType);
                     $autocloseTicket = true;
-                    // Sjekker om vi skal opprette nye saker per mottaker
-                    $createNewTickets = $email['to'] == config('pureservice.dispatch.address.email_121');
+                    // Sjekker om vi skal opprette nye saker per mottaker - masseutsendelse Scenario 2
+                    if ($massScenario2 = $email['to'] == config('pureservice.dispatch.address.email_121')):
+                        $autocloseTicket = false;
+                    endif;
                 else:
+                    // Dette er en enkeltforsendelse
                     $toRegNo = Str::before($email['to'], '@');
                     if ($recipient = $this->api->findCompany($toRegNo, null, true)):
                         if ($dbcompany = Company::firstWhere('id', $recipient->id)):
@@ -203,10 +208,13 @@ class Utsending extends Command
                         $this->line(Tools::L3.'Sender meldingen');
                         $this->ef->dispatchMessage($message);
                         $this->results['eFormidling']++;
-                    elseif ($createNewTickets):
+
+                    elseif ($massScenario == 2):
+                        // Masseutsendelse scenario 2: Én til én
+                        // Vi oppretter én sak per mottaker, og lar dem stå åpne etter åpning
+                        $autocloseTicket = false;
                         // Oppretter sak per mottaker og sender meldingen fra Pureservice
                         $newTicket = $ticket->replicate(['id', 'requestNumber', 'userId', 'emailAddress', 'attachments']);
-                        $communication = $this->api->getCommunication($email['id'], true);
                         if (!$psRecipient = $this->api->findUser($recipient->email, true)):
                             if (!$isUser): // Mottaker er et foretak
                                 if (!$user = $recipient->users()->firstWhere('email', $recipient->email)):
@@ -227,10 +235,25 @@ class Utsending extends Command
                         $newTicket->visibility = config('pureservice.visibility.no_receipt');
                         $newTicket->statusId = $this->api->findStatus(config('pureservice.ticket.status_in_progress'));
                         $newTicket = $newTicket->addOrUpdatePS($this->api);
+
+                        // Henter den opprinnelige meldingen, for å kunne bruke saksbehandler og tekst derfra til ny melding
+                        if ($psMsg = $this->api->getCommunication($email['id'], false, false)):
+                            // Oppretter (og sender dermed) sakens utgående melding
+                            $newMsgResponse = $this->api->addCommunicationToTicket($newTicket,
+                                $psRecipient->id,
+                                $msgAttachments,
+                                config('pureservice.comms.standard'),
+                                config('pureservice.comms.direction.out'),
+                                config('pureservice.comms.visibility.on'),
+                                $psMsg['subject'],
+                                $psMsg['text']
+                            );
+                        endif;
+
                         $this->results['sakerOpprettet'][] = $newTicket;
                         // Oppretter og sender meldingen som skal sendes ut
                     else:
-                        // Sendes som e-post
+                        // Sendes ut som e-post
                         if (!$recipient->email):
                             $this->results['skipped']++;
                             $this->error(Tools::L3.'Kan ikke sendes. E-postadresse mangler');

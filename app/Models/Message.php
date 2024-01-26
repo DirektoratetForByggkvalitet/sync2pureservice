@@ -310,6 +310,7 @@ class Message extends Model {
             elseif (basename($a) == 'emailtext'):
                 // Leser inn e-posttekst fra eInnsyn
                 $emailtext = Storage::get($a);
+                $emailtext = Str::replace("\n", "<br/>\n", $emailtext);
                 $docMetadata = $this->processEmailText($emailtext);
             else:
                 continue;
@@ -343,21 +344,21 @@ class Message extends Model {
             $description = Blade::render(config('eformidling.in.innsynskrav'), ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject, 'docMetadata' => $docMetadata]);
             $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true);
             // Oppretter en skjult innkommende melding med den opprinnelige bestillingen
+            /** Tatt vekk inntil videre
             if (isset($emailtext)):
-                $emailtext = Str::replace("\n", "<br/>\n", $emailtext);
-                $emailtext = "<p><strong>Denne saken er en del av følgende bestilling fra eInnsyn</strong></p>\n\n" . $emailtext;
+                $reportText = "<p><strong>Denne saken er en del av følgende bestilling fra eInnsyn</strong></p>\n\n" . $emailtext;
                 $ps->addCommunicationToTicket(
                     $ticket,
                     $this->sender_id,
-                    false,
+                    null,
                     config('pureservice.comms.description'),
                     config('pureservice.comms.direction.in'),
                     config('pureservice.comms.visibility.off'),
                     'eInnsyn: Opprinnelig bestilling',
-                    $emailtext
+                    $reportText
                 );
-                //$ps->createInternalNote(Str::replace("\n", "<br/>\n", $emailtext), $ticket['id'], 'Opprinnelig bestilling', false);
             endif;
+            */
             $tickets[] = $ticket;
         endforeach;
         return $tickets;

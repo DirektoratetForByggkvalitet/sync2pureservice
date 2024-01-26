@@ -41,6 +41,16 @@ class Company extends Model {
     public function actorId() {
         return config('eformidling.address.prefix').$this->organizationNumber;
     }
+    /**
+     * Henter et firma fra Pureservice, basert på ID eller e-postadresse
+     * Dersom firmaet allerede ligger i lokal database blir ikke Pureservice kontaktet
+     */
+    public static function createFromPs(string|int $search, PsApi|null $ps = null): Company|null {
+        if ($company = self::firstWhere('id', $search) || $company = self::firstWhere('email', $search)) return $company;
+
+        if (!$ps) $ps = new PsApi();
+        return $ps->getCompanyOrUser($search, true);
+    }
 
     /**
      * Synkroniserer virksomheten i Pureservice
