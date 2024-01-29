@@ -13,7 +13,7 @@ use App\Models\User;
  */
 class PsUserCleanup extends Command {
     protected float $start;
-    protected string $version = '1.0';
+    protected string $version = '1.5';
     protected int $changeCount = 0;
     protected PsApi $ps;
     protected bool $debug = false;
@@ -61,18 +61,23 @@ class PsUserCleanup extends Command {
             'sort' => 'lastName ASC, firstName ASC',
         ];
         $batchCount = 500;
+        $rTotal = 0;
         while ($batchCount == 500):
             $response = $this->ps->apiQuery($uri, $query, true);
             if ($response->successful()):
                 $batchCount = count($response->json('users'));
                 $emails = collect($response->json('linked.emailaddresses'));
-                collect($response->json('users'))->mapInto(User::class)->each(function (User $user) use ($emails){
+                collect($response->json('users'))
+                    ->mapInto(User::class)
+                    ->each(function (User $user) use ($emails) {
                     if ($user != User::firstWhere('id', $user->id)):
                         $email = $emails->firstWhere('userId', $user->id);
                         $user->email = $email['email'];
                         $user->save();
                     endif;
                 });
+                $rTotal += $batchCount;
+                $this->info(Tools::L2.$rTotal.' hentet');
             else:
                 continue;
             endif;
@@ -82,10 +87,11 @@ class PsUserCleanup extends Command {
 
         $userCount = User::all('id')->count();
         $this->report['Antall brukere'] = $userCount;
+        $this->newLine();
         $this->changeCount = 0;
         $this->info(Tools::L1.'Vi fant '.$userCount.' sluttbrukere. Starter behandling...');
         $this->newLine();
-        User::all()->lazy()->each(function (User $psUser, int $key) {
+        User::lazy()->each(function (User $psUser, int $key) {
             $fullName = $psUser->firstName.' '.$psUser->lastName;
             $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
             $updateMe = false;
