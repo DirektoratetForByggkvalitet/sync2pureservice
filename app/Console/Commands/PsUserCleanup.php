@@ -49,51 +49,43 @@ class PsUserCleanup extends Command {
         ];
         $this->ps = new PsApi();
         $userCount = 0;
-        Cache::remember('psUsers', 1200, function() {
-            $this->info(Tools::L1.'Henter brukerdata fra \''.$this->ps->base_url.'\'');
-            $uri = '/user/';
-            $AND = ' && ';
-            $query = [
-                'filter' => 'role == '.config('pureservice.user.role_id') . $AND . '!disabled',
-                'include' => 'emailaddress',
-                'limit' => 500,
-                'start' => 0,
-                'sort' => 'lastName ASC, firstName ASC',
-            ];
-            $batchCount = 500;
-            $psUsers = [];
-            $emailData = [];
-            while ($batchCount == 500):
-                $response = $this->ps->apiQuery($uri, $query, true);
-                if ($response->successful()):
-                    $batchCount = count($response->json('users'));
-                    $psUsers = array_merge($psUsers, $response->json('users'));
-                    $emailData = array_merge($emailData, $response->json('linked.emailaddresses'));
-                else:
-                    continue;
-                endif;
-                $query['start'] = $query['start'] + $query['limit'];
-            endwhile;
-            $emailAddresses = collect($emailData);
-            collect($psUsers)->mapInto(User::class)->each(function (User $user) use ($emailAddresses) {
-                if ($user != User::firstWhere('id', $user->id)):
-                    $email = $emailAddresses->firstWhere('userId', $user->id);
-                    $user->email = $email['email'];
-                    $user->save();
-                endif;
-            });
-            unset($response, $psUsers, $emailData);
-            // Legger brukerdataene i cache inntil videre
-            // Cache::add('psUsers', $this->psUsers, 600);
-            // Cache::add('emailAddresses', $this->emailAddresses, 600);
-        });
+
+        $this->info(Tools::L1.'Henter brukerdata fra \''.$this->ps->base_url.'\'');
+        $uri = '/user/';
+        $AND = ' && ';
+        $query = [
+            'filter' => 'role == '.config('pureservice.user.role_id') . $AND . '!disabled',
+            'include' => 'emailaddress',
+            'limit' => 500,
+            'start' => 0,
+            'sort' => 'lastName ASC, firstName ASC',
+        ];
+        $batchCount = 500;
+        while ($batchCount == 500):
+            $response = $this->ps->apiQuery($uri, $query, true);
+            if ($response->successful()):
+                $batchCount = count($response->json('users'));
+                $emails = collect($response->json('linked.emailaddresses'));
+                collect($response->json('users'))->mapInto(User::class)->each(function (User $user) use ($emails){
+                    if ($user != User::firstWhere('id', $user->id)):
+                        $email = $emails->firstWhere('userId', $user->id);
+                        $user->email = $email['email'];
+                        $user->save();
+                    endif;
+                });
+            else:
+                continue;
+            endif;
+            $query['start'] = $query['start'] + $query['limit'];
+        endwhile;
+        unset($response, $batchCount);
 
         $userCount = User::all('id')->count();
         $this->report['Antall brukere'] = $userCount;
         $this->changeCount = 0;
         $this->info(Tools::L1.'Vi fant '.$userCount.' sluttbrukere. Starter behandling...');
         $this->newLine();
-        User::all()->lazy()->each(function (User $psUser, int $key) {
+        User::lazy()->each(function (User $psUser, int $key) {
             $fullName = $psUser->firstName.' '.$psUser->lastName;
             $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
             $updateMe = false;
