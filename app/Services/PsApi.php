@@ -876,6 +876,6 @@ class PsApi extends API {
     public function disableCompanyOrUser(User|Company $object): void {
         $uri = $object instanceof User ? '/user/'.$object->id : '/company/'.$object->id;
         $body = ['disabled' => true];
-        $response = $this->apiPatch($uri, $body);
+        $response = $this->apiPatch($uri, $body, 'application/json');
     }
 }

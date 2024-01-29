@@ -60,9 +60,9 @@ class PsUserCleanup extends Command {
             'start' => 0,
             'sort' => 'lastName ASC, firstName ASC',
         ];
-        $batchCount = 500;
+        $batchCount = 250;
         $rTotal = 0;
-        while ($batchCount == 500):
+        while ($batchCount == 250):
             $response = $this->ps->apiQuery($uri, $query, true);
             if ($response->successful()):
                 $batchCount = count($response->json('users'));
