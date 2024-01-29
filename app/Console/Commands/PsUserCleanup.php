@@ -95,7 +95,9 @@ class PsUserCleanup extends Command {
             $fullName = $psUser->firstName.' '.$psUser->lastName;
             $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
             $updateMe = false;
+            $deleteMe = false;
             $companyChanged = false;
+            $deleteMe = in_array(Str::after($psUser->email, '@',), config('pureservice.domain_disable'));
             // $email = $this->emailAddresses->firstWhere('userId', $psUser->id);
             // $psUser->email = $email['email'];
             if (Str::contains($fullName, ['@', '.com', '.biz', '.net', '.ru']) || $psUser->firstName == '' || $psUser->lastName == ''):
@@ -116,7 +118,7 @@ class PsUserCleanup extends Command {
                     $companyChanged = true;
                 endif;
             endif;
-            if ($updateMe):
+            if ($updateMe && !$deleteMe):
                 $this->changeCount++;
                 //if ($this->debug) $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
                 if (isset($newName)):
@@ -131,6 +133,11 @@ class PsUserCleanup extends Command {
                 endif;
                 // Oppdater brukeren i Pureservice
                 $psUser->addOrUpdatePS($this->ps);
+            endif;
+            if ($deleteMe):
+                // Brukeren har en e-postadresse som ikke er i bruk lenger
+                $this->line(Tools::L3.' Brukeren deaktiveres: E-postadressen er i et domene som ikke er i bruk lenger.');
+                $this->ps->disableCompanyOrUser($psUser);
             endif;
             $this->newLine();
         });

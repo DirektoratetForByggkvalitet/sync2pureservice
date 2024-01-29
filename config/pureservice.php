@@ -177,6 +177,11 @@ return [
             'toTicket' => env('PURESERVICE_DISPATCH_LINK_TO_TICKET', 'Gir mottakere til'),
         ],
     ],
+    // PsUserCleanup: Sett brukere som har dette e-postdomenet som inaktive
+    'domain_disable' => [
+        'svarut.pureservice.local',
+        'pureservice.local'
+    ],
     // Overstyrer domenemapping (PsUserCleanup)
     // domain settes til e-postdomenet (det etter @)
     // company settes til navnet på firmaet som er registrert i Pureservice
