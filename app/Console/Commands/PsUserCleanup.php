@@ -56,7 +56,7 @@ class PsUserCleanup extends Command {
         $query = [
             'filter' => 'role == '.config('pureservice.user.role_id') . $AND . '!disabled',
             'include' => 'emailaddress',
-            'limit' => 500,
+            'limit' => 250,
             'start' => 0,
             'sort' => 'lastName ASC, firstName ASC',
         ];
