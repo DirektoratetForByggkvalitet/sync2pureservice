@@ -210,4 +210,5 @@ pipelines:
             - "self.hosted"
           script:
             - *install
+            - *resetDB
             - ./artisan pureservice:user-cleanup

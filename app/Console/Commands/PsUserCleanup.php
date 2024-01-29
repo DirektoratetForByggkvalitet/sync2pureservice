@@ -12,9 +12,6 @@ use App\Models\User;
  * Brukes til å gå gjennom alle sluttbrukere i Pureservice og oppdatere de som har e-postadresse i fornavn og/eller etternavn
  */
 class PsUserCleanup extends Command {
-
-    protected Collection $psUsers;
-    protected Collection $emailAddresses;
     protected float $start;
     protected string $version = '1.0';
     protected int $changeCount = 0;
@@ -52,11 +49,7 @@ class PsUserCleanup extends Command {
         ];
         $this->ps = new PsApi();
         $userCount = 0;
-        if (Cache::has('psUsers') && Cache::has('emailAddresses')):
-            $this->info(Tools::L1.'Henter brukerdata fra cache');
-            $this->psUsers = Cache::get('psUsers');
-            $this->emailAddresses = Cache::get('emailAddresses');
-        else:
+        Cache::remember('psUsers', 1200, function() {
             $this->info(Tools::L1.'Henter brukerdata fra \''.$this->ps->base_url.'\'');
             $uri = '/user/';
             $AND = ' && ';
@@ -81,26 +74,32 @@ class PsUserCleanup extends Command {
                 endif;
                 $query['start'] = $query['start'] + $query['limit'];
             endwhile;
-            $this->psUsers = collect($psUsers)->mapInto(User::class);
-            $this->emailAddresses = collect($emailData);
+            $emailAddresses = collect($emailData);
+            collect($psUsers)->mapInto(User::class)->each(function (User $user) use ($emailAddresses) {
+                if ($user != User::firstWhere('id', $user->id)):
+                    $email = $emailAddresses->firstWhere('userId', $user->id);
+                    $user->email = $email['email'];
+                    $user->save();
+                endif;
+            });
             unset($response, $psUsers, $emailData);
             // Legger brukerdataene i cache inntil videre
-            Cache::add('psUsers', $this->psUsers, 600);
-            Cache::add('emailAddresses', $this->emailAddresses, 600);
-        endif;
+            // Cache::add('psUsers', $this->psUsers, 600);
+            // Cache::add('emailAddresses', $this->emailAddresses, 600);
+        });
 
-        $userCount = $this->psUsers->count();
+        $userCount = User::all('id')->count();
         $this->report['Antall brukere'] = $userCount;
         $this->changeCount = 0;
         $this->info(Tools::L1.'Vi fant '.$userCount.' sluttbrukere. Starter behandling...');
         $this->newLine();
-        $this->psUsers->lazy()->each(function (User $psUser, int $key) {
+        User::all()->lazy()->each(function (User $psUser, int $key) {
             $fullName = $psUser->firstName.' '.$psUser->lastName;
             $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
             $updateMe = false;
             $companyChanged = false;
-            $email = $this->emailAddresses->firstWhere('userId', $psUser->id);
-            $psUser->email = $email['email'];
+            // $email = $this->emailAddresses->firstWhere('userId', $psUser->id);
+            // $psUser->email = $email['email'];
             if (Str::contains($fullName, ['@', '.com', '.biz', '.net', '.ru']) || $psUser->firstName == '' || $psUser->lastName == ''):
                 $newName = Tools::nameFromEmail($psUser->email);
                 $updateMe = true;
