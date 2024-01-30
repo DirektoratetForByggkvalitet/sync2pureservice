@@ -32,11 +32,10 @@ class Company2Csv extends Command
         $this->csvFile = storage_path('companies.csv');
         $fp = fopen($this->csvFile, 'w');
         fputs($fp, $bom = ( chr(0xEF) . chr(0xBB) . chr(0xBF) ));
-        fputcsv($fp, ['regnr', 'knr', 'navn', 'e-post', 'nettside', 'kategori', 'notater'], ';');
+        fputcsv($fp, ['regnr', 'navn', 'e-post', 'nettside', 'kategori', 'notater'], ';');
         foreach (Company::lazy() as $company):
             $line = [
                 $company->organizationNumber,
-                $company->companyNumber,
                 $company->name,
                 $company->email,
                 $company->website,
