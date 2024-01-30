@@ -59,6 +59,9 @@ class Company extends Model {
         $update = false;
         $emailId = false;
         $phoneId = false;
+        if ($newName = config('pureservice.company.name_overrides.'.$this->organizationNumber, false)):
+            $this->name = $newName;
+        endif;
         if ($psCompany = $ps->findCompany($this->organizationNumber, $this->name)):
             $this->id = $psCompany['id'];
             $this->save();

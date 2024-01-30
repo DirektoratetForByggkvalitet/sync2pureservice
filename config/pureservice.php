@@ -159,6 +159,10 @@ return [
             'FYLK' => 'Fylkeskommune',
             'ORGL' => 'Underliggende statlig virksomhet',
         ],
+        'name_overrides' => [
+            '872417982' => 'Herøy kommune (Nordland)',
+            '871034222' => 'Våler kommune (Innlandet)',
+        ],
     ],
     // Oppsett for Utsending
     'dispatch' => [
@@ -177,6 +181,7 @@ return [
             'toTicket' => env('PURESERVICE_DISPATCH_LINK_TO_TICKET', 'Gir mottakere til'),
         ],
     ],
+
     // Overstyrer domenemapping (PsUserCleanup)
     // domain settes til e-postdomenet (det etter @)
     // company settes til navnet på firmaet som er registrert i Pureservice
