@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\{Str, Collection};
 use Illuminate\Support\Facades\{Storage, Mail, Blade};
 use App\Services\{Eformidling, PsApi, Tools};
-use App\Models\{Message, Company, User, Ticket, TicketCommunication};
+use App\Models\{Message, Company, User, Ticket, PsEmail};
 use App\Mail\TicketMessage;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
@@ -88,9 +88,23 @@ class Utsending extends Command
             $this->error('Feil ved innhenting av meldinger');
             return Command::FAILURE;
         endif;
-        $this->messages = collect($response->json('emails'));
-        $this->tickets = collect($response->json('linked.tickets'))->mapInto(Ticket::class);
-        $msgCount = $this->messages->count();
+        // Lagrer e-postmeldingene i databasen
+        collect($response->json('emails'))
+            ->mapInto(PsEmail::class)
+            ->each(function (PsEmail $email) {
+                if (!$exists = PsEmail::firstWhere('id', $email['id'])):
+                    $email->save();
+                endif;
+            });
+        // Sparer minne ved å lagre alle saksdata i databasen
+        collect($response->json('linked.tickets'))
+            ->mapInto(Ticket::class)
+            ->each(function (Ticket $ticket) {
+                if (!$exists = Ticket::firstWhere('id', $ticket->id)):
+                    $ticket->save();
+                endif;
+            });
+        $msgCount =PsEmail::all(['id'])->count();
         if ($msgCount == 0):
             $this->info(Tools::L1.'Ingen meldinger ble funnet.');
             return Command::SUCCESS;
@@ -115,18 +129,15 @@ class Utsending extends Command
         $this->sender = $this->api->getSelfCompany();
         $this->sender->save();
         //dd($this->messages);
-        $this->messages->each(function (array $email, int $key) {
-            $ticket = $this->tickets->firstWhere('id', $email['requestId']); // $this->api->getTicketFromPureservice($email['requestId'], false);
-            if ($existing = Ticket::firstWhere('id', $email['requestId'])):
+        $lastTicketId = null;
+        PsEmail::lazy()->each(function (array $email, int $key) use ($lastTicketId) {
+            $ticket = Ticket::firstWhere('id', $email['requestId']);
+
+            if ($lastTicketId == $ticket->id):
                 // Denne saken har vi håndtert tidligere
-                $duplicate = true;
-            else:
-                $duplicate = false;
-            endif;
-            if ($duplicate):
                 $this->error(Tools::L1.'Meldingen med emne \''.$email['subject'].'\' er et duplikat. Vi har allerede sendt en nyere melding.');
             else:
-                $ticket->save();
+                $lastTicketId = $ticket->id;
                 $autocloseTicket = false;
                 $massScenario = false;
                 $this->results['saker']++;
