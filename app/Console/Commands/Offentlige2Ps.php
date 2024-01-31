@@ -159,7 +159,7 @@ class Offentlige2Ps extends Command {
             $this->addedToDB++;
             // Finner e-postadresse fra Excel-fil
             if ($eData && $foundData = $eData->firstWhere('regnr', $newCompany->organizationNumber)):
-                $newCompany->email = Str::squish($foundData['e-post']);
+                $newCompany->email = Tools::cleanEmail($foundData['e-post']);
             endif;
 
             if ($newCompany->category == config('pureservice.company.categoryMap.KOMM')):

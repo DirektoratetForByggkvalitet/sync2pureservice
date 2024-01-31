@@ -87,4 +87,10 @@ class Tools {
         $t = $ts ? Carbon::parse($ts)->tz(config('app.timezone')) : Carbon::now(config('app.timezone'));
         return $t->toAtomString();
     }
+
+    public static function cleanEmail(string $address): string {
+        $address = Str::squish($address);
+        $address = Str::replace([' ', ' '], '', $address);
+        return $address;
+    }
 }
