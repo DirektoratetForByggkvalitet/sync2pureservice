@@ -8,7 +8,7 @@
     'api' => [
         'url' => 'https://data.brreg.no',
         'prefix' => '/enhetsregisteret/api/',
-        'accept' => 'application/vnd.brreg.enhetsregisteret.enhet.v2+json;charset=UTF-8',
+        'accept' => 'application/json',
     ],
     'search' => [
         'alleKommuner' => ['organisasjonsform' => 'KOMM', 'size' => 400],
