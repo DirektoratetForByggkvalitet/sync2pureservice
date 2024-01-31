@@ -21,7 +21,7 @@ class Company2Csv extends Command
      *
      * @var string
      */
-    protected $description = 'Eksporterer databasens foretak til CSV-filen \'companies.csv\' i storage/';
+    protected $description = 'Eksporterer databasens foretak til CSV-filen \'companies.csv\' i storage/app/';
 
     protected $csvFile;
     /**
@@ -29,7 +29,7 @@ class Company2Csv extends Command
      */
     public function handle()
     {
-        $this->csvFile = storage_path('companies.csv');
+        $this->csvFile = storage_path('app/companies.csv');
         $fp = fopen($this->csvFile, 'w');
         fputs($fp, $bom = ( chr(0xEF) . chr(0xBB) . chr(0xBF) ));
         fputcsv($fp, ['regnr', 'navn', 'e-post', 'nettside', 'kategori', 'notater'], ';');

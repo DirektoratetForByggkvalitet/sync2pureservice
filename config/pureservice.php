@@ -232,4 +232,34 @@ return [
             'company' => false,
         ],
     ],
+    'yearlystats' => [
+        [
+            'title' => 'Saker opprettet totalt',
+            'uri' => '/ticket/count/',
+            'params' => [
+                'filter' => 'created.Year == *YEAR* AND !user.emailaddress.email.contains("dibk.no")'
+            ],
+        ],
+        [
+            'title' => 'Saker opprettet SG',
+            'uri' => 'ticket/count/',
+            'params' => [
+                'filter' => 'created.Year == *YEAR* AND !user.emailaddress.email.contains("dibk.no") AND assignedTeam.name == "Sentral godkjenning"'
+            ],
+        ],
+        [
+            'title' => 'Utgående brev fra Pureservice',
+            'uri' => '/email/count/',
+            'params' => [
+                'filter' => 'created.Year == *YEAR* AND from == "post@dibk.no" AND !to.contains("dibk.no")',
+            ],
+        ],
+        [
+            'title' => 'Innkommende e-post til post@dibk.no',
+            'uri' => '/email/count/',
+            'params' => [
+                'filter' => 'created.Year == *YEAR* AND to == "post@dibk.no" AND !from.contains("dibk.no")',
+            ],
+        ],
+    ],
 ];
