@@ -41,17 +41,11 @@ class Enhetsregisteret extends API {
 
     public function lookupCompany(string $regno): array|false {
         foreach (['enheter', 'underenheter'] as $uri):
-            $uri .= '/'.$regno;
-            try {
-                $response = $this->apiGet($uri, true);
-                if ($response->successful()):
-                    return $response->json();
-                endif;
-            } catch (RequestException $e) {
-                //return $e->response;
-                continue;
-            }
+            $params = ['organisasjonsnummer' => $regno];
+            $response = $this->apiQuery($uri, $params, true);
+            if ($response->successful() && $response->json('page.totalElements') > 0):
+                return $response->json('_embedded.'.$uri.'.0');
+            endif;
         endforeach;
         return false;
-    }
-}
+    }}
