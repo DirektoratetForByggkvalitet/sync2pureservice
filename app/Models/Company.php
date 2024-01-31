@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{HasMany, BelongsToMany};
-use App\Services\{PsApi, Pureservice, Tools};
+use App\Services\{PsApi, Pureservice, Enhetsregisteret};
+use Illuminate\Support\{Str, Arr};
+
 class Company extends Model {
     use HasFactory;
     protected $primaryKey = 'internal_id';
@@ -51,6 +53,36 @@ class Company extends Model {
         if (!$ps) $ps = new PsApi();
         return $ps->getCompanyOrUser($search, true);
     }
+
+    // Oppretter
+    public static function createFromBrreg(string $regno, Enhetsregisteret|null $brreg = null): Company|false {
+        if (!$brreg) $brreg = new Enhetsregisteret();
+        $regno = Str::squish(Str::remove([' ', ' '], $regno));
+        // Hvis foretaket allerede finnes i DB trenger vi ikke oppslag
+        if ($found = self::firstWhere('organizationNumber', $regno)):
+            if ($found->name == 'Virksomhet ikke i BRREG' && $company = $brreg->apiGet($regno)):
+                $found->name = Str::replace(' For ' , ' for ', Str::replace(' Og ', ' og ', Str::replace(' I ', ' i ', Str::title(Str::squish($company['navn'])))));
+            endif;
+            return $found;
+        endif;
+        if ($company = $brreg->lookupCompany($regno)):
+            $fields = [
+                'name' => Str::replace(' For ' , ' for ', Str::replace(' Og ', ' og ', Str::replace(' I ', ' i ', Str::title(Str::squish($company['navn']))))),
+                'organizationNumber' => $regno,
+                'website' => isset($company['hjemmeside']) ? Str::squish($company['hjemmeside']) : null,
+                'category' => config('pureservice.company.categoryMap.'.Arr::get($company, 'organisasjonsform.kode'), null),
+                'email' => null,
+                'phone' => null,
+            ];
+        endif;
+        if (isset($fields)):
+            $newCompany = self::factory()->make($fields);
+            $newCompany->save();
+            return $newCompany;
+        endif;
+        return false;
+    }
+
 
     /**
      * Synkroniserer virksomheten i Pureservice
