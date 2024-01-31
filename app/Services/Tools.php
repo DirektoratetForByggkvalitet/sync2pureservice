@@ -90,7 +90,7 @@ class Tools {
 
     public static function cleanEmail(string $address): string {
         $address = Str::squish($address);
-        $address = Str::replace([' ', ' '], '', $address);
+        $address = Str::remove([' ', ' '], $address);
         return $address;
     }
 }

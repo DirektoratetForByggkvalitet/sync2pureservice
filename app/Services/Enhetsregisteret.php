@@ -13,7 +13,7 @@ class Enhetsregisteret extends API {
     }
 
     public function getCompany(string $regno): Company|false {
-        $regno = Str::squish(Str::remove(' ', $regno));
+        $regno = Str::squish(Str::remove([' ', ' '], $regno));
         // Hvis foretaket allerede finnes i DB trenger vi ikke oppslag
         if ($found = Company::firstWhere('organizationNumber', $regno)):
             if ($found->name == 'Virksomhet ikke i BRREG' && $company = $this->apiGet($regno)):
@@ -32,9 +32,9 @@ class Enhetsregisteret extends API {
             ];
         endif;
         if (isset($fields)):
-            $c = Company::factory()->make($fields);
-            $c->save();
-            return $c;
+            $newCompany = Company::factory()->make($fields);
+            $newCompany->save();
+            return $newCompany;
         endif;
         return false;
     }
