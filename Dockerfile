@@ -1,11 +1,10 @@
-FROM php:fpm-alpine
+FROM php:cli-alpine
 
 # Nødvendige pakker
 RUN apk add --no-cache curl bash tar openssl xz git
 
 # Installerer PHP-extensions med https://github.com/mlocati/docker-php-extension-installer
-RUN curl -Lso /usr/local/bin/install-php-extensions https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions && \
-    chmod +x /usr/local/bin/install-php-extensions && \
-    install-php-extensions apcu opcache gd imagick zip @composer
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN install-php-extensions apcu opcache bcmath gd zip @composer pdo mbstring xml curl ctype dom pcre openssl session tokenizer imagick/imagick@master
 
 ENTRYPOINT [ "/bin/bash" ]
