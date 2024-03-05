@@ -61,15 +61,12 @@ pipelines:
           name: Bygger et docker-image for kjøring av sync2pureservice
           image: atlassian/default-image:4
           deployment: Production
-          services:
-            - docker
-          caches:
-            - docker
           runs-on:
             - self.hosted
             - macos
             - docker
           script:
+            - unset DOCKER_HOST
             - echo ${DOCKER_TOKEN} | docker login --username ${DOCKER_USER} --password-stdin
             - docker buildx bake -f docker-bake.hcl --push
 
