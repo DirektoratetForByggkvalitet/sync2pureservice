@@ -59,7 +59,6 @@ pipelines:
     buildImage:
       - step:
           name: Bygger et docker-image for kjøring av sync2pureservice
-          image: atlassian/default-image:4
           deployment: Production
           runs-on:
             - self.hosted
