@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\{Storage};
 
 class IncomingMessages extends Command {
     protected float $start;
-    protected string $version = '1.1';
+    protected string $version = '1.2';
     protected Eformidling $ip;
     protected PsApi $ps;
     /**
@@ -48,8 +48,7 @@ class IncomingMessages extends Command {
         $this->info(Tools::L1.'Bruker '.$this->ip->getBaseUrl().' som integrasjonspunkt');
         $messages = $this->ip->getIncomingMessages();
         if (!$messages):
-            $this->newLine();
-            $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
+            $this->noMessages();
             return Command::SUCCESS;
         endif;
         $skipCount = $messages->lazy()->whereIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering'])->count();
@@ -58,8 +57,7 @@ class IncomingMessages extends Command {
 
         // Avslutter dersom alle meldinger skal hoppes over.
         if ($messages->count() == $skipCount):
-            $this->newLine();
-            $this->info('Ingen meldinger å behandle. Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
+            $this->noMessages();
             return Command::SUCCESS;
         endif;
         $i = 0;
@@ -198,5 +196,11 @@ class IncomingMessages extends Command {
      */
     protected function ensurePs() : void {
         if (!isset($this->ps)) $this->ps = new PsApi();
+    }
+
+    protected function noMessages(): void {
+        $this->newLine();
+        $this->info('Integrasjonspunktet fant ingen uleste meldinger. Dersom SvarUt sier at det er meldinger i køen som ikke er hentet må du laste den ned manuelt fra https://svarut.ks.no, for så å sette meldingen til mottatt.');
+        $this->info('Avslutter etter '.round((microtime(true) - $this->start), 0).' sekunder.');
     }
 }
