@@ -262,4 +262,21 @@ return [
             ],
         ],
     ],
+    'repeating' => [
+        'resourceName' => env('PS_REPEATING_TASK_ASSETNAME', 'Repeterende oppgaver'),
+        'field' => [
+            'name' => env('PS_REPEATING_TASK_FIELD_NAME', 'Navn'),
+            'date' => env('PS_REPEATING_TASK_FIELD_DATE', 'Startdato'),
+            'type' => env('PS_REPEATING_TASK_FIELD_TYPE', 'Type'),
+            'task' => [
+                'type' => env('PS_REPEATING_TASK_FIELD_TYPE_CASE', 'Sakstype'),
+                'priority' => env('PS_REPEATING_TASK_FIELD_PRIORITY', 'Prioritet'),
+                'title' => env('PS_REPEATING_TASK_FIELD_TITLE', 'Emne'),
+                'description' => env('PS_REPEATING_TASK_FIELD_DESCRIPTION', 'Beskrivelse'),
+                'team' => env('PS_REPEATING_TASK_FIELD_TEAM', 'Ansvarlig team'),
+                'responsible' => env('PS_REPEATING_TASK_FIELD_RESPONSIBLE', 'Saksbehandler'),
+            ],
+        ],
+
+    ],
 ];
