@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Services;
-use App\Services\API;
+use App\Services\{API, Tools};
 use App\Models\Company;
 use Illuminate\Support\{Str, Arr};
 use Illuminate\Http\Client\{RequestException};
