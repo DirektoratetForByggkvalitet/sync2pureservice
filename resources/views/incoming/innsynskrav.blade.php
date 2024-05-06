@@ -16,6 +16,9 @@
 @foreach ($dokumenter as $dok)
     @php
         $metadata = $docMetadata->firstWhere('sekvensnr', $dok['journalnr']);
+        if (!isset($metadata['dokumentnavn'])):
+            $metadata['dokumentnavn'] = 'Ikke tilgjengelig';
+        endif;
     @endphp
     <li>
         <strong>Dokumentnr: {{ $dok['dokumentnr'] }}</strong><br/>
