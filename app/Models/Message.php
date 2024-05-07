@@ -296,26 +296,29 @@ class Message extends Model {
     public function splittInnsynsKrav(PsApi|false $ps = false) : array|false {
         if (!$ps):
             $ps = new PsApi();
-            $ps->setTicketOptions('innsynskrav');
         endif;
-        $emailtext = '';
-        foreach ($this->attachments as $a):
-            if (basename($a) == 'order.xml' ):
-                $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($a))), true);
-                // Rydder opp i tolkingen av xml
-                $dokumenter = collect($bestilling['dokumenter']['dokument']);
-                unset($bestilling['dokumenter']['dokument']);
-                $bestilling['dokumenter'] = $dokumenter;
-                unset($dokumenter);
-            elseif (basename($a) == 'emailtext'):
-                // Leser inn e-posttekst fra eInnsyn
-                $emailtext = Storage::get($a);
-                $emailtext = Str::replace("\n", "<br/>\n", $emailtext);
-                $docMetadata = $this->processEmailText($emailtext);
-            else:
-                continue;
-            endif;
-        endforeach;
+        $ps->setTicketOptions('innsynskrav');
+        $dlPath = $this->downloadPath();
+        $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($dlPath.'/order.xml'))), true);
+        $emailtext = Storage::get($dlPath.'/emailtext');
+        // Behandler ordrefila
+        // Rydder opp i tolkingen av xml
+        $dokumenter = collect($bestilling['dokumenter']['dokument']);
+        if (!is_array($dokumenter->first())):
+            $tmp = [];
+            $tmp[] = $dokumenter->toArray();
+            $dokumenter = collect($tmp);
+        endif;
+        unset($bestilling['dokumenter']['dokument']);
+        $bestilling['dokumenter'] = $this->processEmailText($emailtext, $dokumenter);
+        unset($dokumenter);
+
+        // Befolker bestillingens dokumenter med info fra emailtext
+        // foreach ($bestilling['dokumenter'] as &$dok):
+        //     $metadata = $docMetadata->firstWhere('sekvensnr', $dok['journalnr']);
+        //     $dok['dokumentnavn'] = $metadata['dokumentnavn'];
+        // endforeach;
+        unset($dok);
         if (!isset($bestilling)):
             return false;
         endif;
@@ -328,39 +331,15 @@ class Message extends Model {
         //dd($senderUser);
         $bDokumenter = $bestilling['dokumenter'];
         $saker = $bestilling['dokumenter']->unique('saksnr');
-        if (isset($saker['saksnr'])):
-            // Det er bare ett dokument for én sak
-            $tmp = [];
-            $tmp[] = $bestilling['dokumenter']->all();
-            $saker = collect($tmp);
-            $bestilling['dokumenter'] = $saker;
-            unset($tmp);
-        endif;
         //dd($saker->all());
         $tickets = [];
-        foreach ($saker as $sak):
-            $saksnr = $sak['saksnr'];
-            $subject = 'Innsynskrav for sak '. $sak['saksnr'];
-            $description = Blade::render(config('eformidling.in.innsynskrav'), ['bestilling' => $bestilling, 'saksnr' => $saksnr, 'subject' => $subject, 'docMetadata' => $docMetadata]);
+        $saker->each(function (array $item, int $key) use ($bestilling, &$tickets, $ps, $senderUser) {
+            $subject = 'Innsynskrav for sak '. $item['saksnr'];
+            $dokumenter = $bestilling['dokumenter']->where('saksnr', $item['saksnr'])->toArray();
+            $description = Blade::render(config('eformidling.in.innsynskrav'), ['dokumenter' => $dokumenter, 'sak' => $item, 'bestilling' => $bestilling]);
             $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true);
-            // Oppretter en skjult innkommende melding med den opprinnelige bestillingen
-            /** Tatt vekk inntil videre
-            if (isset($emailtext)):
-                $reportText = "<p><strong>Denne saken er en del av følgende bestilling fra eInnsyn</strong></p>\n\n" . $emailtext;
-                $ps->addCommunicationToTicket(
-                    $ticket,
-                    $this->sender_id,
-                    null,
-                    config('pureservice.comms.description'),
-                    config('pureservice.comms.direction.in'),
-                    config('pureservice.comms.visibility.off'),
-                    'eInnsyn: Opprinnelig bestilling',
-                    $reportText
-                );
-            endif;
-            */
             $tickets[] = $ticket;
-        endforeach;
+        });
         return $tickets;
     }
 
@@ -400,10 +379,14 @@ class Message extends Model {
     }
 
 
-    public function processEmailText(string $text) : Collection {
-        $dokText = Str::after($text, 'Dokumenter:');
-        $dokArray = explode('--------------------------------------'.PHP_EOL, $dokText);
-        $dokumenter = [];
+    /**
+     * Prosesserer fila emailtext fra et innsynskrav og henter ut metadata for dokumentene det søkes innsyn for
+     */
+    public function processEmailText(string $text, Collection $dokumenter) : Collection {
+        $dokSeparator = '--------------------------------------';
+        $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator);
+        $dokArray = explode($dokSeparator.PHP_EOL, $dokText);
+        $prosesserteDokumenter = [];
         $template = [
             'saksnr' => '',
             'dokumentnr' => '',
@@ -412,16 +395,25 @@ class Message extends Model {
             'dokumentnavn' => '',
         ];
         foreach ($dokArray as $dok):
-            $dokument = $template;
-            $dokument['saksnr'] = trim(Str::before(Str::after($dok, 'Saksnr: '), ' | Dok nr'));
-            $dokument['dokumentnr'] = trim(Str::before(Str::after($dok, 'Dok nr. : '), ' | Sekvensnr'));
-            $dokument['sekvensnr'] = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), PHP_EOL));
-            $dokument['saksnavn'] = trim(Str::before(Str::after($dok, 'Sak: '), PHP_EOL));
-            $dokument['dokumentnavn'] = trim(Str::before(Str::after($dok, 'Dokument: '), PHP_EOL));
-            $dokumenter[] = $dokument;
+            $sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), PHP_EOL));
+            $saksnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Sak: '), PHP_EOL)));
+            $dokumentnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Dokument: '), PHP_EOL)));
+
+            $dok = $dokumenter->firstWhere('journalnr', $sekvensnr);
+            $dok['saksnavn'] = $saksnavn;
+            $dok['dokumentnavn'] = $dokumentnavn;
+
+            $prosesserteDokumenter[] = $dok;
+            // $dokument = $template;
+            // $dokument['saksnr'] = trim(Str::before(Str::after($dok, 'Saksnr: '), ' | Dok nr'));
+            // $dokument['dokumentnr'] = trim(Str::before(Str::after($dok, 'Dok nr. : '), ' | Sekvensnr'));
+            // $dokument['sekvensnr'] = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), PHP_EOL));
+            // $dokument['saksnavn'] = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Sak: '), PHP_EOL)));
+            // $dokument['dokumentnavn'] = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Dokument: '), PHP_EOL)));
+            // $dokumenter[] = $dokument;
         endforeach;
 
-        return collect($dokumenter);
+        return collect($prosesserteDokumenter);
     }
 
 }

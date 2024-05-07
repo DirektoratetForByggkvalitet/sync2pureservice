@@ -1,28 +1,17 @@
-@php
-    $dokumenter = $bestilling['dokumenter']->where('saksnr', $saksnr);
-    $saksData = $docMetadata->firstWhere('saksnr', $saksnr);
-    $saksnavn = $saksData['saksnavn'];
-@endphp
 <h2>
-    Innsynskrav for {{ count($dokumenter) }} journalpost{{ count($dokumenter) > 1 ? 'er' : '' }} fra sak {{ $saksnr }}
-    @if (isset($saksnavn))
-        <br />
-        <strong>{{ $saksnavn }}</strong>
+    Innsynskrav for {{ count($dokumenter) }} journalpost{{ count($dokumenter) > 1 ? 'er' : '' }} fra sak {{ $sak['saksnr'] }}
+    @if (isset($sak['saksnavn']))
+        <br/>
+        <strong>{{ $sak['saksnavn'] }}</strong>
     @endif
 </h2>
 <p>Bestillingsdato: {{ $bestilling['bestillingsdato'] }}</p>
 <h4>Kravet gjelder følgende journalposter</h4>
 <ul>
 @foreach ($dokumenter as $dok)
-    @php
-        $metadata = $docMetadata->firstWhere('sekvensnr', $dok['journalnr']);
-        if (!isset($metadata['dokumentnavn'])):
-            $metadata['dokumentnavn'] = 'Ikke tilgjengelig';
-        endif;
-    @endphp
     <li>
         <strong>Dokumentnr: {{ $dok['dokumentnr'] }}</strong><br/>
-        Navn: {{ $metadata['dokumentnavn'] }}<br/>
+        Navn: {{ $dok['dokumentnavn'] }}<br/>
         Sekvensnr: {{ $dok['journalnr'] }}<br/>
         Saksbehandler: {{ $dok['saksbehandler'] }}
     </li>

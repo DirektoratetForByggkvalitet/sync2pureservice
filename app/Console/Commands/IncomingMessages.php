@@ -148,13 +148,13 @@ class IncomingMessages extends Command {
                 // Innsynskrav
                 $this->ps->setTicketOptions('innsynskrav');
                 $this->line(Tools::L2.'Splitter innsynskravet opp basert på arkivsaker');
-                if ($new = $message->splittInnsynskrav($this->ps)):
-                    $this->line(Tools::L2.count($new).' innsynskrav ble opprettet i Pureservice:');
-                    foreach ($new as $i):
+                $newTickets = $message->splittInnsynskrav($this->ps);
+                if ($newTickets !== false):
+                    $this->line(Tools::L2.count($newTickets).' innsynskrav ble opprettet i Pureservice:');
+                    foreach ($newTickets as $i):
                         $this->line(Tools::L3.'- Sak ID '.$i->requestNumber. ' "'.$i->subject.'"');
                     endforeach;
-                    array_merge($tickets, $new);
-                    unset($new);
+                    unset($newTickets);
                 else:
                     $this->error(Tools::L2.'Klarte ikke å splitte innsynskravet');
                     $this->newLine();
