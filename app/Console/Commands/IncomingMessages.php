@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\{Storage};
 
 class IncomingMessages extends Command {
     protected float $start;
-    protected string $version = '1.2';
+    protected string $version = '1.5';
     protected Eformidling $ip;
     protected PsApi $ps;
     /**
