@@ -5,8 +5,7 @@ namespace App\Services;
 use Psr\Http\Message\{RequestInterface, ResponseInterface};
 use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware};
 
-class JamfPro
-{
+class JamfPro extends API {
     //
     protected $token;
     protected $api;

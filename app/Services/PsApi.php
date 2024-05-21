@@ -222,7 +222,8 @@ class PsApi extends API {
         endif;
         $body['tickets'][] = $ticket;
         //dd($body);
-        $response = $this->apiPost($uri, $ticket);
+        $response = $this->apiPost($uri, $body);
+        unset($body);
         if ($response->successful()):
             $t = collect($response->json('tickets'));
             if ($returnClass):
