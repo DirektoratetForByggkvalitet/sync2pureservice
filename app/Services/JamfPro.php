@@ -2,99 +2,70 @@
 
 namespace App\Services;
 
-use Psr\Http\Message\{RequestInterface, ResponseInterface};
-use GuzzleHttp\{Client, HandlerStack, Middleware, RetryMiddleware};
+use Carbon\Carbon;
+use Hamcrest\Type\IsObject;
+use Illuminate\Support\Facades\{Http, Cache};
 
 class JamfPro extends API {
-    //
-    protected $token;
-    protected $api;
-    protected $options;
-    public $up = false;
 
     public function __construct() {
-        $this->getClient();
-        $this->getBearerToken();
-        $this->setOptions();
-        if ($this->token) $this->up = true;
+        parent::__construct();
+        $this->setToken();
     }
 
-    private function getClient() {
-        $maxRetries = config('jamfpro.maxretries', 3);
-
-        // Funksjon som finner ut om vi skal kjøre en retry
-        $decider = function(int $retries, RequestInterface $request, ResponseInterface $response = null) use ($maxRetries) : bool {
-            return
-                $retries < $maxRetries
-                && null !== $response
-                && 429 === $response->getStatusCode();
-        };
-
-        // Funksjon for å finne ut hvor lenge man skal vente
-        $delay = function(int $retries, ResponseInterface $response) : int {
-            if (!$response->hasHeader('Retry-After')) {
-                return RetryMiddleware::exponentialDelay($retries);
-            }
-
-            $retryAfter = $response->getHeaderLine('Retry-After');
-
-            if (!is_numeric($retryAfter)) {
-                $retryAfter = (new \DateTime($retryAfter))->getTimestamp() - time();
-            }
-
-            return (int) $retryAfter * 1000;
-        };
-
-        $stack = HandlerStack::create();
-        $stack->push(Middleware::retry($decider, $delay));
-
-        $this->api = new Client([
-            'base_uri' => config('jamfpro.api_url'),
-            'timeout'         => 30,
-            'allow_redirects' => false,
-            'handler' => $stack
-        ]);
-    }
-
-    private function getBearerToken() {
-        $headers = [
-            'Accept' => 'application/json',
-        ];
-        $response = $this->api->request('POST', '/api/v1/auth/token',
-            ['auth' => [config('jamfpro.username'), config('jamfpro.password')], 'headers' => $headers]);
-        if ($response->getStatusCode() == 200):
-            $this->token = json_decode($response->getBody()->getContents())->token;
-            return false;
-       else:
-            die('Fikk ikke hentet API Token');
+    protected function setToken(): string {
+        if (isset($this->token) && isset($this->tokenExpiry)):
+            $in15minutes = Carbon::now(config('app.timezone'))->addMinutes(15);
+            if ($this->tokenExpiry instanceof Carbon  && $this->tokenExpiry->isBefore($in15minutes)):
+                return $this->token;
+            else:
+                unset($this->token, $this->tokenExpiry);
+            endif;
         endif;
+        if (!isset($this->token)):
+            $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
+            // Setter timeout for forespørselen
+            $request->timeout($this->myConf('api.timeout', config('api.timeout')));
+            $request->retry($this->myConf('api.retry', config('api.retry')));
+            // Setter headers
+            $request->withHeaders([
+                'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
+                'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
+            ]);
+            $request->baseUrl($this->myConf('api.url').$this->prefix);
+            $request->acceptJson();
+            $request->withBasicAuth($this->myConf('api.username'), $this->myConf('api.password'));
+            $uri = '/v1/auth/token';
+            $response = $request->post($uri, '');
+            if ($response->successful()):
+                $this->token = $response->json('token');
+                $this->tokenExpiry = Carbon::parse($response->json('Expiry'), config('app.timezone'));
+            endif;
+        endif;
+        return $this->token;
     }
 
-    private function setOptions() {
-        $this->options = [
-            'headers' => [
-                'Authorization' => 'Bearer '.$this->token,
-                'Accept' => 'application/json',
-                'Connection' => 'keep-alive',
-                'Accept-Encoding' => 'gzip, deflate',
-            ]
-        ];
-        return false;
-    }
+    /**
+     * Henter alle maskiner fra Jamf Pro
+     */
     public function getJamfComputers() {
+        $uri = '/api/v1/computers-inventory';
+        $results = [];
+        $gotAll = false;
         $page=0;
         $page_size=100;
-        $gotAll = false;
-        $results = [];
+        $params = [
+            'section' => 'GENERAL,HARDWARE,USER_AND_LOCATION,OPERATING_SYSTEM',
+            'page-size' => $page_size,
+            'page' => $page
+        ];
         while (!$gotAll):
-            $uri = '/api/v1/computers-inventory?section=GENERAL&section=HARDWARE&section=USER_AND_LOCATION&section=OPERATING_SYSTEM&page='.$page.'&page-size='.$page_size;
-            $response = $this->api->request('GET', $uri, $this->options);
-            $data = json_decode($response->getBody()->getContents(), true);
-            $results = array_merge($results, $data['results']);
-            $gotAll = $data['totalCount'] <= $page_size * ($page + 1);
+            $params['page'] = $page;
+            $response = $this->apiQuery($uri, $params, true);
+            $results = array_merge($results, $response->json('results'));
+            $gotAll = $response->json('totalCount') <= $page_size * ($page + 1);
             $page++;
         endwhile;
-        $iResultCount = count($results);
 
         return $results;
     }

@@ -11,15 +11,19 @@ use Carbon\Carbon;
  * Generell klasse for å kommunisere med ulike RESTful APIer.
  */
 class API {
-    protected $cKey;
-    public $base_url;
+    protected string $cKey;
+    public string $base_url;
+    public string $token;
+    protected Carbon $tokenExpiry;
 
     protected $prefix = ''; // Prefiks til uri
     protected false|string $auth = false;
 
     public function __construct() {
         $this->setCKey(Str::lower(class_basename($this)));
+        $this->setToken();
         $this->setProperties();
+
     }
 
     /**
@@ -108,7 +112,7 @@ class API {
                     $request->withDigestAuth($this->myConf('api.user'), $this->myConf('api.password'));
                     break;
                 case 'token':
-                    $request->withToken($this->myConf('api.token'));
+                    $request->withToken($this->getToken());
                     break;
                 default: // basic auth
                     $request->withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'));
@@ -134,6 +138,12 @@ class API {
 
         return $request;
     }
+    /**
+     * Funksjon for å returnere token for innlogging. Overstyres hvis APIet må logge inn for å hente token
+     */
+    protected function setToken(): string {
+        return isset($this->token) ? $this->token : $this->myConf('api.token', '');
+    }
 
     public function resolveUri(string $path): string {
         return Str::replace('//', '/', '/' . $path);
@@ -143,6 +153,7 @@ class API {
         //     return Str::replace('//', '/', '/' . $path);
         // endif;
     }
+
 
     /**
      * GET-forespørsel mot APIet
