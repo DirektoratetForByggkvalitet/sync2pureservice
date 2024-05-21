@@ -281,7 +281,7 @@ class Message extends Model {
             $description = Blade::render(config('eformidling.in.arkivmelding'), ['subject' => $subject, 'msg' => $this]);
         //dd($description);
         endif;
-        if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.invisible'))):
+        if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.invisible'), )):
             if (count($this->attachments) && $addAttachments):
                 // Oppretter en kommunikasjon med vedleggene som vedlegg
                 $ps->addCommunicationToTicket($ticket, $senderUser->id, $this->attachments);
