@@ -19,7 +19,7 @@ class Jamf2Pureservice extends Command {
 
     protected $version = '2.2';
 
-    protected JamfPro $jpsApi;
+    protected JamfPro $jamfPro;
     protected PsAssets $psApi;
     protected $jamfDevices;
     protected $psDevices;
@@ -47,8 +47,8 @@ class Jamf2Pureservice extends Command {
         $this->newLine();
 
         $this->line(Tools::l2().'Logger inn på Jamf Pro');
-        $this->jpsApi = new JamfPro();
-        if ($this->jpsApi->up):
+        $this->jamfPro = new JamfPro();
+        if ($this->jamfPro->up):
             $this->line(Tools::L3.'Jamf Pro er tilkoblet og klar til bruk');
         else:
             $this->error(Tools::L3.'Jamf Pro er nede eller feilkonfigurert');
@@ -263,7 +263,7 @@ class Jamf2Pureservice extends Command {
     public function getJamfAssetsAsPsAssets() {
         $psAssets = [];
 
-        $devices = $this->jpsApi->getMobileDevices();
+        $devices = $this->jamfPro->getMobileDevices();
         $fn = config('pureservice.mobile.properties');
         //$this->line(Tools::L3.count($devices).' mobilenheter');
         foreach ($devices as $dev):
@@ -303,7 +303,7 @@ class Jamf2Pureservice extends Command {
         endforeach;
         unset($devices);
 
-        $computers = $this->jpsApi->getComputers();
+        $computers = $this->jamfPro->getComputers();
         $fn = config('pureservice.computer.properties'); // strukturerte feltnavn
         //$this->line(Tools::L3.count($computers).' datamaskiner');
         foreach ($computers as $mac):
