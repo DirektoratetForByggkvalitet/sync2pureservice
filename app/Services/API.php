@@ -85,6 +85,7 @@ class API {
 
     /**
      * Setter prefiks for alle API-kall (det som kommer etter 'https://server.no' i alle kall)
+     * Korrigerer prefix som ikke starter med '/'
      */
     public function setPrefix(string $prefix): void {
         $this->prefix = $prefix != '' ? Str::replace('//', '/', '/'.$prefix): $prefix;
@@ -105,9 +106,9 @@ class API {
             'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
             'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
         ]);
-        // Korrigerer manglende prefix eller prefix som ikke starter med '/'
-        if ($this->myConf('api.prefix', false) && $this->prefix == ''):
-            $this->setPrefix(Str::replace('//', '/', '/'.$this->myConf('api.prefix')));
+        // Setter prefix, hvis den finnes
+        if ($this->myConf('api.prefix', false)):
+            $this->setPrefix($this->myConf('api.prefix'));
         endif;
         // Setter baseUrl, inkludert prefix
         if ($this->myConf('api.url', false)):
