@@ -3,22 +3,23 @@
 namespace App\Services;
 
 use Carbon\Carbon;
-use Hamcrest\Type\IsObject;
 use Illuminate\Support\Facades\{Http, Cache};
+use Illuminate\Support\Str;
 
 class JamfPro extends API {
+    public bool $up = false;
 
     public function __construct() {
-        parent::__construct();
+        $this->setCKey(Str::lower(class_basename($this)));
         $this->setToken();
+        $this->setProperties();
+        $this->up = isset($this->token);
     }
 
-    protected function setToken(): string {
+    protected function setToken(): void {
         if (isset($this->token) && isset($this->tokenExpiry)):
             $in15minutes = Carbon::now(config('app.timezone'))->addMinutes(15);
             if ($this->tokenExpiry instanceof Carbon  && $this->tokenExpiry->isBefore($in15minutes)):
-                return $this->token;
-            else:
                 unset($this->token, $this->tokenExpiry);
             endif;
         endif;
@@ -42,23 +43,53 @@ class JamfPro extends API {
                 $this->tokenExpiry = Carbon::parse($response->json('Expiry'), config('app.timezone'));
             endif;
         endif;
-        return $this->token;
     }
 
     /**
      * Henter alle maskiner fra Jamf Pro
      */
-    public function getJamfComputers() {
-        $uri = '/api/v1/computers-inventory';
+    public function getComputers() {
+        $uri = '/v1/computers-inventory';
+        $params = [
+            'section' => 'GENERAL,HARDWARE,USER_AND_LOCATION,OPERATING_SYSTEM',
+            'sort' => 'id:asc'
+        ];
+        return $this->paginatedQuery($uri, $params);
+    }
+
+    public function getMobileDevices($detailed = true) {
+        $uri = '/v2/mobile-devices/detail';
+        $params = [
+            'section' => 'GENERAL,USER_AND_LOCATION,HARDWARE',
+            'sort' => 'mobileDeviceId:asc'
+        ];
+        $results = $this->paginatedQuery($uri, $params);
+        if ($detailed && !isset($results[0]['general']['initialEntryTimestamp'])):
+            /**
+             * Må løpe gjennom hver enkelt for å hente ut initialEntryTimestamp
+             */
+            $detailedResults = [];
+            foreach ($results as $device):
+                $detail = $this->apiGet('/v2/mobile-devices/'.$device['mobileDeviceId'].'/detail');
+                $device['general']['initialEntryTimestamp'] = $detail['initialEntryTimestamp'];
+                $detailedResults[] = $device;
+            endforeach;
+            return $detailedResults;
+        endif;
+
+        return $results;
+    }
+
+    /**
+     * Smart funksjon som bruker paginering til å hente ut alle poster fra Jamf Pro
+     */
+    protected function paginatedQuery(string $uri, array $params = []): array {
         $results = [];
         $gotAll = false;
         $page=0;
         $page_size=100;
-        $params = [
-            'section' => 'GENERAL,HARDWARE,USER_AND_LOCATION,OPERATING_SYSTEM',
-            'page-size' => $page_size,
-            'page' => $page
-        ];
+
+        $params['page-size'] = $page_size;
         while (!$gotAll):
             $params['page'] = $page;
             $response = $this->apiQuery($uri, $params, true);
@@ -70,31 +101,4 @@ class JamfPro extends API {
         return $results;
     }
 
-    public function getJamfMobileDevices($detailed = true) {
-        $page=0;
-        $page_size=100;
-        $gotAll = false;
-        $results = [];
-        while (!$gotAll):
-            $uri = '/api/v2/mobile-devices?page='.$page.'&page-size='.$page_size;
-            $response = $this->api->request('GET', $uri, $this->options);
-            $data = json_decode($response->getBody()->getContents(), true);
-            $results = array_merge($results, $data['results']);
-            $gotAll = $data['totalCount'] <= $page_size * ($page + 1);
-            $page++;
-        endwhile;
-        if ($detailed):
-            $detailedResults = [];
-            foreach ($results as $dev):
-                $uri = '/api/v2/mobile-devices/'.$dev['id'].'/detail';
-                $response = $this->api->request('GET', $uri, $this->options);
-                $data = json_decode($response->getBody()->getContents(), true);
-                $detailedResults[] = $data;
-            endforeach;
-
-            return $detailedResults;
-        else:
-            return $results;
-        endif;
-    }
 }

@@ -13,7 +13,7 @@ use Carbon\Carbon;
 class API {
     protected string $cKey;
     public string $base_url;
-    public string $token;
+    protected string $token;
     protected Carbon $tokenExpiry;
 
     protected $prefix = ''; // Prefiks til uri
@@ -21,9 +21,7 @@ class API {
 
     public function __construct() {
         $this->setCKey(Str::lower(class_basename($this)));
-        $this->setToken();
         $this->setProperties();
-
     }
 
     /**
@@ -39,6 +37,9 @@ class API {
             $this->prefix = Str::replace('//', '/', '/'.$this->prefix);
         endif;
         $this->base_url = $this->myConf($prefix.'.url');
+        if ($this->myConf($prefix.'.token')):
+            $this->token = $this->myConf($prefix.'.token');
+        endif;
         // Beholder samme User-Agent uansett prefix
         if (env('BITBUCKET_COMMIT', false)):
             $userAgent = class_basename($this).'-'.Str::limit(env('BITBUCKET_COMMIT'), 8).'/'.config('api.user-agent');
@@ -72,6 +73,13 @@ class API {
 
     public function myConf($key, $default = null): mixed {
         return config($this->cKey.'.'.$key, $default);
+    }
+
+    /**
+     * Henter token for innlogging
+     */
+    protected function getToken(): string {
+        return isset($this->token) ? $this->token : '';
     }
 
 
@@ -137,12 +145,6 @@ class API {
         endif;
 
         return $request;
-    }
-    /**
-     * Funksjon for å returnere token for innlogging. Overstyres hvis APIet må logge inn for å hente token
-     */
-    protected function setToken(): string {
-        return isset($this->token) ? $this->token : $this->myConf('api.token', '');
     }
 
     public function resolveUri(string $path): string {
