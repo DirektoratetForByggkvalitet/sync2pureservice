@@ -11,8 +11,10 @@ use Carbon\Carbon;
  * Generell klasse for å kommunisere med ulike RESTful APIer.
  */
 class API {
-    protected $cKey;
-    public $base_url;
+    protected string $cKey;
+    public string $base_url;
+    protected string $token;
+    protected Carbon $tokenExpiry;
 
     protected $prefix = ''; // Prefiks til uri
     protected false|string $auth = false;
@@ -35,6 +37,9 @@ class API {
             $this->prefix = Str::replace('//', '/', '/'.$this->prefix);
         endif;
         $this->base_url = $this->myConf($prefix.'.url');
+        if ($this->myConf($prefix.'.token')):
+            $this->token = $this->myConf($prefix.'.token');
+        endif;
         // Beholder samme User-Agent uansett prefix
         if (env('BITBUCKET_COMMIT', false)):
             $userAgent = class_basename($this).'-'.Str::limit(env('BITBUCKET_COMMIT'), 8).'/'.config('api.user-agent');
@@ -68,6 +73,13 @@ class API {
 
     public function myConf($key, $default = null): mixed {
         return config($this->cKey.'.'.$key, $default);
+    }
+
+    /**
+     * Henter token for innlogging
+     */
+    protected function getToken(): string {
+        return isset($this->token) ? $this->token : '';
     }
 
 
@@ -108,7 +120,7 @@ class API {
                     $request->withDigestAuth($this->myConf('api.user'), $this->myConf('api.password'));
                     break;
                 case 'token':
-                    $request->withToken($this->myConf('api.token'));
+                    $request->withToken($this->getToken());
                     break;
                 default: // basic auth
                     $request->withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'));
@@ -143,6 +155,7 @@ class API {
         //     return Str::replace('//', '/', '/' . $path);
         // endif;
     }
+
 
     /**
      * GET-forespørsel mot APIet

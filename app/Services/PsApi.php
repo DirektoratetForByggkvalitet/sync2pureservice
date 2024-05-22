@@ -17,10 +17,20 @@ use Illuminate\Http\Client\Response;
 class PsApi extends API {
     protected array $ticketOptions;
     protected array|Collection $statuses;
+    protected string $tempPath;
 
     public function __construct() {
         $this->setCKey('pureservice');
         $this->setProperties();
+        $this->setTempPath();
+    }
+
+    /**
+     * Oppretter en midlertidig mappe for mellomlagring av filer
+     */
+    protected function setTempPath(): void {
+        $this->tempPath = 'PsApi/'.Str::uuid()->toString();
+        Storage::createDirectory($this->tempPath);
     }
 
     public function fetchStatuses(string $key = 'Ticket', bool $return = false): null|Collection {
@@ -158,20 +168,18 @@ class PsApi extends API {
 
     /**
      * Oppretter sak med gitt emne og beskrivelse med oppgitt brukerId som sluttbruker
-     * @param   string  $subject        Sakens emne
-     * @param   string  $description    Beskrivelse av saken
-     * @param   array   $userId         Sluttbrukers ID
-     * @param   mixed   $visibility     Synlighetskode, standard = 2 (usynlig)
     */
     public function createTicket (
         string $subject,
         string $description,
         int $userId,
         int $visibility = 2,
-        bool $returnClass = true
+        bool $returnClass = true,
+        array $attachments = []
     ): array|false|Ticket {
         //if ($this->ticketOptions == []) $this->setTicketOptions();
         $uri = '/ticket';
+        $body = ['tickets' => []];
         $ticket = [
             'subject' => $subject,
             'description' => $description,
@@ -185,9 +193,37 @@ class PsApi extends API {
             'statusId' => $this->ticketOptions['statusId'],
             'requestTypeId' => $this->ticketOptions['requestTypeId'],
         ];
-        $body = ['tickets' => [$ticket]];
+        /**
+         * Hvis saken skal ha vedlegg koblet til beskrivelsen må de legges til ved oppretting
+         */
+        if (count($attachments)):
+            $body['linked'] = ['attachments' => []];
+            $ticket['links'] = [
+                'attachments' => []
+            ];
+            $num = 0;
+            foreach ($attachments as $file):
+                $num++;
+                $tempId = 'attachment-'.$num;
+                $filename = basename($file);
+                $encodedPath = $this->tempPath.'/'.$filename;
+                Storage::put($encodedPath, base64_encode(Storage::get($file)));
+                $body['linked']['attachments'][] = [
+                    'name' => Str::beforeLast($filename, '.'),
+                    'fileName' => $filename,
+                    'size' => $this->human_filesize(Storage::size($file)),
+                    'contentType' => Storage::mimeType($file),
+                    'bytes' => Storage::get($encodedPath),
+                    'isVisible' => true,
+                    'temporaryId' => $tempId,
+                ];
+                $ticket['links']['attachments'][] = ['temporaryId' => $tempId];
+            endforeach;
+        endif;
+        $body['tickets'][] = $ticket;
         //dd($body);
-        $response = $this->apiPost($uri, $ticket);
+        $response = $this->apiPost($uri, $body);
+        unset($body);
         if ($response->successful()):
             $t = collect($response->json('tickets'));
             if ($returnClass):

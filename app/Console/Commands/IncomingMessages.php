@@ -78,7 +78,7 @@ class IncomingMessages extends Command {
             endif;
             $lock = $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
             if ($lock->successful()):
-                $this->line(Tools::L2.'Meldingen \''. $lock->json('standardBusinessDocumentHeader.documentIdentification.instanceIdentifier', '[Finner ikke meldings-ID]') .'\' har blitt låst og er klar for nedlasting.');
+                $this->line(Tools::L2.'Meldingen \''. $lock->json('standardBusinessDocumentHeader.documentIdentification.instanceIdentifier', '[Finner ikke melding-ID]') .'\' har blitt låst og er klar for nedlasting.');
                 //dd($lock->body());
             else:
                 //dd($lock->body());

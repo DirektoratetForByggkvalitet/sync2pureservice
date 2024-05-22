@@ -17,7 +17,7 @@ class Jamf2Pureservice extends Command {
      */
     protected $signature = 'pureservice:sync-jamf';
 
-    protected $version = '2.1';
+    protected $version = '2.2';
 
     protected JamfPro $jpsApi;
     protected PsAssets $psApi;
@@ -263,32 +263,32 @@ class Jamf2Pureservice extends Command {
     public function getJamfAssetsAsPsAssets() {
         $psAssets = [];
 
-        $devices = $this->jpsApi->getJamfMobileDevices();
+        $devices = $this->jpsApi->getMobileDevices();
         $fn = config('pureservice.mobile.properties');
         //$this->line(Tools::L3.count($devices).' mobilenheter');
         foreach ($devices as $dev):
             // Skipper enheten hvis den ikke har serienummer
-            if ($dev['serialNumber'] == null || $dev['serialNumber'] == '') continue;
+            if ($dev['hardware']['serialNumber'] == null || $dev['hardware']['serialNumber'] == '') continue;
 
             $psAsset = [];
-            $psAsset[$fn['name']] = $dev['name'] == '' ? '-uten-navn-': $dev['name'];
+            $psAsset[$fn['name']] = $dev['general']['displayName'] == '' ? '-uten-navn-': $dev['general']['displayName'];
             $psAsset['name'] = $psAsset[$fn['name']];
-            $psAsset[$fn['serial']] = $dev['serialNumber'];
-            $psAsset[$fn['model']] = $dev[$dev['type']]['model'];
-            $psAsset[$fn['modelId']] = $dev[$dev['type']]['modelIdentifier'];
+            $psAsset[$fn['serial']] = $dev['hardware']['serialNumber'];
+            $psAsset[$fn['model']] = $dev[$dev['hardware']]['model'];
+            $psAsset[$fn['modelId']] = $dev[$dev['hardware']]['modelIdentifier'];
             if ($dev['osVersion'] != null):
-                $psAsset[$fn['OsVersion']] = $dev['osVersion'];
+                $psAsset[$fn['OsVersion']] = $dev['general']['osVersion'];
             endif;
 
-            $psAsset[$fn['memberSince']] = Carbon::create($dev['initialEntryTimestamp'])
+            $psAsset[$fn['memberSince']] = Carbon::create($dev['general']['initialEntryTimestamp'])
                 ->timezone(config('app.timezone'))
                 ->toJSON();
-            $psAsset[$fn['EOL']] = Carbon::create($dev['initialEntryTimestamp'])
+            $psAsset[$fn['EOL']] = Carbon::create($dev['general']['initialEntryTimestamp'])
                 ->timezone(config('app.timezone'))
                 ->addYears(config('pureservice.mobile.lifespan', 3))
                 ->toJSON();
             if ($dev['lastInventoryUpdateTimestamp'] != null):
-                $psAsset[$fn['lastSeen']] = Carbon::create($dev['lastInventoryUpdateTimestamp'])
+                $psAsset[$fn['lastSeen']] = Carbon::create($dev['general']['lastInventoryUpdateTimestamp'])
                     ->timezone(config('app.timezone'))
                     ->toJSON();
             endif;
@@ -296,14 +296,14 @@ class Jamf2Pureservice extends Command {
             $psAsset[$fn['jamfUrl']] = config('jamfpro.api_url').'/mobileDevices.html?id='.$dev['id'].'&o=r';
 
             $psAsset['usernames'] = [];
-            if ($dev['location']['username'] != null) $psAsset['usernames'][] = $dev['location']['username'];
+            if ($dev['userAndLocation']['username'] != null) $psAsset['usernames'][] = $dev['userAndLocation']['username'];
             $psAsset['type'] = 'mobile';
             $psAssets[] = $psAsset;
             unset($psAsset);
         endforeach;
         unset($devices);
 
-        $computers = $this->jpsApi->getJamfComputers();
+        $computers = $this->jpsApi->getComputers();
         $fn = config('pureservice.computer.properties'); // strukturerte feltnavn
         //$this->line(Tools::L3.count($computers).' datamaskiner');
         foreach ($computers as $mac):
