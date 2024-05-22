@@ -1,7 +1,6 @@
 <?php
 
 return [
-    'api_url' => env('JAMFPRO_URL', ''),
     'api' => [
         'url' => env('JAMFPRO_URL', null),
         'username' => env('JAMFPRO_USER', ''),
