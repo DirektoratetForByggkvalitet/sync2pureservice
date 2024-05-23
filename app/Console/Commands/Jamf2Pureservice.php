@@ -276,9 +276,9 @@ class Jamf2Pureservice extends Command {
             $psAsset[$fn['name']] = $dev['general']['displayName'] == '' ? '-uten-navn-': $dev['general']['displayName'];
             $psAsset['name'] = $psAsset[$fn['name']];
             $psAsset[$fn['serial']] = $dev['hardware']['serialNumber'];
-            $psAsset[$fn['model']] = $dev[$dev['hardware']]['model'];
-            $psAsset[$fn['modelId']] = $dev[$dev['hardware']]['modelIdentifier'];
-            if ($dev['osVersion'] != null):
+            $psAsset[$fn['model']] = $dev['hardware']['model'];
+            $psAsset[$fn['modelId']] = $dev['hardware']['modelIdentifier'];
+            if ($dev['general']['osVersion'] != null):
                 $psAsset[$fn['OsVersion']] = $dev['general']['osVersion'];
             endif;
 
@@ -289,13 +289,13 @@ class Jamf2Pureservice extends Command {
                 ->timezone(config('app.timezone'))
                 ->addYears(config('pureservice.mobile.lifespan', 3))
                 ->toJSON();
-            if ($dev['lastInventoryUpdateTimestamp'] != null):
-                $psAsset[$fn['lastSeen']] = Carbon::create($dev['general']['lastInventoryUpdateTimestamp'])
+            if ($dev['general']['lastInventoryUpdateDate'] != null):
+                $psAsset[$fn['lastSeen']] = Carbon::create($dev['general']['lastInventoryUpdateDate'])
                     ->timezone(config('app.timezone'))
                     ->toJSON();
             endif;
 
-            $psAsset[$fn['jamfUrl']] = config('jamfpro.api_url').'/mobileDevices.html?id='.$dev['id'].'&o=r';
+            $psAsset[$fn['jamfUrl']] = config('jamfpro.api.url').'/mobileDevices.html?id='.$dev['mobileDeviceId'].'&o=r';
 
             $psAsset['usernames'] = [];
             if ($dev['userAndLocation']['username'] != null) $psAsset['usernames'][] = $dev['userAndLocation']['username'];
@@ -338,7 +338,7 @@ class Jamf2Pureservice extends Command {
                     ->toJSON();
             endif;
 
-            $psAsset[$fn['jamfUrl']] = config('jamfpro.api_url').'/computers.html?id='.$mac['id'].'&o=r';
+            $psAsset[$fn['jamfUrl']] = config('jamfpro.api.url').'/computers.html?id='.$mac['id'].'&o=r';
 
             $psAsset['usernames'] = [];
             if ($mac['userAndLocation']['username'] != null) $psAsset['usernames'][] = $mac['userAndLocation']['username'];
