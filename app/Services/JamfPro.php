@@ -12,8 +12,8 @@ class JamfPro extends API {
 
     public function __construct() {
         $this->setCKey(Str::lower(class_basename($this)));
-        $this->setProperties();
         $this->setToken();
+        $this->setProperties();
         $this->up = isset($this->token);
     }
 
@@ -34,11 +34,11 @@ class JamfPro extends API {
                 'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
                 'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
             ]);
-            $request->baseUrl($this->myConf('api.url').$this->prefix);
+            $request->baseUrl($this->myConf('api.url').$this->myConf('api.prefix'));
             $request->acceptJson();
             $request->withBasicAuth($this->myConf('api.username'), $this->myConf('api.password'));
             $uri = '/v1/auth/token';
-            $response = $request->post($uri, '');
+            $response = $request->post($uri, []);
             if ($response->successful()):
                 $this->token = $response->json('token');
                 $this->tokenExpiry = Carbon::parse($response->json('Expiry'), config('app.timezone'));
