@@ -73,11 +73,9 @@ pipelines:
       - step:
           name: Synkroniser mellom Jamf Pro og Pureservice
           deployment: jamf2pureservice
-          caches:
-            - composer
-            - composer-vendor
           runs-on:
-            - "self.hosted"
+            - self.hosted
+            - macos
           script:
             - cp .env.example .env
             - *install
