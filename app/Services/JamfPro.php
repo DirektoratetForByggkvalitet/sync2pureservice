@@ -12,8 +12,8 @@ class JamfPro extends API {
 
     public function __construct() {
         $this->setCKey(Str::lower(class_basename($this)));
-        $this->setToken();
         $this->setProperties();
+        $this->setToken();
         $this->up = isset($this->token);
     }
 
