@@ -45,6 +45,8 @@ class Jamf2Pureservice extends Command {
         $this->info(class_basename($this).' v'.$this->version);
         $this->line($this->description);
         $this->newLine();
+        $this->line('Bruker URL '.config('jamfpro.api.url').config('jamfpro.api.prefix'));
+        $this->newline();
 
         $this->line(Tools::l2().'Logger inn på Jamf Pro');
         $this->jamfPro = new JamfPro();
