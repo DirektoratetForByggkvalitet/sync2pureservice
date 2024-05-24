@@ -28,18 +28,17 @@ class JamfPro extends API {
             $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
             // Setter timeout for forespørselen
             $request->timeout($this->myConf('api.timeout', config('api.timeout')));
-            $request->retry($this->myConf('api.retry', config('api.retry')));
+            // $request->retry($this->myConf('api.retry', config('api.retry')));
             // Setter headers
-            $request->withHeaders([
-                'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
-                'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
-            ]);
+            // $request->withHeaders([
+            //     'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
+            //     'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
+            // ]);
             //$request->baseUrl($this->myConf('api.url').$this->myConf('api.prefix'));
             $request->acceptJson();
             $request->withBasicAuth($this->myConf('api.username'), $this->myConf('api.password'));
             $uri = $this->myConf('api.url').$this->myConf('api.prefix').'/v1/auth/token';
-            dd($request);
-            $response = $request->post($uri, []);
+            $response = $request->post($uri);
             if ($response->successful()):
                 $this->token = $response->json('token');
                 $this->tokenExpiry = Carbon::parse($response->json('Expiry'), config('app.timezone'));
