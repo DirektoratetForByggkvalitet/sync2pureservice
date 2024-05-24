@@ -26,18 +26,17 @@ class JamfPro extends API {
         endif;
         if (!isset($this->token)):
             $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
-            // Setter timeout for forespørselen
-            $request->timeout($this->myConf('api.timeout', config('api.timeout')));
             // $request->retry($this->myConf('api.retry', config('api.retry')));
             // Setter headers
             // $request->withHeaders([
             //     'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
             //     'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
             // ]);
-            //$request->baseUrl($this->myConf('api.url').$this->myConf('api.prefix'));
+            $request->baseUrl($this->myConf('api.url').$this->myConf('api.prefix'));
             $request->acceptJson();
-            $request->withBasicAuth($this->myConf('api.username'), $this->myConf('api.password'));
-            $uri = $this->myConf('api.url').$this->myConf('api.prefix').'/v1/auth/token';
+            $request->withDigestAuth($this->myConf('api.username'), $this->myConf('api.password'));
+            //$request->withBasicAuth($this->myConf('api.username'), $this->myConf('api.password'));
+            $uri = '/v1/auth/token';
             $response = $request->post($uri);
             if ($response->successful()):
                 $this->token = $response->json('token');
