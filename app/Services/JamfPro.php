@@ -38,6 +38,7 @@ class JamfPro extends API {
             $request->acceptJson();
             $request->withBasicAuth($this->myConf('api.username'), $this->myConf('api.password'));
             $uri = $this->myConf('api.url').$this->myConf('api.prefix').'/v1/auth/token';
+            dd($request);
             $response = $request->post($uri, []);
             if ($response->successful()):
                 $this->token = $response->json('token');
