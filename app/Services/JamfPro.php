@@ -30,14 +30,13 @@ class JamfPro extends API {
         endif;
         // Setter ny token hvis token ikke er satt fra før
         if (!isset($this->token)):
-            $request = Http::withUserAgent(config('jamfpro.api.user-agent', config('api.user-agent')));
-            $request->withBasicAuth(config('jamfpro.api.username'), config('jamfpro.api.password'));
-            $request->baseUrl(config('jamfpro.api.url').config('jamfpro.api.prefix'));
+            $request = Http::withBasicAuth(config('jamfpro.api.username'), config('jamfpro.api.password'));
+            $request->baseUrl($this->base_url);
             $request->acceptJson();
             $uri = '/v1/auth/token';
-            $response = $request->post($uri);
+            $response = $request->post($uri, null);
             if ($response->successful()):
-                $this->token = $response->json('token');
+                $this->token = $response->json('token', );
                 $this->tokenExpiry = Carbon::parse($response->json('Expiry'), config('app.timezone'));
             else:
                 dd($response);
