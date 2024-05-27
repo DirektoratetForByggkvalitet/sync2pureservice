@@ -52,6 +52,10 @@ definitions:
 options:
   max-time: 60
 
+# Begrenser dybden på git-kloningen for å gi bedre fart
+clone:
+  depth: 1
+
 image: dibk/sync2pureservice:latest
 
 pipelines:
