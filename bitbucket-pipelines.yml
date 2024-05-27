@@ -79,28 +79,8 @@ pipelines:
           script:
             - cp .env.example .env
             - *install
+            - *resetDB
             - ./artisan pureservice:sync-jamf
-
-    svarUtMottak:
-      - step: *forberedeSvarInn
-      - step:
-          name: Sjekker SvarUtMottak
-          deployment: eFormidling
-          caches:
-            - composer-vendor
-            - composer
-          runs-on:
-            - "self.hosted"
-          script:
-            - echo 'Installerer OpenJDK 11 og CMS dekrypter'
-            - apk add openjdk11 unzip
-            - curl -LO https://github.com/DirektoratetForByggkvalitet/svarut-dekrypter/releases/download/${DEKRYPTER_VER}/dekrypter-${DEKRYPTER_VER}-dist.zip
-            - unzip dekrypter-${DEKRYPTER_VER}-dist.zip && rm dekrypter-${DEKRYPTER_VER}-dist.zip
-            - echo 'Setter opp og legger inn avhengigheter'
-            - mv ${SVARINN_EXCEL_LOOKUP_FILE} *.pem storage/app/
-            - *install
-            - echo 'Kjører svarinn2pureservice'
-            - ./artisan pureservice:svarUtMottak
 
     eFormidlingMottak:
       - step:
@@ -117,21 +97,6 @@ pipelines:
             - *resetDB
             - echo "Kjører sjekk på innkommende meldinger"
             - ./artisan eformidling:inn
-
-    sjekkInnsynskrav:
-      - step: *forberedeSvarInn
-      - step:
-          name: Sjekker innsynskrav
-          deployment: eFormidling
-          caches:
-            - composer-vendor
-            - composer
-          runs-on:
-            - "self.hosted"
-          script:
-            - echo 'Kjører sjekkInnsynskrav'
-            - *install
-            - ./artisan pureservice:sjekkInnsynskrav
 
 
     offentlige2ps:
