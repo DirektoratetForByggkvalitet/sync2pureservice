@@ -13,6 +13,7 @@ use Carbon\Carbon;
 class API {
     protected string $cKey;
     public string $base_url;
+    private string $version = '1.5';
     protected string $token;
     protected Carbon $tokenExpiry;
 

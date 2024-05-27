@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 class JamfPro extends API {
     public bool $up = false;
-    public string $version = '2.0';
+    private string $version = '2.1';
     public string $errorMsg = '';
 
     public function __construct() {
