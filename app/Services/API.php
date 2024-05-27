@@ -33,10 +33,9 @@ class API {
      */
     public function setProperties(string $prefix = 'api') {
         $this->auth = $this->myConf($prefix.'.auth', false);
-        $this->prefix = $this->myConf($prefix.'.prefix', '');
-        if ($this->prefix != '' & !Str::startsWith($this->prefix, '/')):
-            $this->prefix = Str::replace('//', '/', '/'.$this->prefix);
-        endif;
+
+        $this->setPrefix($this->myConf($prefix.'.prefix', false));
+
         $this->base_url = $this->myConf($prefix.'.url').$this->prefix;
 
         // Beholder samme User-Agent uansett prefix
@@ -92,8 +91,8 @@ class API {
      * Setter prefiks for alle API-kall (det som kommer etter 'https://server.no' i alle kall)
      * Korrigerer prefix som ikke starter med '/'
      */
-    public function setPrefix(string $prefix): void {
-        $this->prefix = $prefix != '' ? Str::replace('//', '/', '/'.$prefix): $prefix;
+    public function setPrefix(string|false $myPrefix): void {
+        $this->prefix = $myPrefix ? Str::replace('//', '/', '/'.$myPrefix): '';
     }
 
     /**
@@ -113,13 +112,9 @@ class API {
             'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
             'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
         ]);
-        // Setter prefix, hvis den finnes
-        if ($this->myConf('api.prefix', false)):
-            $this->setPrefix($this->myConf('api.prefix'));
-        endif;
-        // Setter baseUrl, inkludert prefix
+        // Setter baseUrl
         if ($this->myConf('api.url', false)):
-            $request->baseUrl($this->myConf('api.url').$this->prefix);
+            $request->baseUrl($this->base_url);
         endif;
         // Setter opp autentisering, hvis oppgitt i config
         if ($this->auth):
@@ -199,14 +194,13 @@ class API {
      * POST-forespørsel mot APIet
      */
     public function apiPost (
-            string $uri,
-            mixed $body = null,
-            string|null $accept = null,
-            string|null $contentType = 'auto',
-            bool $returnBool = false,
-            null|string $toFile = null
-        ): Response|bool
-    {
+        string $uri,
+        mixed $body = null,
+        string|null $accept = null,
+        string|null $contentType = 'auto',
+        bool $returnBool = false,
+        null|string $toFile = null
+    ): Response|bool {
         $uri = $this->resolveUri($uri);
         $response = $this->prepRequest($accept, $contentType, $toFile)->post($uri, $body);
         if ($returnBool) return $response->successful();
@@ -217,13 +211,12 @@ class API {
      * PATCH-forespørsel mot APIet
      */
     public function apiPatch (
-            string $uri,
-            mixed $body,
-            string|null $contentType = 'auto',
-            mixed $returnOptions = false,
-            null|string $toFile = null
-        ): Response|bool
-    {
+        string $uri,
+        mixed $body,
+        string|null $contentType = 'auto',
+        mixed $returnOptions = false,
+        null|string $toFile = null
+    ): Response|bool {
         $uri = $this->resolveUri($uri);
         $accept = Str::contains($returnOptions, '/') ? $returnOptions : $this->myConf('api.accept', 'application/json');
         //$contentType = $contentType ? $contentType : $this->myConf('api.contentType', $accept);
@@ -234,7 +227,12 @@ class API {
     /**
      * PUT-forespørsel mot APIet
      */
-    public function apiPut(string $uri, mixed $body, string|null $contentType = null, bool $returnBool = false) : Response|bool {
+    public function apiPut(
+        string $uri,
+        mixed $body,
+        string|null $contentType = null,
+        bool $returnBool = false
+    ) : Response|bool {
         $uri = $this->resolveUri($uri);
         $accept = $this->myConf('api.accept');
         $contentType = $contentType ? $contentType : $accept;

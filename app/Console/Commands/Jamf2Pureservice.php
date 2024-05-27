@@ -44,14 +44,13 @@ class Jamf2Pureservice extends Command {
         $this->start = microtime(true);
         $this->info(class_basename($this).' v'.$this->version);
         $this->line($this->description);
-        $this->newLine();
-        $this->line('Bruker URL '.config('jamfpro.api.url').config('jamfpro.api.prefix'));
         $this->newline();
 
         $this->line(Tools::l2().'Logger inn på Jamf Pro');
         $this->jamfPro = new JamfPro();
         if ($this->jamfPro->up):
             $this->line(Tools::L3.'Jamf Pro er tilkoblet og klar til bruk');
+            $this->line('Bruker URL '.config('jamfpro.api.url').config('jamfpro.api.prefix'));
         else:
             $this->error(Tools::L3.'Jamf Pro er nede eller feilkonfigurert');
             dd(config('jamfpro.api'));
@@ -64,6 +63,7 @@ class Jamf2Pureservice extends Command {
         $this->psApi = new PsAssets();
         if ($this->psApi->up):
             $this->line(Tools::L3.'Pureservice er tilkoblet og svarer normalt');
+            $this->line('Bruker URL '.config('pureservice.api.url').config('pureservice.api.prefix'));
         else:
             $this->error(Tools::L3.'Pureservice er nede eller feilkonfigurert');
             return Command::FAILURE;
