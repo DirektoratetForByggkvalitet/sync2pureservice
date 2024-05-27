@@ -14,11 +14,11 @@ class API {
     protected string $cKey;
     public string $base_url;
     private string $version = '1.5';
-    protected string|bool $token = false;
-    protected Carbon $tokenExpiry;
+    protected string|false $token = false;
+    protected Carbon|false $tokenExpiry = false;
 
     protected $prefix = ''; // Prefiks til uri
-    protected false|string $auth = false;
+    public false|string $auth = false;
 
     public function __construct() {
         $this->setCKey(Str::lower(class_basename($this)));
@@ -84,10 +84,9 @@ class API {
     /**
      * Henter token for innlogging
      */
-    protected function getToken(): string {
-        return isset($this->token) ? $this->token : '';
+    protected function getToken(): string|false {
+        return $this->token;
     }
-
 
     /**
      * Setter prefiks for alle API-kall (det som kommer etter 'https://server.no' i alle kall)

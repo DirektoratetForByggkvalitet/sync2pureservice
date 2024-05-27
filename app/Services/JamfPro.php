@@ -14,32 +14,30 @@ class JamfPro extends API {
 
     public function __construct() {
         parent::__construct();
-        $this->up = isset($this->token);
+        $this->up = $this->token ? true : false;
     }
 
     /**
      * Logger inn mot JamfPro for å hente id-token til bruk videre.
      */
-    protected function setToken(): void {
+    public function setToken(): void {
         // Dersom token finnes sjekker vi den mot utløpstiden
-        if (isset($this->token) && isset($this->tokenExpiry)):
+        if ($this->token && isset($this->tokenExpiry)):
             $in15minutes = Carbon::now(config('app.timezone'))->addMinutes(15);
             if ($this->tokenExpiry instanceof Carbon  && $this->tokenExpiry->isBefore($in15minutes)):
-                unset($this->token, $this->tokenExpiry);
+                $this->token = $this->tokenExpiry = false;
             endif;
         endif;
         // Setter ny token hvis token ikke er satt fra før
-        if (!isset($this->token)):
+        if (!$this->token):
             $request = Http::withBasicAuth(config('jamfpro.api.username'), config('jamfpro.api.password'));
             $request->baseUrl($this->base_url);
             $request->acceptJson();
             $uri = '/v1/auth/token';
             $response = $request->post($uri, null);
             if ($response->successful()):
-                $this->token = $response->json('token', );
+                $this->token = $response->json('token');
                 $this->tokenExpiry = Carbon::parse($response->json('Expiry'), config('app.timezone'));
-            else:
-                dd($response);
             endif;
         endif;
     }
