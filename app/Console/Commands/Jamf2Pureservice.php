@@ -54,6 +54,7 @@ class Jamf2Pureservice extends Command {
             $this->line(Tools::L3.'Jamf Pro er tilkoblet og klar til bruk');
         else:
             $this->error(Tools::L3.'Jamf Pro er nede eller feilkonfigurert');
+            dd($this->jamfPro);
             return Command::FAILURE;
         endif;
 
