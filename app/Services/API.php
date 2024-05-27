@@ -39,11 +39,8 @@ class API {
         $this->base_url = $this->myConf($prefix.'.url').$this->prefix;
 
         // Beholder samme User-Agent uansett prefix
-        if (env('BITBUCKET_COMMIT', false)):
-            $userAgent = class_basename($this).'-'.Str::limit(env('BITBUCKET_COMMIT'), 8).'/'.config('api.user-agent');
-        else:
-            $userAgent = class_basename($this).'/'.config('api.user-agent');
-        endif;
+        $userAgent = class_basename($this).'/'.config('api.user-agent');
+
         config([
             Str::lower(class_basename($this)).'.api.user-agent' => $userAgent,
         ]);
