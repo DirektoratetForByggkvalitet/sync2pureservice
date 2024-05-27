@@ -14,7 +14,7 @@ class API {
     protected string $cKey;
     public string $base_url;
     private string $version = '1.5';
-    protected string $token;
+    protected string|bool $token = false;
     protected Carbon $tokenExpiry;
 
     protected $prefix = ''; // Prefiks til uri
@@ -45,7 +45,7 @@ class API {
         config([
             Str::lower(class_basename($this)).'.api.user-agent' => $userAgent,
         ]);
-        if ($this->auth = 'token'):
+        if ($this->auth == 'token'):
             $this->setToken();
         endif;
     }
@@ -54,7 +54,7 @@ class API {
      * Funksjon for å regne ut eller hente inn Token for innlogging. Kan overstyres i underklasser
      */
     protected function setToken(): void {
-        $this->token = $this->myConf('api.token');
+        $this->token = $this->myConf('api.token', false);
     }
 
     public function setBaseUrl(string $url): void {
