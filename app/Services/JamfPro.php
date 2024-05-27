@@ -8,7 +8,8 @@ use Illuminate\Support\Str;
 
 class JamfPro extends API {
     public bool $up = false;
-    public string $version = "2.0";
+    public string $version = '2.0';
+    public string $errorMsg = '';
 
     public function __construct() {
         $this->setCKey(Str::lower(class_basename($this)));
@@ -25,24 +26,26 @@ class JamfPro extends API {
             endif;
         endif;
         if (!isset($this->token)):
-            $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
+            $request = Http::withUserAgent(config('jamfpro.api.user-agent', config('api.user-agent')));
             // $request->retry($this->myConf('api.retry', config('api.retry')));
             // Setter headers
             // $request->withHeaders([
             //     'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
             //     'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
             // ]);
-            $request->baseUrl($this->myConf('api.url').$this->myConf('api.prefix'));
+            $request->baseUrl(config('jamfpro.api.url').config('jamfpro.api.prefix'));
             $request->acceptJson();
-            //$request->withBasicAuth($this->myConf('api.username'), $this->myConf('api.password'));
-            $request->withHeaders([
-                'Authorization' => 'Basic '. base64_encode($this->myConf('api.username').':'. $this->myConf('api.password'))
-            ]);
+            $request->withBasicAuth(config('jamfpro.api.username'), config('jamfpro.api.password'));
+            // $request->withHeaders([
+            //     'Authorization' => 'Basic '. base64_encode(config('jamfpro.api.username').':'. config('jamfpro.api.password'))
+            // ]);
             $uri = '/v1/auth/token';
             $response = $request->post($uri);
             if ($response->successful()):
                 $this->token = $response->json('token');
                 $this->tokenExpiry = Carbon::parse($response->json('Expiry'), config('app.timezone'));
+            else:
+                dd($response->json());
             endif;
         endif;
     }
