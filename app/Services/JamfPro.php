@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\{Http, Cache};
 use Illuminate\Support\Str;
 
@@ -12,40 +13,34 @@ class JamfPro extends API {
     public string $errorMsg = '';
 
     public function __construct() {
-        $this->setCKey(Str::lower(class_basename($this)));
-        $this->setToken();
-        $this->setProperties();
+        parent::__construct();
         $this->up = isset($this->token);
     }
 
+    /**
+     * Logger inn mot JamfPro for å hente id-token til bruk videre.
+     */
     protected function setToken(): void {
+        // Dersom token finnes sjekker vi den mot utløpstiden
         if (isset($this->token) && isset($this->tokenExpiry)):
             $in15minutes = Carbon::now(config('app.timezone'))->addMinutes(15);
             if ($this->tokenExpiry instanceof Carbon  && $this->tokenExpiry->isBefore($in15minutes)):
                 unset($this->token, $this->tokenExpiry);
             endif;
         endif;
+        // Setter ny token hvis token ikke er satt fra før
         if (!isset($this->token)):
             $request = Http::withUserAgent(config('jamfpro.api.user-agent', config('api.user-agent')));
-            // $request->retry($this->myConf('api.retry', config('api.retry')));
-            // Setter headers
-            // $request->withHeaders([
-            //     'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
-            //     'Accept-Encoding' => $this->myConf('api.headers.accept-encoding', config('api.headers.accept-encoding')),
-            // ]);
+            $request->withBasicAuth(config('jamfpro.api.username'), config('jamfpro.api.password'));
             $request->baseUrl(config('jamfpro.api.url').config('jamfpro.api.prefix'));
             $request->acceptJson();
-            $request->withBasicAuth(config('jamfpro.api.username'), config('jamfpro.api.password'));
-            // $request->withHeaders([
-            //     'Authorization' => 'Basic '. base64_encode(config('jamfpro.api.username').':'. config('jamfpro.api.password'))
-            // ]);
             $uri = '/v1/auth/token';
             $response = $request->post($uri);
             if ($response->successful()):
                 $this->token = $response->json('token');
                 $this->tokenExpiry = Carbon::parse($response->json('Expiry'), config('app.timezone'));
             else:
-                dd($response->json());
+                dd($response);
             endif;
         endif;
     }

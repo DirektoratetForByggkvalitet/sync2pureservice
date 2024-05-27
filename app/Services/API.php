@@ -36,10 +36,8 @@ class API {
         if ($this->prefix != '' & !Str::startsWith($this->prefix, '/')):
             $this->prefix = Str::replace('//', '/', '/'.$this->prefix);
         endif;
-        $this->base_url = $this->myConf($prefix.'.url');
-        if ($this->myConf($prefix.'.token')):
-            $this->token = $this->myConf($prefix.'.token');
-        endif;
+        $this->base_url = $this->myConf($prefix.'.url').$this->prefix;
+
         // Beholder samme User-Agent uansett prefix
         if (env('BITBUCKET_COMMIT', false)):
             $userAgent = class_basename($this).'-'.Str::limit(env('BITBUCKET_COMMIT'), 8).'/'.config('api.user-agent');
@@ -49,6 +47,16 @@ class API {
         config([
             Str::lower(class_basename($this)).'.api.user-agent' => $userAgent,
         ]);
+        if ($this->auth = 'token'):
+            $this->setToken();
+        endif;
+    }
+
+    /**
+     * Funksjon for å regne ut eller hente inn Token for innlogging. Kan overstyres i underklasser
+     */
+    protected function setToken(): void {
+        $this->token = $this->myConf('api.token');
     }
 
     public function setBaseUrl(string $url): void {
@@ -97,6 +105,8 @@ class API {
      * @return  Illuminate\Http\Client\PendingRequest
      */
     public function prepRequest(string|null $accept = null, string|null $contentType = 'auto', null|string $toFile = null): PendingRequest {
+        // Fornyer token dersom den trenger fornyelse
+        $this->setToken();
         $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
         // Setter timeout for forespørselen
         $request->timeout($this->myConf('api.timeout', config('api.timeout')));
