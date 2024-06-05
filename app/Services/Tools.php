@@ -93,4 +93,28 @@ class Tools {
         $address = Str::remove([' ', ' '], $address);
         return $address;
     }
+    /**
+     * Komprimerer store PDF-filer for å spare plass
+    */
+    public static function compressPdf($file): bool {
+        // Sjekker om ghostscript er installert
+        system('type gs >> /dev/null', $gsInstalledCode);
+        // Hvis ghostscript ikke finnes må vi avbryte
+        if ($gsInstalledCode != 0) return false;
+        if (Storage::exists($file) && Storage::mimeType($file) == 'application/pdf'):
+            $bkFile = Str::beforeLast($file, '.').'_orig.'. Str::afterLast($file, '.');
+            // Flytter på originalfila
+            Storage::move($file, $bkFile);
+
+            system ('gs
+                -sDEVICE=pdfwrite
+                -dCompatibilityLevel=1.5
+                -dPDFSETTINGS=/ebook
+                -dNOPAUSE -dQUIET
+                -dBATCH
+                -sOutputFile='.Storage::path($file).' -f '.Storage::path($bkFile), $resultCode);
+        endif;
+
+        return false;
+    }
 }

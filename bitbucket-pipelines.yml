@@ -8,6 +8,10 @@ definitions:
         ./artisan migrate:fresh --force
     - script: &install
         echo "Setter opp miljøet for kjøring" && cp .env.example .env && composer install
+    - script: &gsCheckMac
+        if ! type gs >> /dev/null; then brew install ghostscript; fi
+    - script: &gsCheckLinux
+        if ! type gs >> /dev/null; then apt-get update && apt-get install -yq ghostscript; fi
   steps:
     - step: &forberedeSvarInn
         name: Forbereder kjøring
@@ -52,6 +56,10 @@ definitions:
 options:
   max-time: 60
 
+# Begrenser dybden på git-kloningen for å gi bedre fart
+clone:
+  depth: 1
+
 image: dibk/sync2pureservice:latest
 
 pipelines:
@@ -93,6 +101,7 @@ pipelines:
           runs-on:
             - "self.hosted"
           script:
+            - *gsCheckLinux
             - *install
             - *resetDB
             - echo "Kjører sjekk på innkommende meldinger"

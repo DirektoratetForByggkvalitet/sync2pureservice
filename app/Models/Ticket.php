@@ -92,7 +92,7 @@ class Ticket extends Model
     /**
      * Returnerer array over mottakere som er koblet til mottakerlister
      */
-    public function extractRecipientsFromAsset(PsApi $ps, array $recipientListAssetType, bool $returnList = false): Collection|false {
+    public function extractRecipientsFromAsset(PsApi $ps, array $recipientListAssetType, bool $returnList = false): Collection {
         $recipientList = [];
         $uri = '/relationship/'.$this->id.'/fromTicket';
         $query = [
@@ -141,7 +141,7 @@ class Ticket extends Model
             endforeach;
             return collect($recipientList);
         endif;
-        return false;
+        return collect([]);
     }
 
     /**
