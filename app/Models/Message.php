@@ -290,6 +290,8 @@ class Message extends Model {
         return $ticket;
     }
 
+
+
     /**
      * Splitter innsynskrav opp slik at hver sak får sitt eget innsynskrav
      */

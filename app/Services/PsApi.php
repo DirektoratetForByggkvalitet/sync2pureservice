@@ -1,7 +1,4 @@
 <?php
-
-
-
 namespace App\Services;
 use App\Models\{Ticket, TicketCommunication, User, Company, Message, PsStatus};
 use Carbon\Carbon;
