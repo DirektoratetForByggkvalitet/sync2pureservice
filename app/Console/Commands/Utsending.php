@@ -104,7 +104,7 @@ class Utsending extends Command
                     $ticket->save();
                 endif;
             });
-        $msgCount =PsEmail::all(['id'])->count();
+        $msgCount = PsEmail::all(['id'])->count();
         if ($msgCount == 0):
             $this->info(Tools::L1.'Ingen meldinger ble funnet.');
             return Command::SUCCESS;
