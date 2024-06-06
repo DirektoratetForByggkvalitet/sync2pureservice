@@ -25,7 +25,7 @@ class Utsending extends Command
      * @var string
      */
     protected $description = 'Henter ut masseutsendelser som skal sendes med e-post og eFormidling, samt utgående meldinger som skal sendes med eFormidling';
-    protected string $version = '2.0';
+    protected string $version = '2.5 beta';
     protected float $start;
     protected Collection $messages;
     protected Collection $tickets;
