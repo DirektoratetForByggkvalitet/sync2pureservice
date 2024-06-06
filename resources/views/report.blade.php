@@ -10,17 +10,21 @@
     <li>Mottakere med ugyldige adresser: {{ $results['skipped'] }}</li>
 </ul>
 <h2>Mottakere</h2>
-<p>Utsendingen ble sendt til {{ $results['recipients'] }} mottakere:</p>
+<p>Utsendingen var adressert til {{ $results['recipients'] }} mottakere:</p>
 <ul>
 @foreach ($recipients as $recipient)
+    @php
+        $delivery = '[levert]';
+        if (!$recipient->email) $delivery = '[ikke levert]';
+    @endphp
     @if ($recipient instanceof App\Models\User)
         <li>{{ $recipient->firstName . ' ' . $recipient->lastName }}
         @if ($recipient->companyId && $c = App\Models\Company::firstWhere('id', $recipient->companyId))
-            - {{ $c->name }}
+            - {{ $c->name }} {{ $delivery }}
         @endif
         </li>
     @else
-        <li>{{ $recipient->name }}</li>
+        <li>{{ $recipient->name }} {{ $delivery }}</li>
     @endif
 @endforeach
 </ul>
