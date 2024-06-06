@@ -92,7 +92,7 @@ return [
         'array' => [
             'transport' => 'array',
         ],
-
+        // Failover beskriver det å kunne bruke flere forsendelsesmåter. Dersom den første feiler vil neste på listen brukes
         'failover' => [
             'transport' => 'failover',
             'mailers' => [

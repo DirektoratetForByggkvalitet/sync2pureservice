@@ -17,7 +17,7 @@ class PsEmail extends Model {
         'dbid',
         'id'
     ];
-    protected $fillable [
+    protected $fillable = [
         'id',
         'requestId',
         'assetId',
@@ -52,7 +52,6 @@ class PsEmail extends Model {
         'created' => 'datetime',
         'isInitial' => 'boolean',
         'isBoundary' => 'boolean',
-        'statusDate' => 'datetime',
-        
+        'statusDate' => 'datetime', 
      ];
 }
