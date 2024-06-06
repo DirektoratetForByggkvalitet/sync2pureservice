@@ -15,6 +15,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.7",
         "phpoffice/phpspreadsheet": "^1.25",
+        "predis/predis": "^2.0",
         "zanysoft/laravel-zip": "dev-laravel-11"
     },
     "require-dev": {
