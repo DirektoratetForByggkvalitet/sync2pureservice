@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\{Str, Collection};
 use Illuminate\Support\Facades\{Storage, Mail, Blade};
 use App\Services\{Eformidling, PsApi, Tools};
-use App\Models\{Message, Company, User, Ticket, PsEmail};
+use App\Models\{Message, Company, User, Ticket};
 use App\Mail\TicketMessage;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
@@ -88,23 +88,9 @@ class Utsending extends Command
             $this->error('Feil ved innhenting av meldinger');
             return Command::FAILURE;
         endif;
-        // Lagrer e-postmeldingene i databasen
-        collect($response->json('emails'))
-            ->mapInto(PsEmail::class)
-            ->each(function (PsEmail $email) {
-                if (!$exists = PsEmail::firstWhere('id', $email['id'])):
-                    $email->save();
-                endif;
-            });
-        // Sparer minne ved å lagre alle saksdata i databasen
-        collect($response->json('linked.tickets'))
-            ->mapInto(Ticket::class)
-            ->each(function (Ticket $ticket) {
-                if (!$exists = Ticket::firstWhere('id', $ticket->id)):
-                    $ticket->save();
-                endif;
-            });
-        $msgCount = PsEmail::all(['id'])->count();
+        $this->messages = collect($response->json('emails'));
+        $this->tickets = collect($response->json('linked.tickets'))->mapInto(Ticket::class);
+        $msgCount = $this->messages->count();
         if ($msgCount == 0):
             $this->info(Tools::L1.'Ingen meldinger ble funnet.');
             return Command::SUCCESS;

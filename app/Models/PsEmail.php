@@ -17,4 +17,42 @@ class PsEmail extends Model {
         'dbid',
         'id'
     ];
+    protected $fillable [
+        'id',
+        'requestId',
+        'assetId',
+        'from',
+        'fromName',
+        'to',
+        'cc',
+        'bcc',
+        'messageId',
+        'subject',
+        'text',
+        'inReplyTo',
+        'references',
+        'emailDataId',
+        'attachmentStrategy',
+        'direction',
+        'channelId',
+        'status',
+        'statusDate',
+        'statusMessage',
+        'statusDetails',
+        'isInitial',
+        'isSystem',
+        'isBoundary',
+        'created',
+        'modified',
+        'createdBy',
+        'modifiedBy',
+    ];
+     protected $casts = [
+        'modified' => 'datetime',
+        'created' => 'datetime',
+        'isInitial' => 'boolean',
+        'isBoundary' => 'boolean',
+        'statusDate' => 'datetime',
+        
+     ];
 }
