@@ -129,13 +129,19 @@ return [
 
     'redis' => [
 
-        'client' => env('REDIS_CLIENT', 'phpredis'),
+        'client' => env('REDIS_CLIENT', 'predis'),
+
+        'options' => [
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'sync2pureservice'), '_')),
+            'serializer' => env('REDIS_SERIALIZER', 'igbinary'),
+            'compression' => env('REDIS_COMPRESSION', 'lz4'),   
+        ],
 
         'default' => [
             'host' => env('REDIS_HOST', '127.0.0.1'),
             'password' => env('REDIS_PASSWORD', null),
             'port' => env('REDIS_PORT', 6380),
-            'database' => 3,
+            'database' => env('REDIS_DB', '0'),
             'scheme' => 'tls',
         ],
 
@@ -143,7 +149,7 @@ return [
             'host' => env('REDIS_HOST', '127.0.0.1'),
             'password' => env('REDIS_PASSWORD', null),
             'port' => env('REDIS_PORT', 6380),
-            'database' => env('REDIS_CACHE_DB', 2),
+            'database' => env('REDIS_CACHE_DB', '1'),
             'scheme' => 'tls',
         ],
     ],
