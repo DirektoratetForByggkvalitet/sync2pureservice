@@ -30,14 +30,34 @@ class JamfPro extends API {
         endif;
         // Setter ny token hvis token ikke er satt fra før
         if (!$this->token):
-            $request = Http::withBasicAuth(config('jamfpro.api.username'), config('jamfpro.api.password'));
+            $params = null;
+            $oauth = config('jamfpro.api.client_id', false) ? true : false;
+            if ($oauth):
+                // Bruker API Client-innlogging: https://learn.jamf.com/en-US/bundle/jamf-pro-documentation-current/page/API_Roles_and_Clients.html
+                $request = Http::asForm();
+                $params = [
+                    'client_id' => config('jamfpro.api.client_id'),
+                    'grant_type' => 'client_credentials',
+                    'client_secret' => config('jamfpro.api.client_secret'),
+                ];
+                $uri = 'oauth/token';
+
+            else:
+                // API v1 sin API-innlogging
+                $request = Http::withBasicAuth(config('jamfpro.api.username'), config('jamfpro.api.password'));
+                $uri = '/v1/auth/token';
+            endif;
             $request->baseUrl($this->base_url);
             $request->acceptJson();
-            $uri = '/v1/auth/token';
-            $response = $request->post($uri, null);
+            $response = $request->post($uri, $params);
             if ($response->successful()):
-                $this->token = $response->json('token');
-                $this->tokenExpiry = Carbon::parse($response->json('Expiry'), config('app.timezone'));
+                if ($oauth):
+                    $this->token = $response->json('access_token');
+                    $this->tokenExpiry = Carbon::now(config('app.timezone'))->addSeconds($response->json('expires_in'));
+                else:
+                    $this->token = $response->json('token');
+                    $this->tokenExpiry = Carbon::parse($response->json('Expiry'), config('app.timezone'));
+                endif;
             endif;
         endif;
     }

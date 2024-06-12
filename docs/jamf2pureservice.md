@@ -15,7 +15,7 @@ Jamf2pureservice er en konsoll-kommando som utfører følgende operasjoner:
 - En instans av Jamf Pro
 - En Pureservice-instans med brukersynkronisering (f.eks. Azure AD) som er ajour med brukerne i Jamf Pro
 - Pureservice Assets satt opp med to ressurstyper: Datamaskin og mobilenhet
-- PHP 8.x og PHP composer på maskinen som skal kjøre synkroniseringen
+- PHP 8.x og PHP composer på maskinen eller konteineren som skal kjøre synkroniseringen
 
 ## Nødvendige miljøvariabler
 
@@ -24,10 +24,12 @@ Det er en rekke miljøvariabler som er nødvendige for at skriptet skal få gjor
 | Variabel | Standardverdi | Beskrivelse |
 | ----------- | ----------- | ----------- |
 | JAMFPRO_URL | https://customer.jamfcloud.com | Angir base-adressen til Jamf Pro-instansen. Det er ikke nødvendig å bruke /api el.l. |
-| JAMFPRO_USER | let-me | Brukernavn for en bruker i Jamf Pro som har global lesetilgang |
-| JAMFPRO_PASSWORD | pass | Passord til Jamf Pro-brukeren |
+| JAMFPRO_CLIENTID / JAMFPRO_USER | | Client ID når man vil logge inn gjennom [API-klient](https://learn.jamf.com/en-US/bundle/jamf-pro-documentation-current/page/API_Roles_and_Clients.html) (anbefales). Eller du kan bruke en bruker med lesetilgang, og oppgi brukernavnet som JAMPRO_USER |
+| JAMFPRO_SECRET / JAMFPRO_PASSWORD | | Client Secret når man bruker API-klient eller passord for admin-bruker |
 | PURESERVICE_URL | https://customer.pureservice.com | Base-adressen til Pureservice-instansen |
-| PURESERVICE_APIKEY | ey... | API-nøkkel til Pureservice |
+| PURESERVICE_APIKEY | ey... | API-nøkkel (egentlig token) til Pureservice |
+
+Dersom du bruker [API-klient](https://learn.jamf.com/en-US/bundle/jamf-pro-documentation-current/page/API_Roles_and_Clients.html) for å logge inn må du i Jamf Pro sette opp en API-klient med en rolle som gir tilgangene "Read Computers" og "Read Mobile Devices". Dette er absolutt å foretrekke i stedet for å sette opp en administrator-bruker.
 
 ## Nødvendig oppsett i Pureservice
 
