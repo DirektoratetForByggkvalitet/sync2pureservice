@@ -3,19 +3,13 @@ name: Build docker image
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build-image:
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, docker, ARM64]
 
     steps:
-    - uses: docker-practice/actions-setup-docker@master
-      env:
-        docker_version: "26.1"
-      timeout-minutes: 12
     - uses: actions/checkout@v4
     - name: Azure CLI login
       env:
