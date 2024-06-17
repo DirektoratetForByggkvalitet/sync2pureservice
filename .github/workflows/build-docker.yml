@@ -22,5 +22,7 @@ jobs:
     - name: Azure CLI login
       env:
         SP_ID: ${{vars.AZURE_SP_ID}}
-        TENANT_ID: ${{vars.AZURE_TENANT}}
-      run: echo "${{secrets.AZURE_SP_CERT}}" > sp.cert && az login --service-principal -u $SP_ID -t $TENANT_ID -p sp.cert
+        TENANT_ID: ${{vars.AZURE_TENANT_ID}}
+      run: |
+        echo "${{secrets.AZURE_SP_CERT}}" > sp.cert
+        az login --service-principal -u $SP_ID --tenant $TENANT_ID -p ./sp.cert
