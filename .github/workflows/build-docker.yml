@@ -17,6 +17,8 @@ jobs:
       run: |
         brew install php composer
         brew install --cask docker
+        unset $DOCKER_HOST
+        docker version
     - name: Copy .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
     - name: Install Dependencies
