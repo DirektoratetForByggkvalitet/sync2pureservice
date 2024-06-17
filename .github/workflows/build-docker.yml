@@ -1,0 +1,26 @@
+name: Build docker image
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-image:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install php
+      run: brew install php
+    - name: Copy .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+    - name: Install Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+    - name: Azure CLI login
+      env:
+        SP_ID: ${{vars.AZURE_SP_ID}}
+        TENANT_ID: ${{vars.AZURE_TENANT}}
+      run: echo "${{secrets.AZURE_SP_CERT}}" > sp.cert && az login --service-principal -u $SP_ID -t $TENANT_ID -p sp.cert
