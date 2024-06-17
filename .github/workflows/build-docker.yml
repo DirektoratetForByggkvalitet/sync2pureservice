@@ -9,17 +9,12 @@ on:
 jobs:
   build-image:
 
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install php og Docker
-      run: |
-        brew install --cask docker
-        sudo '/Applications/Docker.app/Contents/MacOS/Docker' --unattended --install-privileged-components
-        open -a "/Applications/Docker.app" --args --unattended --accept-license
-        brew install php composer
-        docker version
+    - uses: docker-practice/actions-setup-docker@master
+      timeout-minutes: 12
     - name: Copy .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
     - name: Install Dependencies
