@@ -13,8 +13,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install php
-      run: brew install php composer
+    - name: Install php og Docker
+      run: |
+        brew install php composer
+        brew install --cask docker
     - name: Copy .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
     - name: Install Dependencies
@@ -26,3 +28,11 @@ jobs:
       run: |
         echo "${{secrets.AZURE_SP_CERT}}" > sp.cert
         az login --service-principal -u $SP_ID --tenant $TENANT_ID -p ./sp.cert
+        az acr login -n dibknoe
+    - name: Docker Hub login
+      env:
+        DOCKER_USER: ${{vars.DOCKERHUB_USER}}
+        DOCKER_PW: ${{secrets.DOCKERHUB_TOKEN}}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PW
+        
