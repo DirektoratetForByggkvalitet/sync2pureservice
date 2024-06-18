@@ -9,7 +9,8 @@ jobs:
   build-image:
 
     runs-on: [self-hosted, docker, macOS]
-    environment: production
+    environment:
+      name: production
 
     steps:
     - uses: actions/checkout@v4
