@@ -1,0 +1,23 @@
+name: Build docker image
+
+on:
+  workflow_call:
+  # schedule:
+  #   - cron: "15 23 * * 0"
+
+jobs:
+  build-image:
+
+    runs-on: [self-hosted, docker, macOS]
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set .env
+      run: echo "${{ vars.LARAVEL_ENV }}" > .env
+    - name: Install dependencies
+      run: composer install
+    - name: Run Jamf2Pureservice
+      run: |
+        ./artisan migrate:fresh --force
+        ./artisan pureservice:sync-jamf

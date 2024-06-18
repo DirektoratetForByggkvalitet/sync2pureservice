@@ -147,7 +147,7 @@ class PsApi extends API {
      */
     public function setTicketOptions(string $prefix = 'ticket') : void {
         $this->ticketOptions = [
-            'zoneId' => $this->getEntityId('department', $this->myConf($prefix.'.zone')),
+            // 'zoneId' => $this->getEntityId('department', $this->myConf($prefix.'.zone')),
             'teamId' => $this->getEntityId('team', $this->myConf($prefix.'.team')),
             'sourceId' => $this->getEntityId('source', $this->myConf($prefix.'.source')),
             'requestTypeId' => $this->getEntityId('requesttype', $this->myConf($prefix.'.requestType'), true),
@@ -182,7 +182,7 @@ class PsApi extends API {
             'description' => $description,
             'userId' => $userId,
             'visibility' => $visibility,
-            'assignedDepartmentId' => $this->ticketOptions['zoneId'],
+            // 'assignedDepartmentId' => $this->ticketOptions['zoneId'],
             'assignedTeamId' => $this->ticketOptions['teamId'],
             'sourceId' => $this->ticketOptions['sourceId'],
             'ticketTypeId' => $this->ticketOptions['ticketTypeId'],
