@@ -1,7 +1,7 @@
 name: Jamf2Pureservice
 
 on:
-  workflow_call:
+  workflow_dispatch:
   # schedule:
   #   - cron: "15 23 * * 0"
 
