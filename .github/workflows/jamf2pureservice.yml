@@ -6,7 +6,7 @@ on:
   #   - cron: "15 23 * * 0"
 
 jobs:
-  build-image:
+  jamf2pureservice:
 
     runs-on: [self-hosted, docker, macOS]
     environment:
@@ -17,7 +17,6 @@ jobs:
     - name: Set .env
       run: |
         echo "${{ vars.LARAVEL_ENV }}" > .env
-        cat .env
     - name: Install dependencies
       run: composer install
     - name: Run Jamf2Pureservice
