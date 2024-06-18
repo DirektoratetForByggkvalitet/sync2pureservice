@@ -1,4 +1,4 @@
-name: Build docker image
+name: Jamf2Pureservice
 
 on:
   workflow_call:
