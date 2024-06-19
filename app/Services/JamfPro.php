@@ -31,7 +31,7 @@ class JamfPro extends API {
         // Setter ny token hvis token ikke er satt fra før
         if (!$this->token):
             $params = null;
-            $oauth = config('jamfpro.api.client_id', false) ? true : false;
+            $oauth = config('jamfpro.api.client_id') ? true : false;
             if ($oauth):
                 // Bruker API Client-innlogging: https://learn.jamf.com/en-US/bundle/jamf-pro-documentation-current/page/API_Roles_and_Clients.html
                 $request = Http::asForm();

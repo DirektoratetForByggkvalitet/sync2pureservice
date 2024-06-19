@@ -17,6 +17,7 @@ jobs:
     - name: Set .env
       run: |
         echo "${{ vars.LARAVEL_ENV }}" > .env
+        echo ${PURESERVICE_URL}
     - name: Install dependencies
       run: composer install
     - name: Run Jamf2Pureservice
