@@ -9,7 +9,7 @@ jobs:
   usercleanup:
 
 
-    runs-on: [self-hosted, Linux]
+    runs-on: [self-hosted]
     environment:
       name: production
 
