@@ -283,9 +283,9 @@ class Jamf2Pureservice extends Command {
                 $psAsset[$fn['OsVersion']] = $dev['general']['osVersion'];
             endif;
             if (isset($dev['general']['initialEntryTimestamp']) && $dev['general']['initialEntryTimestamp'] != ''):
-                $memberSinceData = $dev['general']['initialEntryTimestamp'];
+                $memberSinceData = &$dev['general']['initialEntryTimestamp'];
              else:
-                $memberSinceData = $dev['general']['lastEnrolledDate'];
+                $memberSinceData = &$dev['general']['lastEnrolledDate'];
             endif;
             $memberSince = Carbon::create($memberSinceData)->timezone(config('app.timezone'));
 
@@ -293,6 +293,7 @@ class Jamf2Pureservice extends Command {
             $psAsset[$fn['EOL']] = $memberSince->copy()
                 ->addYears(config('pureservice.mobile.lifespan', 3))
                 ->toJSON();
+            unset($memberSince);
             if ($dev['general']['lastInventoryUpdateDate'] != null):
                 $psAsset[$fn['lastSeen']] = Carbon::create($dev['general']['lastInventoryUpdateDate'])
                     ->timezone(config('app.timezone'))
@@ -330,9 +331,9 @@ class Jamf2Pureservice extends Command {
             endif;
 
             if (isset($mac['general']['initialEntryDate']) && $mac['general']['initialEntryDate'] != ''):
-                $memberSinceData = $dev['general']['initialEntryDate'];
+                $memberSinceData = &$mac['general']['initialEntryDate'];
              else:
-                $memberSinceData = $dev['general']['lastEnrolledDate'];
+                $memberSinceData = &$mac['general']['lastEnrolledDate'];
             endif;
             $memberSince = Carbon::create($memberSinceData)->timezone(config('app.timezone'));
 
@@ -345,7 +346,7 @@ class Jamf2Pureservice extends Command {
                     ->timezone(config('app.timezone'))
                     ->toJSON();
             endif;
-
+            unset($memberSince);
             $psAsset[$fn['jamfUrl']] = config('jamfpro.api.url').'/computers.html?id='.$mac['id'].'&o=r';
 
             $psAsset['usernames'] = [];
