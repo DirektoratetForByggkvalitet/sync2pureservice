@@ -11,8 +11,6 @@ jobs:
     runs-on: [self-hosted, docker, macOS]
     environment:
       name: production
-    container: dibk/sync2pureservice:latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Sett opp .env
