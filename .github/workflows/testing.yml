@@ -16,5 +16,9 @@ jobs:
     - uses: actions/checkout@v4
     - name: Setter opp .env
       run: |
-        envsubst < ".env.ga_template" > ".env"
+        echo "${{ vars.LARAVEL_ENV }}" > .env
+        cat <<EOF >> .env
+        PURESERVICE_URL=${{ vars.PURESERVICE_URL }}
+        PURESERVICE_APIKEY=${{ secrets.PURESERVICE_APIKEY }}
+        MAIL_MAILER=${{ vars.MAILER }}
         cat .env
