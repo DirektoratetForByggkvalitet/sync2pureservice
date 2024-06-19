@@ -18,8 +18,22 @@ jobs:
       run: |
         echo "${{ vars.LARAVEL_ENV }}" > .env
         cat <<EOF >> .env
+        # Innstillinger basert på Environment/Repository
+        AZURE_SP_SECRET=${{ secrets.AZURE_SP_SECRET }}
+
         PURESERVICE_URL=${{ vars.PURESERVICE_URL }}
         PURESERVICE_APIKEY=${{ secrets.PURESERVICE_APIKEY }}
+        JAMFPRO_URL=${{ vars.JAMFPRO_URL }}
+        JAMFPRO_CLIENTID=${{ vars.JAMFPRO_CLIENTID }}
+        JAMFPRO_SECRET=${{ secrets.JAMFPRO_SECRET }}
+
+        REDIS_HOST=${{ vars.REDIS_HOST }}
+        REDIS_SECRET=${{ secrets.REDIS_SECRET }}
+        CACHE_DRIVER=${{ vars.CACHE_DRIVER }}
+
         MAIL_MAILER=${{ vars.MAILER }}
+
+        APP_DEBUG=${{ vars.APP_DEBUG }}
+
         EOF
         cat .env
