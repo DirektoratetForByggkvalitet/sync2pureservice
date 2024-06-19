@@ -282,12 +282,15 @@ class Jamf2Pureservice extends Command {
             if ($dev['general']['osVersion'] != null):
                 $psAsset[$fn['OsVersion']] = $dev['general']['osVersion'];
             endif;
+            if (isset($dev['general']['initialEntryTimestamp']) && $dev['general']['initialEntryTimestamp'] != ''):
+                $memberSinceData = $dev['general']['initialEntryTimestamp'];
+             else:
+                $memberSinceData = $dev['general']['lastEnrolledDate'];
+            endif;
+            $memberSince = Carbon::create($memberSinceData)->timezone(config('app.timezone'));
 
-            $psAsset[$fn['memberSince']] = Carbon::create($dev['general']['initialEntryTimestamp'])
-                ->timezone(config('app.timezone'))
-                ->toJSON();
-            $psAsset[$fn['EOL']] = Carbon::create($dev['general']['initialEntryTimestamp'])
-                ->timezone(config('app.timezone'))
+            $psAsset[$fn['memberSince']] = $memberSince->copy()->toJSON();
+            $psAsset[$fn['EOL']] = $memberSince->copy()
                 ->addYears(config('pureservice.mobile.lifespan', 3))
                 ->toJSON();
             if ($dev['general']['lastInventoryUpdateDate'] != null):
@@ -326,11 +329,15 @@ class Jamf2Pureservice extends Command {
                 $psAsset[$fn['OsVersion']] = $mac['operatingSystem']['version'];
             endif;
 
-            $psAsset[$fn['memberSince']] = Carbon::create($mac['general']['initialEntryDate'])
-                ->timezone(config('app.timezone'))
-                ->toJSON();
-            $psAsset[$fn['EOL']] = Carbon::create($mac['general']['initialEntryDate'])
-                ->timezone(config('app.timezone'))
+            if (isset($mac['general']['initialEntryDate']) && $mac['general']['initialEntryDate'] != ''):
+                $memberSinceData = $dev['general']['initialEntryDate'];
+             else:
+                $memberSinceData = $dev['general']['lastEnrolledDate'];
+            endif;
+            $memberSince = Carbon::create($memberSinceData)->timezone(config('app.timezone'));
+
+            $psAsset[$fn['memberSince']] = $memberSince->copy()->toJSON();
+            $psAsset[$fn['EOL']] = $memberSince->copy()
                 ->addYears(config('pureservice.computer.lifespan', 4))
                 ->toJSON();
             if ($mac['general']['lastContactTime'] != null):
