@@ -1,0 +1,20 @@
+name: Testing
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "15 23 * * 0"
+
+jobs:
+  test:
+
+    runs-on: [self-hosted, docker, macOS]
+    environment:
+      name: jamf2pureservice
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setter opp .env
+      run: |
+        envsubst < ".env.gatemplate" > ".env"
+        cat .env
