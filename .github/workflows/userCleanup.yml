@@ -19,31 +19,15 @@ jobs:
         echo "${{ vars.LARAVEL_ENV }}" > .env
         cat <<EOF >> .env
         # Innstillinger basert på Environment/Repository
-        AZURE_SP_SECRET=${{ secrets.AZURE_SP_SECRET }}
-        AZURE_SP_ID=${{vars.AZURE_SP_ID}}
-        AZURE_TENANT_ID=${{ vars.AZURE_TENANT_ID }}
-        MICROSOFT_GRAPH_CLIENT_ID=${{ vars.MICROSOFT_GRAPH_CLIENT_ID }}
-        MICROSOFT_GRAPH_CLIENT_SECRET=${{ secrets.MICROSOFT_GRAPH_CLIENT_SECRET }}
-
         PURESERVICE_URL=${{ vars.PURESERVICE_URL }}
-        PURESERVICE_APIKEY=${{ secrets.PURESERVICE_APIKEY }}
-
-        JAMFPRO_URL=${{ vars.JAMFPRO_URL }}
-        JAMFPRO_CLIENTID=${{ vars.JAMFPRO_CLIENTID }}
-        JAMFPRO_SECRET=${{ secrets.JAMFPRO_SECRET }}
 
         REDIS_HOST=${{ vars.REDIS_HOST }}
-        REDIS_PASSWORD=${{ secrets.REDIS_SECRET }}
         CACHE_DRIVER=${{ vars.CACHE_DRIVER }}
 
         MAIL_MAILER=${{ vars.MAILER }}
         MAIL_HOST=${{ vars.MAIL_HOST }}
         MAIL_USER=${{ vars.MAIL_USER }}
-        MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
 
-        EF_IP_PASSWORD=${{ secrets.INTEGRASJONSPUNKT_PASSWORD }}
-
-        APP_DEBUG=${{ vars.APP_DEBUG }}
         EOF
     - name: Cache dependencies
       id: vendor-cache
@@ -60,6 +44,10 @@ jobs:
     - name: Install dependencies
       run: composer install
     - name: Rydder i sluttbrukere i Pureservice
+      env:
+        REDIS_PASSWORD: ${{ secrets.REDIS_SECRET }}
+        MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+        PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
       run: |
         ./artisan migrate:fresh --force
         ./artisan pureservice:user-cleanup
