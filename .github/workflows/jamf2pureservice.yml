@@ -33,7 +33,7 @@ jobs:
         JAMFPRO_SECRET=${{ secrets.JAMFPRO_SECRET }}
 
         REDIS_HOST=${{ vars.REDIS_HOST }}
-        REDIS_SECRET=${{ secrets.REDIS_SECRET }}
+        REDIS_PASSWORD=${{ secrets.REDIS_SECRET }}
         CACHE_DRIVER=${{ vars.CACHE_DRIVER }}
 
         MAIL_MAILER=${{ vars.MAILER }}
@@ -42,7 +42,7 @@ jobs:
         MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
 
         EF_IP_PASSWORD=${{ secrets.INTEGRASJONSPUNKT_PASSWORD }}
-        
+
         APP_DEBUG=${{ vars.APP_DEBUG }}
         EOF
     - name: Cache dependencies
