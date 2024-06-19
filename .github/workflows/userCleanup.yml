@@ -8,11 +8,16 @@ on:
 jobs:
   usercleanup:
 
-    runs-on: [self-hosted, docker, macOS]
+
+    runs-on: [self-hosted, Linux]
     environment:
       name: production
 
     steps:
+    - if: runner.os == 'Linux'
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
     - uses: actions/checkout@v4
     - name: Sett opp .env
       run: |
