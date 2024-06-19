@@ -21,4 +21,5 @@ jobs:
         PURESERVICE_URL=${{ vars.PURESERVICE_URL }}
         PURESERVICE_APIKEY=${{ secrets.PURESERVICE_APIKEY }}
         MAIL_MAILER=${{ vars.MAILER }}
+        EOF
         cat .env
