@@ -10,7 +10,7 @@ Vi har bygd en kommandolinje-basert Laravel-applikasjon for å utvide funksjonal
 
 ## What are you saying?
 
-We're sorry if you don't understand the Norwegian language. This repository contains command line functions that expands the functionality of the Norwegian helpdesk system [Pureservice](https://www.pureservice.com). The extra functionality is mostly based on services not available outside Norway. The exception is [jamf2pureservice](docs/jamf2pureservice.md), which will sync data from Jamf Pro with Pureservice Assets.
+We're sorry if you don't understand the Norwegian language. This repository contains command line functions that expands the functionality of the Norwegian helpdesk system [Pureservice](https://www.pureservice.com). The extra functionality is mostly based on services not available outside Norway. The exception is [jamf2pureservice](docs/jamf2pureservice.md), which will sync data from Jamf Pro with Pureservice Assets. All documentation for sync2pureservice is in Norwegian.
 
 ## Utdaterte funksjoner (kan virke fremdeles)
 
