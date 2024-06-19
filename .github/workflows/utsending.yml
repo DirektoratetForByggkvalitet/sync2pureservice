@@ -1,16 +1,16 @@
-name: Jamf2Pureservice
+name: Utsending fra Pureservice
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "48 6,11,14 * * 1-5"
+    - cron: "29 8-16 * * 1-5"
 
 jobs:
-  jamf2pureservice:
+  utsending:
 
     runs-on: [self-hosted, docker, macOS]
     environment:
-      name: jamf2pureservice
+      name: production
 
     steps:
     - uses: actions/checkout@v4
@@ -61,4 +61,4 @@ jobs:
         EF_IP_PASSWORD: ${{ secrets.INTEGRASJONSPUNKT_PASSWORD }}
       run: |
         ./artisan migrate:fresh --force
-        ./artisan pureservice:sync-jamf
+        ./artisan pureservice:utsending
