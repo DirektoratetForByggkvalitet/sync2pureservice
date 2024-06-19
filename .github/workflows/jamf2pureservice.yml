@@ -8,7 +8,7 @@ on:
 jobs:
   jamf2pureservice:
 
-    runs-on: [self-hosted, docker, macOS]
+    runs-on: [self-hosted]
     environment:
       name: jamf2pureservice
 

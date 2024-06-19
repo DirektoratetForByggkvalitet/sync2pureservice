@@ -14,11 +14,6 @@ jobs:
       name: production
 
     steps:
-    - if: runner.os == 'Linux'
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.3'
-        extensions: none, opcache, bcmath, gd, zip, pdo, mbstring, xml, curl, ctype, dom, pcre, openssl, session, tokenizer, imagick
     - uses: actions/checkout@v4
     - name: Sett opp .env
       run: |
