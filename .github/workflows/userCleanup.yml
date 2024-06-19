@@ -18,7 +18,7 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.3'
-        extensions: gd, imagick, zip, :pgsql, :amqp, ;dba, :enchant, :imap, :odbc, :dlib, :firebird, :pspell, :snmp, :tidy, :zmq, :memcached
+        extensions: none, opcache, bcmath, gd, zip, pdo, mbstring, xml, curl, ctype, dom, pcre, openssl, session, tokenizer, imagick
     - uses: actions/checkout@v4
     - name: Sett opp .env
       run: |
