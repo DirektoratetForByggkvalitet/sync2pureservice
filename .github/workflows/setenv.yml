@@ -1,25 +1,27 @@
-name: Testing
+name: Sett .env
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: "15 23 * * 0"
+  schedule:
+    - cron: "42 6,11 * * 1-5"
 
 jobs:
-  test:
+  setenv:
 
-    runs-on: [self-hosted, docker, macOS]
-    environment:
-      name: jamf2pureservice
+    runs-on: [self-hosted, macOS]
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Setter opp .env
+    - name: Sett opp .env
       run: |
         echo "${{ vars.LARAVEL_ENV }}" > .env
         cat <<EOF >> .env
         # Innstillinger basert på Environment/Repository
         AZURE_SP_SECRET=${{ secrets.AZURE_SP_SECRET }}
+        AZURE_SP_ID=${{vars.AZURE_SP_ID}}
+        AZURE_TENANT_ID=${{ vars.AZURE_TENANT_ID }}
+        MICROSOFT_GRAPH_CLIENT_ID=${{ vars.MICROSOFT_GRAPH_CLIENT_ID }}
+        MICROSOFT_GRAPH_CLIENT_SECRET=${{ secrets.MICROSOFT_GRAPH_CLIENT_SECRET }}
+
 
         PURESERVICE_URL=${{ vars.PURESERVICE_URL }}
         PURESERVICE_APIKEY=${{ secrets.PURESERVICE_APIKEY }}
@@ -32,8 +34,20 @@ jobs:
         CACHE_DRIVER=${{ vars.CACHE_DRIVER }}
 
         MAIL_MAILER=${{ vars.MAILER }}
+        MAIL_HOST=${{ vars.MAIL_HOST }}
+        MAIL_USER=${{ vars.MAIL_USER }}
+        MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+
+        EF_IP_PASSWORD=${{ secrets.INTEGRASJONSPUNKT_PASSWORD }}
 
         APP_DEBUG=${{ vars.APP_DEBUG }}
 
         EOF
-        cat .env
+    - name: Last opp .env
+      uses: actions/upload-artifact@v4
+      with:
+        name: env-file
+        path: .env
+        retention-days: 5
+
+

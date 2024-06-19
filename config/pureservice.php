@@ -105,8 +105,7 @@ return [
     ],
     'ticket' => [
         'codeTemplate' => env('PURESERVICE_TICKET_NUMBER_TEMPLATE', '[Sak ID# {{RequestNumber}}]'),
-        'source' => env('PURESERVICE_TICKET_SOURCE', 'SvarUt'),
-        'zone' => env('PURESERVICE_TICKET_ZONE', 'Fordeling'),
+        'source' => env('PURESERVICE_TICKET_SOURCE', 'E-post'),
         'team' => env('PURESERVICE_TICKET_TEAM', 'Postmottak'),
         'visibility' => env('PURESERVICE_TICKET_VISIBILITY', 2),
         'ticketType' => env('PURESERVICE_TICKET_TYPE', 'Henvendelse'),
@@ -122,7 +121,6 @@ return [
         // Prefikset med 'DPE_' i miljøvariablene
         'codeTemplate' => env('PURESERVICE_TICKET_NUMBER_TEMPLATE', '[Sak ID# {{RequestNumber}}]'),
         'source' => env('DPE_TICKET_SOURCE', 'eFormidling'),
-        'zone' => env('DPE_TICKET_ZONE', env('PURESERVICE_TICKET_ZONE', 'Fordeling')),
         'team' => env('DPE_TICKET_TEAM', env('PURESERVICE_TICKET_TEAM', 'Postmottak')),
         'visibility' => env('DPE_TICKET_VISIBILITY', 1),
         'ticketType' => env('DPE_TICKET_TYPE', 'Innsynskrav'),
@@ -135,7 +133,6 @@ return [
         // Prefikset med 'EF_' i miljøvariablene
         'codeTemplate' => env('PURESERVICE_TICKET_NUMBER_TEMPLATE', '[Sak ID# {{RequestNumber}}]'),
         'source' => env('EF_TICKET_SOURCE', 'eFormidling'),
-        'zone' => env('EF_TICKET_ZONE', env('PURESERVICE_TICKET_ZONE', 'Fordeling')),
         'team' => env('EF_TICKET_TEAM', env('PURESERVICE_TICKET_TEAM', 'Postmottak')),
         'visibility' => env('EF_TICKET_VISIBILITY', 2),
         'ticketType' => env('EF_TICKET_TYPE', env('PURESERVICE_TICKET_TYPE', 'Henvendelse')),

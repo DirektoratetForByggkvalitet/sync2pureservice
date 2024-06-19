@@ -10,30 +10,14 @@ jobs:
 
     runs-on: [self-hosted, docker, macOS]
     environment:
-      name: production
+      name: jamf2pureservice
 
     steps:
     - uses: actions/checkout@v4
-    - name: Setter opp .env
-      run: |
-        echo "${{ vars.LARAVEL_ENV }}" > .env
+    - uses: actions/download-artifact@v4
     - name: Install dependencies
       run: composer install
     - name: Run Jamf2Pureservice
-      env:
-        AZURE_SP_SECRET: ${{secrets.AZURE_SP_SECRET}}
-        AZURE_SP_ID: ${{vars.AZURE_SP_ID}}
-        AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-        PURESERVICE_URL: ${{ vars.PURESERVICE_URL }}
-        PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY}}
-        JAMFPRO_URL: ${{ vars.JAMFPRO_URL }}
-        JAMFPRO_CLIENTID: ${{ vars.JAMFPRO_CLIENTID }}
-        JAMFPRO_SECRET: ${{ secrets.JAMFPRO_SECRET }}
-        CACHE_DRIVER: ${{ vars.CACHE_DRIVER }}
-        REDIS_HOST: ${{ vars.REDIS_HOST }}
-        REDIS_SECRET: ${{ secrets.REDIS_SECRET }}
-        MAIL_MAILER: ${{ vars.MAILER }}
-        
       run: |
         ./artisan migrate:fresh --force
         ./artisan pureservice:sync-jamf

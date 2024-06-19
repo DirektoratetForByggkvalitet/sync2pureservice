@@ -47,6 +47,7 @@ return [
                 'address' => env('MAIL_REPLYTO_ADDRESS', env('MAIL_FROM_ADDRESS')),
                 'name' => env('MAIL_REPLYTO_NAME', env('MAIL_FROM_NAME'))
             ],
+            'save_to_sent_items' =>  env('MAIL_SAVE_TO_SENT_ITEMS', false),
         ],
         'smtp' => [
             'transport' => 'smtp',
