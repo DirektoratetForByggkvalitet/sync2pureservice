@@ -1,4 +1,4 @@
-name: PS User cleanup
+name: Pureservice - brukeropprydding
 
 on:
   workflow_dispatch:
