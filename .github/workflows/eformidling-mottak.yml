@@ -1,4 +1,4 @@
-name: Mottak fra eFormidling
+name: eFormidling - mottak
 
 on:
   workflow_dispatch:
