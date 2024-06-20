@@ -1,4 +1,4 @@
-name: Utsending fra Pureservice
+name: Pureservice - utsending
 
 on:
   workflow_dispatch:
