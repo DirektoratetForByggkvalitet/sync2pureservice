@@ -101,7 +101,7 @@ class JamfPro extends API {
      */
     public function getMobileDeviceInitialEntryTimestamp(int $id): string|null {
         $detail = $this->apiGet('/v2/mobile-devices/'.$id.'/detail');
-        return $detail['general']['initialEntryTimestamp'] ? $detail['general']['initialEntryTimestamp'] : null;
+        return $detail['initialEntryTimestamp'] ? $detail['initialEntryTimestamp'] : null;
     }
 
     /**
