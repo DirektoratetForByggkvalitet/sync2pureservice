@@ -1,4 +1,4 @@
-name: Build docker image
+name: Bygging av Docker-image
 
 on:
   schedule:
