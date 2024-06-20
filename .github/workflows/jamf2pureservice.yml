@@ -1,4 +1,4 @@
-name: Jamf2Pureservice
+name: Jamf Pro > Pureservice
 
 on:
   workflow_dispatch:
