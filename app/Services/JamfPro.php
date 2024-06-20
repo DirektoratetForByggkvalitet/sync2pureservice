@@ -83,18 +83,25 @@ class JamfPro extends API {
         $results = $this->paginatedQuery($uri, $params);
         if ($detailed && !isset($results[0]['general']['initialEntryTimestamp'])):
             /**
-             * Må løpe gjennom hver enkelt for å hente ut initialEntryTimestamp
+             * Løper gjennom hver enkelt enhet for å hente ut initialEntryTimestamp
              */
             $detailedResults = [];
             foreach ($results as $device):
-                $detail = $this->apiGet('/v2/mobile-devices/'.$device['mobileDeviceId'].'/detail');
-                $device['general']['initialEntryTimestamp'] = $detail['initialEntryTimestamp'];
+                $device['general']['initialEntryTimestamp'] = $this->getMobileDeviceInitialEntryTimestamp($device['mobileDeviceId']);
                 $detailedResults[] = $device;
             endforeach;
             return $detailedResults;
         endif;
 
         return $results;
+    }
+
+    /**
+     * Henter inn initialEntryTimestamp fra mobilenheten
+     */
+    public function getMobileDeviceInitialEntryTimestamp(int $id): string|null {
+        $detail = $this->apiGet('/v2/mobile-devices/'.$id.'/detail');
+        return $detail['general']['initialEntryTimestamp'] ? $detail['general']['initialEntryTimestamp'] : null;
     }
 
     /**
