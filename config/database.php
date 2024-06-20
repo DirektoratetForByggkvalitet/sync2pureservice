@@ -133,8 +133,8 @@ return [
 
         'options' => [
             'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'sync2pureservice'), '_')),
-            'serializer' => env('REDIS_SERIALIZER', 'igbinary'),
-            'compression' => env('REDIS_COMPRESSION', 'lz4'),   
+            'serializer' => env('REDIS_SERIALIZER', null),
+            'compression' => env('REDIS_COMPRESSION', null),   
         ],
 
         'default' => [

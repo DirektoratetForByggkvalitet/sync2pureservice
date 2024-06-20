@@ -1,6 +1,7 @@
 name: Bygging av Docker-image
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "15 23 * * 0"
 

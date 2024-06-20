@@ -24,7 +24,7 @@ Den medfølgende Excel-filen [storage/virksomheter.xlsx](../storage/virksomheter
 
 ### Egendefinerte felter i Pureservice ###
 
-I Pureservice kan det være lurt å opprette egendefinerte felter for firma og bruker, slik at man kan lagre firmaets kategori, samt sette et ikkesvar-felt til 1. 
+I Pureservice kan det være lurt å opprette egendefinerte felter for firma og bruker, slik at man kan lagre firmaet sin kategori, samt sette et ikkesvar-felt til '1'. 
 
 Dette siste er et triks som vi bruker for å unngå e-postloop, spesielt med offentlige postmottak, der det sendes autosvar i loop mellom partene. Vi har slått av Pureservice sin standardregel for å sende e-post til sluttbruker når en sak opprettes, og erstattet den med en egen regel som egentlig gjør det samme, men kun dersom ikkesvar-feltet er tomt. På den måten kan vi stoppe en e-postloop ved å gå inn på sluttbrukeren og sette ikkesvar til 1. Derfor importerer vi også alle SvarUt- og Postmottak-brukere med dette feltet satt til 1.
 
@@ -36,8 +36,6 @@ Som vanlig må man ha en rekke miljøvariabler i .env for å bruke denne delen, 
 
 | Variabel | Standardverdi | Beskrivelse |
 | ----------- | ----------- | ----------- |
-| PURESERVICE_URL | https://customer.pureservice.com | Base-adressen til Pureservice-instansen |
-| PURESERVICE_APIKEY | ey... | API-nøkkel til Pureservice |
 | PURESERVICE_COMPANY_CATEGORY_FIELD | false | ID til det egendefinerte feltet (av typen tekst) i Pureservice som brukes til å lagre firmaets kategori |
 | PURESERVICE_USER_NOEMAIL_FIELD | false | ID til det egendefinerte feltet (av typen tall) i Pureservice som brukes til å sette en verdi som unngår e-postloop  |
 
