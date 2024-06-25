@@ -9,7 +9,7 @@ on:
 jobs:
   mottak:
 
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, macOS]
     environment:
       name: production
 
