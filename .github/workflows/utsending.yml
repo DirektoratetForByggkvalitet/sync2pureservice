@@ -8,7 +8,7 @@ on:
 jobs:
   utsending:
 
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, macOS]
     environment:
       name: production
     steps:
