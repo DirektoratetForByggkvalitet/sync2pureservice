@@ -35,6 +35,12 @@ jobs:
         MAIL_USER=${{ vars.MAIL_USER }}
 
         APP_DEBUG=${{ vars.APP_DEBUG }}
+
+        PURESERVICE_APIKEY=${{ secrets.PURESERVICE_APIKEY }}
+        MICROSOFT_GRAPH_CLIENT_SECRET=${{ secrets.MICROSOFT_GRAPH_CLIENT_SECRET }}
+        REDIS_PASSWORD=${{ secrets.REDIS_SECRET }}
+        MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+        EF_IP_PASSWORD=${{ secrets.INTEGRASJONSPUNKT_PASSWORD }}
         EOF
     - name: Cache dependencies
       id: vendor-cache
@@ -51,12 +57,6 @@ jobs:
     - name: Install dependencies
       run: composer install
     - name: Run Jamf2Pureservice
-      env:
-        PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
-        MICROSOFT_GRAPH_CLIENT_SECRET: ${{ secrets.MICROSOFT_GRAPH_CLIENT_SECRET }}
-        REDIS_PASSWORD: ${{ secrets.REDIS_SECRET }}
-        MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-        EF_IP_PASSWORD: ${{ secrets.INTEGRASJONSPUNKT_PASSWORD }}
       run: |
         ./artisan migrate:fresh --force
         ./artisan pureservice:utsending
