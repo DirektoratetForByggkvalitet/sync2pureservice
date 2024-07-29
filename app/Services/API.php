@@ -196,7 +196,7 @@ class API {
         bool $returnResponse = false,
         string|null|false $accept = null,
         null|string $toFile = null
-    ): Response|array|false {
+    ): mixed {
         return $this->apiGet($uri, $returnResponse, $accept, $query, $toFile);
     }
 
