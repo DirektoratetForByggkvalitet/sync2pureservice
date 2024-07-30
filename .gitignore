@@ -4,5 +4,7 @@
 /.vagrant
 .phpunit.result.cache
 /database/database.sqlite
+/storage/logs
+/bootstrap/cache
 .env
 .localized
