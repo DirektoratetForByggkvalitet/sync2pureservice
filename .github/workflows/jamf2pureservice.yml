@@ -60,5 +60,5 @@ jobs:
         MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
         EF_IP_PASSWORD: ${{ secrets.INTEGRASJONSPUNKT_PASSWORD }}
       run: |
-        ./artisan migrate:fresh --force
-        ./artisan pureservice:sync-jamf
+        ./sync2pureservice migrate:fresh --force
+        ./sync2pureservice pureservice:sync-jamf
