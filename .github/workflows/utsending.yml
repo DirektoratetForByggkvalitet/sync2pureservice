@@ -1,0 +1,59 @@
+name: Pureservice - utsending
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "29 8-16 * * 1-5"
+
+jobs:
+  utsending:
+
+    runs-on: [self-hosted]
+    environment:
+      name: production
+    steps:
+    - uses: actions/checkout@v4
+    - name: Sett opp .env
+      run: |
+        echo "${{ vars.LARAVEL_ENV }}" > .env
+        cat <<EOF >> .env
+        # Innstillinger basert på Environment/Repository
+        AZURE_SP_ID=${{vars.AZURE_SP_ID}}
+        AZURE_TENANT_ID=${{ vars.AZURE_TENANT_ID }}
+        MICROSOFT_GRAPH_CLIENT_ID=${{ vars.MICROSOFT_GRAPH_CLIENT_ID }}
+
+        PURESERVICE_URL=${{ vars.PURESERVICE_URL }}
+
+        REDIS_HOST=${{ vars.REDIS_HOST }}
+        CACHE_DRIVER=${{ vars.CACHE_DRIVER }}
+
+        MAIL_MAILER=${{ vars.MAILER }}
+        MAIL_HOST=${{ vars.MAIL_HOST }}
+        MAIL_USER=${{ vars.MAIL_USER }}
+
+        APP_DEBUG=${{ vars.APP_DEBUG }}
+        EOF
+    - name: Cache dependencies
+      id: vendor-cache
+      uses: actions/cache@v4
+      env:
+        cache-name: cache-vendor-files
+      with:
+        path: ./vendor
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('./composer.lock') }}
+        restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+    - name: Install dependencies
+      run: composer install
+    - name: Run Jamf2Pureservice
+      env:
+        PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
+        MICROSOFT_GRAPH_CLIENT_SECRET: ${{ secrets.MICROSOFT_GRAPH_CLIENT_SECRET }}
+        REDIS_PASSWORD: ${{ secrets.REDIS_SECRET }}
+        MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+        EF_IP_PASSWORD: ${{ secrets.INTEGRASJONSPUNKT_PASSWORD }}
+      run: |
+        ./artisan migrate:fresh --force
+        ./artisan pureservice:utsending

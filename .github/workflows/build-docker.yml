@@ -1,0 +1,31 @@
+name: Bygging av Docker-image
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 23 * * 0"
+
+jobs:
+  build-image:
+
+    runs-on: [self-hosted, docker, macOS]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Azure CLI login
+      env:
+       SP_ID: ${{vars.AZURE_SP_ID}}
+       TENANT_ID: ${{vars.AZURE_TENANT_ID}}
+      run: |
+        echo "${{secrets.AZURE_SP_CERT}}" > sp.cert
+        az login --service-principal -u $SP_ID --tenant $TENANT_ID -p ./sp.cert
+        security -v unlock-keychain -p ${{secrets.MACOS_KC_PASS}} ~/Library/Keychains/login.keychain-db
+        az acr login -n dibknoe
+    - name: Docker Hub login
+      env:
+        DOCKER_USER: ${{vars.DOCKERHUB_USER}}
+        DOCKER_PW: ${{secrets.DOCKERHUB_TOKEN}}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PW
+    - name: Build image
+      run: docker buildx bake -f docker-bake.hcl --push
