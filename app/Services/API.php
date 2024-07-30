@@ -100,7 +100,11 @@ class API {
      * @param   string    $contentType    Setter forespørselens Content-Type, standard 'application/json'
      * @return  Illuminate\Http\Client\PendingRequest
      */
-    public function prepRequest(string|null $accept = null, string|null $contentType = 'auto', null|string $toFile = null): PendingRequest {
+    public function prepRequest(
+        string|null $accept = null, 
+        string|null $contentType = 'auto', 
+        null|string $toFile = null
+    ): PendingRequest {
         // Fornyer token dersom den trenger fornyelse
         $this->setToken();
         $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
@@ -166,7 +170,13 @@ class API {
      * @param   bool    $returnResponse Returnerer Response-objektet, fremfor kun dataene
      * @param   string  $contentType    Setter Content-Type for forespørselen
      */
-    public function apiGet(string $uri, bool $returnResponse = false, string|null|false $accept = null, null|array $query = null, null|string $toFile = null): mixed {
+    public function apiGet(
+        string $uri, 
+        bool $returnResponse = false, 
+        string|null|false $accept = null, 
+        null|array $query = null, 
+        null|string $toFile = null
+    ): mixed {
         $uri = $this->resolveUri($uri);
         $query = is_array($query) ? $query : [];
         $response = $this->prepRequest($accept, null, $toFile)->get($uri, $query);
@@ -186,7 +196,7 @@ class API {
         bool $returnResponse = false,
         string|null|false $accept = null,
         null|string $toFile = null
-    ): Response|array|false {
+    ): mixed {
         return $this->apiGet($uri, $returnResponse, $accept, $query, $toFile);
     }
 

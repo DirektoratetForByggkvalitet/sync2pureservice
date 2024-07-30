@@ -109,7 +109,7 @@ class Eformidling extends API {
                 endforeach;
             endif;
         endwhile;
-        return count($messages) ? $messages : false;
+        return $messages->count() ? $messages : false;
     }
 
     /**
