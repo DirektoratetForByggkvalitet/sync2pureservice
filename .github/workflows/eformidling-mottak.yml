@@ -52,7 +52,7 @@ jobs:
             ${{ runner.os }}-
     - name: Install dependencies
       run: composer install
-    - name: Run Jamf2Pureservice
+    - name: Kjør Sync2Pureservice
       env:
         JAMFPRO_SECRET: ${{ secrets.JAMFPRO_SECRET }}
         PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
