@@ -101,7 +101,7 @@ class Eformidling extends API {
         while ($last == false):
             $response = $this->apiQuery($uri, $params, true);
             if ($response->successful()):
-                dd($response->body());
+                //dd($response->body());
                 $result = $response->json('content');
                 $params['page']++;
                 $last = $response->json('last');
