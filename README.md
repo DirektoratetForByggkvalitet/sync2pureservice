@@ -1,7 +1,5 @@
 # Tilleggsfuksjoner for Pureservice
 
-NB! Denne grenen er under utvikling, og fungerer ikke 100%.
-
 Vi har bygd en kommandolinje-basert [Laravel Zero](https://laravel-zero.com)-applikasjon for å utvide funksjonaliteten til [Pureservice](https://www.pureservice.com):
 
 - [jamf2pureservice](docs/jamf2pureservice.md) - synkroniserer maskiner og mobilenheter i Jamf Pro med ressurser i Pureservice
@@ -12,7 +10,7 @@ Vi har bygd en kommandolinje-basert [Laravel Zero](https://laravel-zero.com)-app
 
 ## In English
 
-This repository contains command line functions that expands the functionality of the Norwegian helpdesk system [Pureservice](https://www.pureservice.com). The functionality is mostly based on services not available outside Norway. A possible exception is [jamf2pureservice](docs/jamf2pureservice.md), which will sync data from Jamf Pro with Pureservice Assets. All documentation for sync2pureservice will be in Norwegian.
+This repository contains command line functions that expands the functionality of the Norwegian helpdesk system [Pureservice](https://www.pureservice.com). The functionality is mostly based on services not available outside Norway. A possible exception is [jamf2pureservice](docs/jamf2pureservice.md), which will sync data from Jamf Pro with Pureservice Assets. All documentation for sync2pureservice is and will remain in Norwegian.
 
 ## Under utvikling
 
@@ -24,7 +22,7 @@ Vi videreutvikler og fikser stadig på koden til sync2pureservice. Følgende er 
 
 - [PHP 8.x](https://php.net)
 - [Composer](https://getcomposer.org/)
-- PHP-tilleggene gd, sqlite3, opcache og zip (igbinary er anbefalt hvis du bruker redis)
+- PHP-tilleggene gd, sqlite3, opcache og zip. Tillegget igbinary er anbefalt hvis du bruker redis.
 
 ### Database
 
@@ -43,8 +41,6 @@ Det er mange miljøvariabler som må til for å integrere mellom ulike systemer 
 | PURESERVICE_URL | Denne må settes til din instans av Pureservice, typisk https://firma.pureservice.com |
 | PURESERVICE_APIKEY | Du må opprette en API-nøkkel i Pureservice og oppgi den her for at sync2pureservice skal ha tilgang til å snakke med Pureservice |
 
-
-
 ## Kjøring i Github Actions (evt. Bitbucket Pipelines)
 
 Vi har lagt opp til at funksjonene skal kunne kjøres i Github Actions og Bitbucket Pipelines. Kildekoden inneholder våre GitHub Actions og en bitbucket-pipelines.yml, som kan brukes som eksempler for å sette opp sin egen sync2pureservice. Da kan vi enten kjøre det direkte i et shell (så lenge systemkravene er i orden) eller inne i en konteiner. Vårt egenkomponert Docker-image, [dibk/sync2pureservice](https://hub.docker.com/r/dibk/sync2pureservice) inneholder korrekt PHP-versjon (8.x) og de tilleggene vi trenger (gd, opcache og zip, samt composer). Vårt image bygges fra vår [build-docker.yml](.github/workflows/build-docker.yml) hver søndag, og bygges både for AMD64 og ARM64.
@@ -60,7 +56,7 @@ Det er selvsagt også mulig å kjøre dette direkte på egen maskin. Her kan vi 
 1. Bruk git clone eller last ned kildekoden til din maskin
 1. Opprett en .env-fil ved å kopiere .env.example til .env og sette dine egne innstillinger (f.eks. `cp .env.example .env`). Det er en hel haug med miljøvariabler som kan settes i .env eller som miljøvariabler før kjøring. Nærmere info om dette under hver enkelt funksjon
 1. Kjør `composer install` for å installere nødvendige rammeverk
-1. Kjør `./sync2pureservice migrate:fresh` for å klargjøre den lokale databasen (eller om du vil bruke ditt eget databaseoppsett spesifisert i [config/database.php](config/database.php))
+1. Kjør `./sync2pureservice migrate:fresh` for å klargjøre den lokale databasen (eller om du vil klargjøre ditt eget databaseoppsett spesifisert i [config/database.php](config/database.php))
 1. Du er nå klar for å kjøre sync2pureservice (gitt at .env inneholder det du trenger)
 
 # Lisens
