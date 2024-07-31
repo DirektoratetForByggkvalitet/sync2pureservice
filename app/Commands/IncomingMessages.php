@@ -47,7 +47,7 @@ class IncomingMessages extends Command {
 
         $this->ip = new Eformidling();
         $this->info(Tools::L1.'Bruker '.$this->ip->getBaseUrl().' som integrasjonspunkt');
-        $this->message('Henter innkommende meldinger');
+        $this->line('Henter innkommende meldinger');
         $messages = $this->ip->getIncomingMessages();
         if (!$messages):
             $this->noMessages();
