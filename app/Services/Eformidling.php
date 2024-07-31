@@ -99,10 +99,11 @@ class Eformidling extends API {
         $messages = collect([]);
         $last = false;
         while ($last == false):
-            if ($response = $this->apiQuery($uri, $params)):
-                $result = $response['content'];
+            $response = $this->apiQuery($uri, $params, true);
+            if ($response->successful()):
+                $result = $response->json('content');
                 $params['page']++;
-                $last = $response['last'];
+                $last = $response->json('last');
                 // Legger til resultatene
                 foreach ($result as $msg):
                     $messages->push($msg);
