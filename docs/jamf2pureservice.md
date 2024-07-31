@@ -94,8 +94,8 @@ Det er best om man lager en test-enhet for hver ressurs før man kjører jamf2pu
 1. Last ned eller klon jamf2pureservice
 2. Kjør `composer install` for å installere biblioteker og rammeverk
 3. Kopier fila .env.example til .env (`cp .env.example .env`), og fyll ut nødvendige miljøvariabler for koblinger mot Jamf Pro og Pureservice.
-4. Kjør `./artisan key:generate` for å opprette en unik APP_KEY i .env
-5. Synkroniseringen kjøres med `./artisan pureservice:sync-jamf`
+4. Kjør `./sync2pureservice key:generate` for å opprette en unik APP_KEY i .env
+5. Synkroniseringen kjøres med `./sync2pureservice pureservice:sync-jamf`
 
 Fila bitbucket-pipelines.yml gir et eksempel på hvordan dette kan kjøres gjennom Pipelines. I slike tilfeller kan innholdet i .env være erstattet med miljøvariabler som settes i Pipeline-oppsettet.
 

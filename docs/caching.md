@@ -11,6 +11,6 @@ Man bruker miljøvariabelen CACHE_DRIVER for å velge teknologi for mellomlagrin
 | redis | Mellomlagring gjøres i Redis Cache, en veldig rask database-tjener. sync2pureservice er satt opp til å bruke predis/predis-pakken, en PHP-basert Redis-klient som ikke krever et ekstra PHP-tillegg. Likevel er det lurt å ha PHP-tillegget igbinary installert, samt at lz4 (eller liblz4) er installert på maskinen som skal kjøre sync2pureservice eller som PHP-tillegg. Det kan tenkes at du også må endre i [config/database.php](config/database.php) for at det skal fungere |
 | memcached | Mellomlagring gjøres i Memcached, en minnebasert databasetjener. Dette krever at PHP-tillegget memcached er installert, og at oppsett settes opp i [config/database.php](config/database.php) |
 
-Det finnes også andre muligheter her. Memcached og Redis blir sett på som de raskeste, og har også en fordel i at mellomlagringen kan deles av flere runners.
+Det finnes også andre muligheter her (f.eks. array). Memcached og Redis blir sett på som de raskeste, og har også en fordel i at mellomlagringen kan deles av flere runners.
 
 Blir dette for komplisert? Ikke bruk CACHE_DRIVER. Det vil fungere helt greit.

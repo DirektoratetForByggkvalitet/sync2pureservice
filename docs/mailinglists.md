@@ -8,7 +8,7 @@ For at masseutsendelse skal fungere må man nødvendigvis bruke en eller annen f
 
 Siden vi allerede har et oppsett for å hente inn kommuner, fylkeskommuner og statlige virksomheter gjennom sync2pureservice lager vi tre mottakerlister med samme unikt navn som foretakskoden i BRREG, henholdsvis KOMM, FYLK og STAT.
 
-Ved å kjøre skriptet `./artisan pureservice:mailing-lists` vil de tre mottakerlistene automatisk bli koblet til de tre kategoriene, dvs at alle kommuner blir koblet til mottakerlisten med unikt navn 'KOMM' osv.
+Ved å kjøre skriptet `./sync2pureservice pureservice:mailing-lists` vil de tre mottakerlistene automatisk bli koblet til de tre kategoriene, dvs at alle kommuner blir koblet til mottakerlisten med unikt navn 'KOMM' osv.
 
 ## MILJØVARIABLER ##
 

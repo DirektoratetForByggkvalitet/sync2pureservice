@@ -9,6 +9,9 @@ jobs:
   utsending:
 
     runs-on: [self-hosted]
+    concurrency:
+      group: pureservice-utsending
+      cancel-in-progress: true
     environment:
       name: production
     steps:

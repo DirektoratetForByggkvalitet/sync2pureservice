@@ -14,10 +14,6 @@ Vi har bygd en kommandolinje-basert [Laravel Zero](https://laravel-zero.com)-app
 
 This repository contains command line functions that expands the functionality of the Norwegian helpdesk system [Pureservice](https://www.pureservice.com). The functionality is mostly based on services not available outside Norway. A possible exception is [jamf2pureservice](docs/jamf2pureservice.md), which will sync data from Jamf Pro with Pureservice Assets. All documentation for sync2pureservice will be in Norwegian.
 
-## Utdaterte funksjoner (kan virke fremdeles)
-
-- [svarinn2pureservice](docs/svarinn2pureservice.md) - Fungerer som SvarUt-mottak for Pureservice (erstattet av [eFormidling](docs/eformidling.md))
-
 ## Under utvikling
 
 Vi videreutvikler og fikser stadig på koden til sync2pureservice. Følgende er under utvikling (men ligger litt bak i køen):
@@ -28,7 +24,7 @@ Vi videreutvikler og fikser stadig på koden til sync2pureservice. Følgende er 
 
 - [PHP 8.x](https://php.net)
 - [Composer](https://getcomposer.org/)
-- PHP-tilleggene gd, sqlite3, opcache og zip
+- PHP-tilleggene gd, sqlite3, opcache og zip (igbinary er anbefalt hvis du bruker redis)
 
 ### Database
 
@@ -64,7 +60,7 @@ Det er selvsagt også mulig å kjøre dette direkte på egen maskin. Her kan vi 
 1. Bruk git clone eller last ned kildekoden til din maskin
 1. Opprett en .env-fil ved å kopiere .env.example til .env og sette dine egne innstillinger (f.eks. `cp .env.example .env`). Det er en hel haug med miljøvariabler som kan settes i .env eller som miljøvariabler før kjøring. Nærmere info om dette under hver enkelt funksjon
 1. Kjør `composer install` for å installere nødvendige rammeverk
-1. Kjør `php artisan migrate:fresh` for å klargjøre den lokale databasen (eller om du vil bruke ditt eget databaseoppsett spesifisert i [config/database.php](config/database.php))
+1. Kjør `./sync2pureservice migrate:fresh` for å klargjøre den lokale databasen (eller om du vil bruke ditt eget databaseoppsett spesifisert i [config/database.php](config/database.php))
 1. Du er nå klar for å kjøre sync2pureservice (gitt at .env inneholder det du trenger)
 
 # Lisens

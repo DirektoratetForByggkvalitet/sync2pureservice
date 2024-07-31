@@ -9,6 +9,9 @@ jobs:
   build-image:
 
     runs-on: [self-hosted, docker, macOS]
+    concurrency:
+      group: docker_builder
+      cancel-in-progress: true
 
     steps:
     - uses: actions/checkout@v4

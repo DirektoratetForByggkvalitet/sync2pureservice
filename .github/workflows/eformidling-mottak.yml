@@ -10,6 +10,9 @@ jobs:
   mottak:
 
     runs-on: [self-hosted, macOS]
+    concurrency:
+      group: eformidling-mottak
+      cancel-in-progress: true
     environment:
       name: production
 

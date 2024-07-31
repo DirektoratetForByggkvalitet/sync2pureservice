@@ -20,7 +20,7 @@ Dersom man bruker einnsyn-klient-x.x.x.jar fra Digdir til å hente inn innsynskr
 
 1. Tildel saken til et team for prosessering (tips: privat team)
 2. Sakstype settes til Innsynskrav (eller hva man vil bruke)
-3. Send HTTP-kall til en tjeneste som kan kjøre `/artisan innsynskrav:splittEksisterende $SakId` der $SakId er sakens RequestNumber (ikke ID) i Pureservice. 
+3. Send HTTP-kall til en tjeneste som kan kjøre `./sync2pureservice innsynskrav:splittEksisterende $SakId` der $SakId er sakens RequestNumber (ikke ID) i Pureservice. 
 
 I dette tilfellet Bitbucket Pipelines:
 - Metode: POST
@@ -63,7 +63,7 @@ I dette tilfellet vil vi jevnlig kjøre en Pipeline som sjekker etter innsynskra
 | DPE_AUDIT_TYPE | Innsynskrav | Sakstypen som skal brukes for innsynskrav |
 | DPE_TEAM_NAME | Postmottak | Navn på Pureservice-teamet som skal få innsynskrav |
 
-Kommandoen som kjøres i dette tilfellet vil være `./artisan forsendelse:hent`
+Kommandoen som kjøres i dette tilfellet vil være `./sync2pureservice forsendelse:hent`
 
 Denne funksjonaliteten er ikke foreløpig planlagt.
 

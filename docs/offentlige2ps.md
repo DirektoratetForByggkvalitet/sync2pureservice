@@ -1,6 +1,6 @@
 # Import av offentlige etater #
 
-Vi har laget en funksjon (`./artisan pureservice:offentlige2ps`) som lar oss importere virksomheter og brukere fra BRREG inn i Pureservice.
+Vi har laget en funksjon (`./sync2pureservice pureservice:offentlige2ps`) som lar oss importere virksomheter og brukere fra BRREG inn i Pureservice.
 
 Funksjonen bruker oppsett fra config/enhetsregisteret.php til å søke opp følgende:
 
@@ -18,7 +18,7 @@ Med databasen befolket kjøres en jobb mot Pureservice sitt API, der skriptet op
 
 ## Oppsett ##
 
-For at funksjonen skal kunne kjøre innenfor PHP sine minnebegrensninger bruker denne funksjonen databasen SQLite til å mellomlagre dataene før de lastes opp til Pureservice. Bruk `./artisan migrate:fresh` for å nullstille og klargjøre databasen (som ligger i database/database.db) før den tas i bruk.
+For at funksjonen skal kunne kjøre innenfor PHP sine minnebegrensninger bruker denne funksjonen databasen SQLite til å mellomlagre dataene før de lastes opp til Pureservice. Bruk `./sync2pureservice migrate:fresh` for å nullstille og klargjøre databasen (som ligger i database/database.db) før den tas i bruk.
 
 Den medfølgende Excel-filen [storage/virksomheter.xlsx](../storage/virksomheter.xlsx) brukes til å mappe mellom virksomhetens orgnr og e-postadresse. Fila inneholder per nå alle kommuner, fylkeskommuner, samt statlige virksomheter og underliggende statlige virksomheter, oppdatert for 01.01.2024. Foruten orgnr og e-post brukes ikke det øvrige innholdet i fila, det hentes direkte fra BRREG.
 
@@ -42,7 +42,7 @@ Som vanlig må man ha en rekke miljøvariabler i .env for å bruke denne delen, 
 ## Normal bruk ##
 
 ```
-./artisan migrate:fresh
-./artisan pureservice:offentlige2ps
+./sync2pureservice migrate:fresh
+./sync2pureservice pureservice:offentlige2ps
 ```
 

@@ -20,7 +20,7 @@ Integrasjonspunktet vil automatisk ta imot innkommende meldinger fra de aktivert
 ## Innkommende meldinger ##
 
 Funksjonaliteten rundt innkommende eFormidling-meldinger er basert på én tjeneste i sync2pureservice: **eformidling:inn**. Denne tjenesten logger seg på integrasjonspunktet og ser etter nye meldinger. Den kjøres fra kommandolinjen slik:
-`php artisan eformidling:inn`
+`./sync2pureservice eformidling:inn`
 
 En melding i eFormidling er i all hovedsak basert på metadata i JSON- og XML-format, samt vedlegg. Vedleggene er det reelle innholdet i forsendelsen, resten er 'konvolutten'.
 

@@ -9,6 +9,9 @@ jobs:
   jamf2pureservice:
 
     runs-on: [self-hosted]
+    concurrency:
+      group: jamf2pureservice
+      cancel-in-progress: true
     environment:
       name: jamf2pureservice
 

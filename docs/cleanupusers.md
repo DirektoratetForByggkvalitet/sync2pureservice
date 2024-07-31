@@ -1,6 +1,6 @@
 # CleanUpUsers
 
-Kommanoden `./artisan pureservice:clean-up` kan nå brukes. Konsoll-kommandoen utfører klassen CleanUpUsers, som er laget for å håndtere brukerinformasjon som kan være til fare for brukerens privatliv.
+Kommanoden `./sync2pureservice pureservice:clean-up` kan nå brukes. Konsoll-kommandoen utfører klassen CleanUpUsers, som er laget for å håndtere brukerinformasjon som kan være til fare for brukerens privatliv.
 
 Når en person sender innsynskrav eller e-post inn til Pureservice er det ikke alltid at e-postinformasjonen inneholder navn, og da kan det hende at det opprettes en sluttbruker i Pureservice som ikke har fornavn og etternavn, eller at den har e-postadressen som fornavn og etternavn. Det er ikke ønskelig. Vi prøver å unngå at sluttbrukers e-postadresse kommer ut på eInnsyn, og har dermed laget CleanUpUsers for å forhindre det.
 

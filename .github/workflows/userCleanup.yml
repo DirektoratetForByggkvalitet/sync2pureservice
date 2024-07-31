@@ -9,6 +9,9 @@ jobs:
   usercleanup:
 
     runs-on: [self-hosted]
+    concurrency:
+      group: usercleanup
+      cancel-in-progress: true
     environment:
       name: production
 
