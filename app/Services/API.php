@@ -131,8 +131,8 @@ class API {
                     break;
                 case 'basic':
                 default: // basic auth
-                    $request->withHeader('Authorization', 'Basic '.base64_encode($this->myConf('api.user').':'.$this->myConf('api.password')));
-                    // $request->withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'));
+                    //$request->withHeader('Authorization', 'Basic '.base64_encode($this->myConf('api.user').':'.$this->myConf('api.password')));
+                    $request->withBasicAuth($this->myConf('api.user'), $this->myConf('api.password'));
             endswitch;
         endif;
         // Setter accept-headeren
