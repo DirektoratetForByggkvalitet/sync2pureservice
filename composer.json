@@ -23,6 +23,7 @@
         "illuminate/http": "^11.5",
         "illuminate/redis": "^11.5",
         "illuminate/view": "^11.5",
+        "intonate/tinker-zero": "^1.2",
         "laravel-zero/framework": "^11.0.0",
         "phpoffice/phpspreadsheet": "^2.2",
         "predis/predis": "^2.2",
