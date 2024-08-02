@@ -1,0 +1,37 @@
+{
+    "standardBusinessDocumentHeader" : {
+      "headerVersion" : "1.0",
+      "sender" : [ {
+        "identifier" : {
+          "authority" : "iso6523-actorid-upis",
+          "value" : ""
+        }
+      } ],
+      "receiver" : [ {
+        "identifier" : {
+          "authority" : "iso6523-actorid-upis",
+          "value" : ""
+        }
+      } ],
+      "documentIdentification" : {
+        "standard" : "",
+        "typeVersion" : "1.0",
+        "instanceIdentifier" : "",
+        "type" : "arkivmelding",
+        "creationDateAndTime" : ""
+      },
+      "businessScope" : {
+        "scope" : [ {
+          "type" : "ConversationId",
+          "instanceIdentifier" : "",
+          "identifier" : "",
+          "scopeInformation" : [ {
+            "expectedResponseDateTime" : ""
+          } ]
+        } ]
+      }
+    },
+    "arkivmelding" : {
+      "hoveddokument" : ""
+    }
+}
