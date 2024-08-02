@@ -2,9 +2,9 @@ name: eFormidling - mottak
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "15 7-20 * * 1-5"
-    - cron: "24 */6 * * 0,6"
+  # schedule:
+  #   - cron: "15 7-20 * * 1-5"
+  #   - cron: "24 */6 * * 0,6"
 
 jobs:
   mottak:
