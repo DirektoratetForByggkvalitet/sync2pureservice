@@ -304,7 +304,7 @@ class Jamf2Pureservice extends Command {
             $psAsset[$fn['jamfId']] = $dev['mobileDeviceId'];
             $extAttributes = collect($dev['extensionAttributes']);
             $deviceRisk = $extAttributes->firstWhere('name', 'wandera_device_risk');
-            $psAsset[$fn['riskAssessment']] = $deviceRisk['value'][0];
+            $psAsset[$fn['riskAssessment']] = isset($deviceRisk['value'][0])? $deviceRisk['value'][0]: '';
 
             $psAsset['usernames'] = [];
             if ($dev['userAndLocation']['username'] != null) $psAsset['usernames'][] = $dev['userAndLocation']['username'];
@@ -354,7 +354,7 @@ class Jamf2Pureservice extends Command {
             $psAsset[$fn['jamfId']] = $mac['id'];
             $extAttributes = collect($mac['extensionAttributes']);
             $deviceRisk = $extAttributes->firstWhere('name', 'wandera_device_risk');
-            $psAsset[$fn['riskAssessment']] = $deviceRisk['value'][0];
+            $psAsset[$fn['riskAssessment']] = isset($deviceRisk['value'][0])? $deviceRisk['value'][0]: '';
 
             $psAsset['usernames'] = [];
             if ($mac['userAndLocation']['username'] != null) $psAsset['usernames'][] = $mac['userAndLocation']['username'];
