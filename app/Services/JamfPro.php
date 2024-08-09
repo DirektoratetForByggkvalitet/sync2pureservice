@@ -68,7 +68,7 @@ class JamfPro extends API {
     public function getComputers() {
         $uri = '/v1/computers-inventory';
         $params = [
-            'section' => 'GENERAL,HARDWARE,USER_AND_LOCATION,OPERATING_SYSTEM',
+            'section' => 'GENERAL,HARDWARE,USER_AND_LOCATION,OPERATING_SYSTEM,EXTENSION_ATTRIBUTES',
             'sort' => 'id:asc'
         ];
         return $this->paginatedQuery($uri, $params);
@@ -77,7 +77,7 @@ class JamfPro extends API {
     public function getMobileDevices($detailed = true) {
         $uri = '/v2/mobile-devices/detail';
         $params = [
-            'section' => 'GENERAL,USER_AND_LOCATION,HARDWARE',
+            'section' => 'GENERAL,USER_AND_LOCATION,HARDWARE,EXTENSION_ATTRIBUTES',
             'sort' => 'mobileDeviceId:asc'
         ];
         $results = $this->paginatedQuery($uri, $params);
@@ -85,12 +85,9 @@ class JamfPro extends API {
             /**
              * Løper gjennom hver enkelt enhet for å hente ut initialEntryTimestamp
              */
-            $detailedResults = [];
-            foreach ($results as $device):
+            foreach ($results as &$device):
                 $device['general']['initialEntryTimestamp'] = $this->getMobileDeviceInitialEntryTimestamp($device['mobileDeviceId']);
-                $detailedResults[] = $device;
             endforeach;
-            return $detailedResults;
         endif;
 
         return $results;

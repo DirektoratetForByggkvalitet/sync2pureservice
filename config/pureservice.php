@@ -27,9 +27,11 @@ return [
             'OsVersion' => env('PURESERVICE_COMPUTER_FIELD_OS', 'OS-versjon'),
             'processor' => env('PURESERVICE_COMPUTER_FIELD_PROCESSOR', 'Prosessor'),
             'jamfUrl' => env('PURESERVICE_COMPUTER_FIELD_JAMFURL', 'Jamf-URL'),
+            'jamfId' => env('PURESERVICE_COMPUTER_FIELD_JAMFID', 'Jamf ID'),
             'lastSeen' => env('PURESERVICE_COMPUTER_FIELD_LASTSEEN', 'Sist sett'),
             'memberSince' => env('PURESERVICE_COMPUTER_FIELD_MEMBERSINCE', 'Innmeldt'),
             'EOL' => env('PURESERVICE_COMPUTER_FIELD_EOL', 'EOL'),
+            'riskAssessment' => env('PURESERVICE_MOBILE_FIELD_JAMFSECURITY_RISK', 'Risk Assessment'),
         ],
         'properties' => [], // Settes automatisk basert på displayName
         'status' => [
@@ -56,7 +58,9 @@ return [
             'model' => env('PURESERVICE_MOBILE_FIELD_MODEL', 'Modell'),
             'modelId' => env('PURESERVICE_MOBILE_FIELD_MODELID', 'ModelID'),
             'OsVersion' => env('PURESERVICE_MOBILE_FIELD_OS', 'OS-versjon'),
+            'riskAssessment' => env('PURESERVICE_MOBILE_FIELD_JAMFSECURITY_RISK', 'Risk Assessment'),
             'jamfUrl' => env('PURESERVICE_MOBILE_FIELD_JAMFURL', 'Jamf-URL'),
+            'jamfId' => env('PURESERVICE_MOBILE_FIELD_JAMFID', 'Jamf ID'),
             'lastSeen' => env('PURESERVICE_MOBILE_FIELD_LASTSEEN', 'Sist sett'),
             'memberSince' => env('PURESERVICE_MOBILE_FIELD_MEMBERSINCE', 'Innmeldt'),
             'EOL' => env('PURESERVICE_MOBILE_FIELD_EOL', 'EOL'),
