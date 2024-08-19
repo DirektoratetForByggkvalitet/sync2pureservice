@@ -147,7 +147,9 @@ class IncomingMessages extends Command {
                 continue;
             endif;
             if ($message->documentType() == 'innsynskrav'):
-                // Innsynskrav
+                /**
+                 * INNSYNSKRAV
+                 */
                 $this->ps->setTicketOptions('innsynskrav');
                 $this->line(Tools::L2.'Splitter innsynskravet opp basert på arkivsaker');
                 $newTickets = $message->splittInnsynskrav($this->ps);

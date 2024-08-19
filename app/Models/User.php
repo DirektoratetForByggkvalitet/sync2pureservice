@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\{Response};
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany};
 
 use App\Services\{PsApi, Tools};
@@ -78,6 +79,16 @@ class User extends Model
             $this->id = $psUser['id'];
             $this->role = $psUser['role'];
             $this->companyId = $this->companyId ? $this->companyId : $psUser['companyId'];
+            $emailDomain = Str::after($this->email, '@');
+            // Søker etter kobling til foretak dersom companyId er tom og domenet ikke er i svartelisten
+            if (!$this->companyId && !in_array($emailDomain, config('pureservice.domain_disable'))):
+                if ($company = $ps->findCompanyByDomainName($emailDomain, true)):
+                    if ($company->id != $this->companyId):
+                        $this->companyId = $company->id;
+                    endif;
+                endif;
+            endif;
+
             $this->save();
         endif;
 

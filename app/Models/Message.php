@@ -360,6 +360,7 @@ class Message extends Model {
                 $userData['lastName'] = $emailData[1];
             endif;
             $user = User::factory()->create($userData);
+
             $user->save();
         endif;
         $user->addOrUpdatePS($ps);
