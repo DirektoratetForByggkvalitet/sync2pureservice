@@ -32,7 +32,7 @@ jobs:
 
         MAIL_MAILER=${{ vars.MAILER }}
         MAIL_HOST=${{ vars.MAIL_HOST }}
-        MAIL_USER=${{ vars.MAIL_USER }}
+        MAIL_USERNAME=${{ vars.MAIL_USER }}
 
         APP_DEBUG=${{ vars.APP_DEBUG }}
         EOF
