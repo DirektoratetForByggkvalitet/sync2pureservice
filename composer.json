@@ -17,7 +17,7 @@
     ],
     "require": {
         "php": "^8.2.0",
-        "barryvdh/laravel-dompdf": "^2.2",
+        "barryvdh/laravel-dompdf": "^3.0",
         "cardinalby/content-disposition": "^1.1",
         "illuminate/database": "^11.5",
         "illuminate/http": "^11.5",
