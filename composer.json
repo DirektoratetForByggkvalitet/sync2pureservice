@@ -34,6 +34,7 @@
         "laravel-zero/framework": "^11.0.0",
         "phpoffice/phpspreadsheet": "^2.2",
         "predis/predis": "^2.2",
+        "symfony/uid": "^7.1",
         "zanysoft/laravel-zip": "dev-laravel-11"
     },
     "repositories": [
