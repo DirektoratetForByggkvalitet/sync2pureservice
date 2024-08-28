@@ -1,5 +1,5 @@
 {
-    "name": "Sync2pureservice",
+    "name": "dibk/sync2pureservice",
     "description": "Støttefunksjoner for Pureservice, bygd på Laravel Zero-rammeverket.",
     "keywords": ["pureservice", "laravel", "laravel zero", "console", "cli"],
     "homepage": "https://github.com/DirektoratetForByggkvalitet/sync2pureservice",
