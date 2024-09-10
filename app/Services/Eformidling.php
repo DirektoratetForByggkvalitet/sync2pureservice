@@ -100,13 +100,13 @@ class Eformidling extends API {
         $last = false;
         while ($last == false):
             $response = $this->apiQuery($uri, $params, true);
-            if ($response->successful()):
+            if ($response->successful() && $response->json('totalElements') > 0):
                 //dd($response->body());
-                $result = $response->json('content');
+                $contents = $response->json('content');
                 $params['page']++;
                 $last = $response->json('last');
                 // Legger til resultatene
-                foreach ($result as $msg):
+                foreach ($contents as $msg):
                     $messages->push($msg);
                 endforeach;
             endif;
