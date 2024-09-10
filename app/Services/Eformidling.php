@@ -96,19 +96,23 @@ class Eformidling extends API {
             'page' => 0,
         ];
         $uri = 'messages/in';
-        $messages = collect([]);
-        $last = false;
-        while ($last == false):
+        $messages = collect([]); // Tom Collection for resultatet
+
+        // Setter variabel for å paginere resultatet (hvis det er over 100 meldinger)
+        $paginate = true;
+        while ($paginate):
             $response = $this->apiQuery($uri, $params, true);
-            if ($response->successful() && $response->json('totalElements') > 0):
-                //dd($response->body());
-                $contents = $response->json('content');
-                $params['page']++;
-                $last = $response->json('last');
-                // Legger til resultatene
+            if ($response->successful()):
+                // verdien 'last' i responsen bestemmer om vi skal paginere videre eller stoppe
+                $response->json('last') ? $paginate = false : $params['page']++;
+
+                $contents = is_array($response->json('content')) ? $response->json('content') : [];
+                // Legger resultatene til i $messages
                 foreach ($contents as $msg):
                     $messages->push($msg);
                 endforeach;
+            else: // Det oppstår en feil i forespørselen
+                $paginate = false;
             endif;
         endwhile;
         return $messages->count() ? $messages : false;
