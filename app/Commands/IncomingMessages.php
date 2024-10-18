@@ -53,7 +53,7 @@ class IncomingMessages extends Command {
             $this->noMessages();
             return Command::SUCCESS;
         endif;
-        $skipCount = $messages->lazy()->whereIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering', 'arkivmelding_kvittering'])->count();
+        $skipCount = $messages->lazy()->whereIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering'])->count();
 
         $this->info(Tools::L1.'Totalt '.$messages->count().' innkommende meldinger. '.$skipCount.' av disse er kvitteringer, som vi hopper over.');
 
@@ -65,7 +65,7 @@ class IncomingMessages extends Command {
         $i = 0;
         $subtotal = $messages->count() - $skipCount;
         foreach ($messages->lazy()
-            ->whereNotIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering', 'arkivmelding_kvittering'])
+            ->whereNotIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering'])
             ->sortByDesc('standardBusinessDocumentHeader.documentIdentification.type') as $m
         ):
             $i++;
@@ -73,8 +73,9 @@ class IncomingMessages extends Command {
             $this->line(Tools::L1.$i.'/'.$subtotal.' Behandler meldingen \''.$msgId['instanceIdentifier'].'\'');
 
             // Hopper over kvitteringsmeldinger fra eInnsyn, for nå.
-            if ($this->ip->getMessageDocumentType($m) == 'einnsyn_kvittering'):
-                $this->line(Tools::L2.'eInnsynskvittering, hopper over');
+            if ($this->ip->getMessageDocumentType($m) == 'arkivmelding_kvittering'):
+                $this->line(Tools::L2.'Kvittering for arkivmelding, sletter den fra integrasjonspunktet');
+                $this->ip->deleteIncomingMessage($msgId['instanceIdentifier']);
                 $this->newLine();
                 continue;
             endif;
