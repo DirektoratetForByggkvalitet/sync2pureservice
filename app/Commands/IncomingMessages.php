@@ -53,9 +53,9 @@ class IncomingMessages extends Command {
             $this->noMessages();
             return Command::SUCCESS;
         endif;
-        $skipCount = $messages->lazy()->whereIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering'])->count();
+        $skipCount = $messages->lazy()->whereIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering', 'arkivmelding_kvittering'])->count();
 
-        $this->info(Tools::L1.'Totalt '.$messages->count().' innkommende meldinger. '.$skipCount.' av disse er kvitteringer fra eInnsyn, som vi hopper over.');
+        $this->info(Tools::L1.'Totalt '.$messages->count().' innkommende meldinger. '.$skipCount.' av disse er kvitteringer, som vi hopper over.');
 
         // Avslutter dersom alle meldinger skal hoppes over.
         if ($messages->count() == $skipCount):
@@ -65,7 +65,7 @@ class IncomingMessages extends Command {
         $i = 0;
         $subtotal = $messages->count() - $skipCount;
         foreach ($messages->lazy()
-            ->whereNotIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering'])
+            ->whereNotIn('standardBusinessDocumentHeader.documentIdentification.type', ['einnsyn_kvittering', 'arkivmelding_kvittering'])
             ->sortByDesc('standardBusinessDocumentHeader.documentIdentification.type') as $m
         ):
             $i++;
