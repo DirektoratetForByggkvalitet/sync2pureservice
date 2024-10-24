@@ -29,7 +29,7 @@ class PsAssets extends PsApi {
      *  config('pureservice.mobile.properties')
      * @return void
      */
-    protected function fetchTypeIds() {
+    public function fetchTypeIds() {
         // Henter ut relasjonstyper allerede i bruk i basen
         $uri = '/relationship/';
         $query = [
@@ -67,6 +67,7 @@ class PsAssets extends PsApi {
 
             // Finner propertyName for feltnavnene definert i config('pureservice.'.$type.'.fields')
             $properties = collect($result['linked']['assettypefields']);
+            //dd($properties);
             foreach (config('pureservice.'.$type.'.fields') as $key => $fieldName):
                 $property = $properties->firstWhere('name', $fieldName);
                 config(['pureservice.'.$type.'.properties.'.$key => lcfirst($property['propertyName'])]);
