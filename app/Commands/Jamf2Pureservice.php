@@ -101,7 +101,7 @@ class Jamf2Pureservice extends Command {
             $itemno++;
             $time1 = microtime(true);
             $fn = config('pureservice.'.$jamfDev['type'].'.properties');
-            $this->line('');
+            $this->newLine();
             $this->line(Tools::L2.$itemno.'/'.$this->jamfCount.' '.$jamfDev[$fn['serial']].' - '.$jamfDev[$fn['name']]);
             $psDev = $this->psDevices->firstWhere('uniqueId', $jamfDev[$fn['serial']]);
             // Sjekker om enheten finnes i Pureservice
@@ -233,8 +233,8 @@ class Jamf2Pureservice extends Command {
                 $this->line(Tools::L3.'Endret status på enheten');
                 $updated = true;
             endif;
-            if ($dev[$fn['jamfUrl']] != null):
-                $this->psApi->updateAssetDetail($dev, [$fn['jamfUrl'] => null,]);
+            if ($dev[$fn['jamfId']] != null):
+                $this->psApi->updateAssetDetail($dev, [$fn['jamfId'] => null,]);
                 $this->line(Tools::L3.'Fjernet lenke til Jamf Pro');
                 $updated = true;
             endif;
