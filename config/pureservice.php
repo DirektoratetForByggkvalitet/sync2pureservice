@@ -13,6 +13,12 @@ return [
         'dlPath' => env('PURESERVICE_TMP_PATH', 'pureservice'),
         'timeout' => 90,
     ],
+    'corestatus' => [
+        // Snarveier for å lete opp åpne og lukkede saker i PS 
+        // I bruk: filter = [noe].' AND '.config('pureservice.corestatus.open')
+        'open' => 'status.coreStatus < 50 AND !isMarkedForDeletion',
+        'closed' => 'status.coreStatus >= 50 AND !isMarkedForDeletion',
+    ],
     'computer' => [
         'displayName' => env('PURESERVICE_COMPUTER_ASSETTYPE_NAME', 'Datamaskin'),
         'lifespan' => (int)env('PURESERVICE_COMPUTER_LIFESPAN', 4), // Forventet levetid, oppgitt som år
@@ -141,6 +147,17 @@ return [
         'priority' => env('EF_TICKET_PRIORITY', env('PURESERVICE_TICKET_PRIORITY', 'Normal')),
         'status' => env('EF_TICKET_STATUS', env('PURESERVICE_TICKET_STATUS', 'Ny')),
         'status_solved' => env('EF_TICKET_SOLVED_STATUS', env('PURESERVICE_TICKET_SOLVED_STATUS', 'Løst')),
+        'requestType' => env('PURESERVICE_TICKET_REQUEST_TYPE','Ticket'),
+    ],
+    'app_notification' => [
+        'codeTemplate' => env('PURESERVICE_TICKET_NUMBER_TEMPLATE', '[Sak ID# {{RequestNumber}}]'),
+        'source' => env('SECRET_CHECK_SOURCE', 'Direkte'),
+        'team' => env('SECRET_CHECK_TEAM', 'IKT'),
+        'visibility' => env('SECRET_CHECK_VISIBILITY', 1),
+        'ticketType' => env('SECRET_CHECK_TYPE', 'Hendelse'),
+        'priority' => env('SECRET_CHECK_PRIORITY', 'Høy'),
+        'status' => env('SECRET_CHECK_STATUS', env('PURESERVICE_TICKET_STATUS', 'Ny')),
+        'status_solved' => env('SECRET_CHECK_SOLVED_STATUS', env('PURESERVICE_TICKET_SOLVED_STATUS', 'Løst')),
         'requestType' => env('PURESERVICE_TICKET_REQUEST_TYPE','Ticket'),
     ],
 

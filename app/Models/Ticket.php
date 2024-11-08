@@ -30,6 +30,7 @@ class Ticket extends Model
         'category1Id',
         'category2Id',
         'category3Id',
+        'customerReference',
         'ticketTypeId',
         'visibility',
         'emailAddress',
@@ -327,18 +328,28 @@ class Ticket extends Model
         endif;
     }
 
+    public function getChangeArray(PsApi $ps = null): array {
+        $ps = $ps ? $ps : new PsApi();
+        $psTicket = $ps->getTicketFromPureservice($this->id, false);
+        $psArr = $psTicket->toArray();
+        $myArr = $this->toArray();
+        $myChanges = [];
+        foreach (array_keys($myArr) as $field):
+            if ($myArr[$field] != $psArr[$field]):
+                $myChanges[$field] = $myArr[$field];
+            endif;
+        endforeach;
+        return $myChanges;
+    }
     /**
      * Legger til saken i Pureservice, eller oppdaterer eksisterende sak
      */
     public function addOrUpdatePS(PsApi $ps): Ticket|null {
-        $add = true;
-        if ($this->id):
-            $add = false;
-            $psTicket = $ps->getTicketFromPureservice($this->id, false);
-            // Mer kode for å eventuelt samkjøre data?
-            $this->requestNumber = $psTicket->requestNumber;
-        endif;
+        $add = $this->id ? false : true;
+
         $body = $this->toArray();
+        unset($body['id'], $body['requestNumber']);
+        //dd($body);
         $uri = '/ticket/';
         if ($add):
             $response = $ps->apiPost($uri, $body);
@@ -349,9 +360,17 @@ class Ticket extends Model
                 return $this;
             endif;
         else:
-            $uri .= $this->id;
-            $response = $ps->apiPatch($uri, $body);
-            if ($response->successful()) return $this;
+            $body = $this->getChangeArray($ps);
+            //dd($body);
+            if (count($body)):
+                $uri .= $this->id;                
+                $response = $ps->apiPatch($uri, $body, 'application/json', 'application/vnd.api+json');
+                if ($response->successful()):
+                    return $this;
+                endif;
+            else:
+                return $this;
+            endif;
         endif;
         return null;
     }

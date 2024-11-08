@@ -22,6 +22,7 @@ return new class extends Migration
             $table->integer('priorityId');
             $table->integer('statusId');
             $table->integer('sourceId');
+            $table->string('customerReference')->nullable();
             $table->integer('category1Id')->nullable();
             $table->integer('category2Id')->nullable();
             $table->integer('category3Id')->nullable();

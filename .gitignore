@@ -6,3 +6,6 @@
 .env
 .localized
 .DS_Store
+client.key
+client.cer
+client.pem

@@ -129,6 +129,30 @@ class PsApi extends API {
         return null; // Hvis ikke funnet
     }
 
+    public function getCategoriesFromDotName(string $dotCategories): array|false {
+        $catArray = explode('.', $dotCategories);
+        $entity = 'category';
+        $entities = Str::plural($entity);
+        $level = 0;
+        $categories = [
+            $entity.'1Id' => null,
+            $entity.'2Id' => null,
+            $entity.'3Id' => null
+        ];
+        foreach($catArray as $categoryName):
+            $level++;
+            $query = [
+                'filter' => 'name == "' . $categoryName . '" AND level == '.$level . ' AND !disabled',
+            ];
+            $response = $this->apiQuery($entity, $query, true);
+            if ($response->successful()):
+                $category = $response->json($entities.'.0');
+                $categories[$entity.$level.'Id'] = $category['id'];
+            endif;
+        endforeach;
+        return count($categories) ? $categories : false;
+    }
+
 
     /**
      * Sletter en relasjon i Pureservice
