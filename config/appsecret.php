@@ -4,9 +4,6 @@ return [
   'notify' => [
     'days' => 30,
     'subject' => env('SECRET_CHECK_SUBJECT', '? utløper for App Registration ?'),
-    'sakstype' => env('SECRET_CHECK_TYPE', 'Hendelse'),
-    'team' => env('SECRET_CHECK_TEAM', 'IKT'),
-    'requestType' => env('SECRET_CHECK_REQUEST_TYPE', 'Ticket'),
     'refField' => env('SECRET_CHECK_ID_FIELD', 'customerReference'),
     'refPrefix' => env('SECRET_CHECK_REF_PREFIX', 'AppID_'),
     'from' => env('SECRET_CHECK_EMAIL', config('MAIL_FROM_ADDRESS')),
