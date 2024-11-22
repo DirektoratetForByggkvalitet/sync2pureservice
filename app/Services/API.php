@@ -109,9 +109,9 @@ class API {
         $this->setToken();
         $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
         // Setter timeout for forespørselen
-        $request->timeout($this->myConf('api.timeout', config('api.timeout', 60)));
+        $request->timeout($this->myConf('api.timeout', config('api.timeout')));
         // Setter timeout for oppkoblingen
-        $request->connectTimeout($this->myConf('api.connectTimeout', config('api.connectTimeout', 10)));
+        $request->connectTimeout($this->myConf('api.connectTimeout', config('api.connectTimeout')));
         $request->retry($this->myConf('api.retry', config('api.retry')));
         // Setter headers
         $request->withHeaders([
