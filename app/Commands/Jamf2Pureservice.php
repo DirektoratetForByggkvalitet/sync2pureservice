@@ -74,7 +74,7 @@ class Jamf2Pureservice extends Command {
 
 
         $time1 = microtime(true);
-        $this->newLine();
+        $this->newLine(2);
         $this->info(Tools::L1.'1. Henter enheter fra Jamf Pro');
         $this->jamfDevices = Cache::remember('jamfDevices', 3600, function() {
             return collect($this->getJamfAssetsAsPsAssets());
@@ -95,7 +95,7 @@ class Jamf2Pureservice extends Command {
 
 
         // Looper gjennom Jamf-enheter for å oppdatere eller legge dem til i Pureservice
-        $this->newLine();
+        $this->newLine(2);
         $this->info(Tools::L1.'3. Starter behandling av enheter fra Jamf Pro');
         $itemno = 0;
         foreach ($this->jamfDevices->lazy() as $jamfDev):
@@ -194,7 +194,7 @@ class Jamf2Pureservice extends Command {
         // Looper gjennom Pureservice-enheter for å evt. endre status på enheter som ikke lenger finnes i Jamf Pro
         $notUpdatedDevs = $this->psDevices->lazy()->whereNotIn('id', $this->updatedPsDevices);
         $this->psOnlyCount = $notUpdatedDevs->count();
-        $this->newLine();
+        $this->newLine(2);
         $this->info(Tools::L1.'4. Oppdaterer status for '.$this->psOnlyCount.' enheter som ikke er i Jamf Pro');
         $i = 0;
         foreach ($notUpdatedDevs as $dev):

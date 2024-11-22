@@ -109,7 +109,9 @@ class API {
         $this->setToken();
         $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
         // Setter timeout for forespørselen
-        $request->timeout($this->myConf('api.timeout', config('api.timeout')));
+        $request->timeout($this->myConf('api.timeout', config('api.timeout', 60)));
+        // Setter timeout for oppkoblingen
+        $request->connectTimeout($this->myConf('api.connectTimeout', config('api.connectTimeout', 10)));
         $request->retry($this->myConf('api.retry', config('api.retry')));
         // Setter headers
         $request->withHeaders([
@@ -152,6 +154,8 @@ class API {
         if ($toFile):
             $request->sink($toFile);
         endif;
+
+        
 
         return $request;
     }
