@@ -155,8 +155,6 @@ class API {
             $request->sink($toFile);
         endif;
 
-        
-
         return $request;
     }
 
