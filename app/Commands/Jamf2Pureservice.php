@@ -112,7 +112,7 @@ class Jamf2Pureservice extends Command {
 
             if ($psDev):
                 $psDevId = $psDev['id'];
-                $this->line(Tools::L3.$typeName.' finnes i Pureservice fra før.');
+                //$this->line(Tools::L3.$typeName.' finnes i Pureservice fra før.');
                 $statusId = $this->psApi->calculateStatus($psDev);
                 $jamfAsset = array_merge($psDev, $jamfDev);
                 $updateAsset = collect($jamfAsset)
@@ -152,9 +152,9 @@ class Jamf2Pureservice extends Command {
                 endif;
 
             else:
-                $this->line(Tools::L3.$typeName.' finnes ikke i Pureservice fra før. Legger til...');
+                // $this->line(Tools::L3.$typeName.' finnes ikke i Pureservice fra før. Legger til...');
                 if ($psDevId = $this->psApi->createAsset($jamfDev)):
-                    $this->line(Tools::L3.'  Lagt til med id='.$psDevId);
+                    $this->line(Tools::L3.'  Lagt til i Pureservice med id='.$psDevId);
                 else:
                     $this->error(Tools::L3.'Det oppsto en feil under innlegging...');
                 endif;
