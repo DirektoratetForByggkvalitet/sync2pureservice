@@ -88,9 +88,9 @@ class PsAssets extends PsApi {
     public function getAllAssets(): Collection {
         $totalAssets = [];
         foreach (['computer', 'mobile'] as $type):
-            $uri = '/asset/'.$this->myConf($type.'.className');
+            $uri = '/asset/'; // .$this->myConf($type.'.className');
             $params = [
-                'filter' => '!isMarkedForDeletion',
+                'filter' => 'type.name =="'.$this->myConf($type.'.displayName').'" AND !isMarkedForDeletion',
             ];
             $response = $this->apiQuery($uri, $params, true);
             foreach ($response->json('assets') as $asset):
