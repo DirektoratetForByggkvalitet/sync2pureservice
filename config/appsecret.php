@@ -6,7 +6,7 @@ return [
     'subject' => env('SECRET_CHECK_SUBJECT', '? utløper for App Registration ?'),
     'refField' => env('SECRET_CHECK_ID_FIELD', 'customerReference'),
     'refPrefix' => env('SECRET_CHECK_REF_PREFIX', 'AppID_'),
-    'from' => env('SECRET_CHECK_EMAIL', config('MAIL_FROM_ADDRESS')),
+    'from' => env('SECRET_CHECK_EMAIL', env('MAIL_FROM_ADDRESS')),
     'categories' => env('SECRET_CHECK_CATEGORIES'),
   ],
   'template' => [
