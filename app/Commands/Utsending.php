@@ -72,7 +72,7 @@ class Utsending extends Command
 
         $waitingStatusId = $this->api->findStatus(config('pureservice.ticket.status_message_sent'));
         $params['filter'] = 'direction == '.config('pureservice.comms.direction.out').' AND '.
-            'request.statusId == '.$waitingStatusId. ' AND '.
+            'ticket.statusId == '.$waitingStatusId. ' AND '.
             '('.
                 'to == '.Str::wrap(config('pureservice.dispatch.address.ef'), '"').
                 ' OR '.
