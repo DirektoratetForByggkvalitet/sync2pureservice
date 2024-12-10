@@ -67,7 +67,7 @@ class Utsending extends Command
         $params = [
             //'filter' => 'status == '.$failedStatus,
             'sort' => 'created DESC',
-            'include' => 'attachments,request',
+            'include' => 'attachments,ticket',
         ];
 
         $waitingStatusId = $this->api->findStatus(config('pureservice.ticket.status_message_sent'));
