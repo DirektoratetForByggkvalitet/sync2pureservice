@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id('dbid');
             $table->timestamps();
             $table->integer('id')->unique();
-            $table->integer('requestId');
+            $table->integer('ticketId');
             $table->integer('assetId')->nullable();
             $table->string('from');
             $table->string('fromName');

@@ -115,10 +115,10 @@ class Utsending extends Command
         $this->ef = new Eformidling();
         $this->sender = $this->api->getSelfCompany();
         $this->sender->save();
-        //dd($this->messages);
+
         $this->messages->each(function (array $email, int $key) {
-            $ticket = $this->tickets->firstWhere('id', $email['requestId']); // $this->api->getTicketFromPureservice($email['requestId'], false);
-            if ($existing = Ticket::firstWhere('id', $email['requestId'])):
+            $ticket = $this->tickets->firstWhere('id', $email['ticketId']); // $this->api->getTicketFromPureservice($email['ticketId'], false);
+            if ($existing = Ticket::firstWhere('id', $email['ticketId'])):
                 // Denne saken har vi håndtert tidligere
                 $duplicate = true;
             else:
