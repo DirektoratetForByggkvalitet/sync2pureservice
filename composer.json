@@ -36,13 +36,10 @@
         "phpoffice/phpspreadsheet": "^2.2",
         "predis/predis": "^2.2",
         "symfony/uid": "^7.1",
-        "zanysoft/laravel-zip": "dev-laravel-11"
+        "zanysoft/laravel-zip": "^3.0"
     },
     "repositories": [
-        {
-            "type": "git",
-            "url": "https://github.com/CalumChamberlain/laravel-zip.git"
-        }
+
     ],    
     "require-dev": {
         "fakerphp/faker": "^1.23",
