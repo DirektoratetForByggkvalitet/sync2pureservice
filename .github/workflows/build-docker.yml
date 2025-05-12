@@ -14,7 +14,10 @@ permissions:
 jobs:
   build-image:
 
-    runs-on: [self-hosted, docker, macOS]
+    runs-on:
+      - self-hosted
+      - docker
+      - macOS
     concurrency:
       group: docker_builder
       cancel-in-progress: true
@@ -39,12 +42,6 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Docker Hub login
-      env:
-        DOCKER_USER: ${{vars.DOCKERHUB_USER}}
-        DOCKER_PW: ${{secrets.DOCKERHUB_TOKEN}}
-      run: |
-        docker login -u $DOCKER_USER -p $DOCKER_PW
 
     - name: Setter metadata for Docker
       id: meta
@@ -58,7 +55,7 @@ jobs:
           type=raw,value=latest,enable={{is_default_branch}}
           type=raw,value=alpine
           # Kort SHA > 'sha-xxxxxx'
-          # type=sha,prefix=${{ env.appEnv }}-,format=short
+          # type=sha,format=short
     - name: Bygg og push
       uses: docker/build-push-action@v6
       with:
