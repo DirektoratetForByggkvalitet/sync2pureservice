@@ -5,10 +5,12 @@ on:
     inputs:
       resumeUrl:
         required: false
+        default: 'none'
   # schedule:
   #   - cron: "15 23 * * 0"
 
-
+env:
+  webookSha: 'cc1a66f'
 
 permissions:
   id-token: write
@@ -18,7 +20,7 @@ permissions:
 
 jobs:
   build-image:
-
+    continue-on-error: true
     runs-on:
       - self-hosted
       - docker
@@ -70,4 +72,18 @@ jobs:
         context: .
         platforms: linux/amd64,linux/arm64
         cache-to: type=gha,mode=max
+
+  send-webhook:
+    if: ${{ inputs.resumeUrl != 'none' }}
+    runs-on:
+      - self-hosted
+      - docker
+      - macOS
+    steps:
+      - name: Webhook
+        uses: joelwmale/webhook-action@${{ env.webhookSha }}
+        with:
+          url: ${{ inputs.resumeUrl }}
+          body: '{"status": "Finished"}'
+          github_event_payload: true
 
