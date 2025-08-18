@@ -85,6 +85,6 @@ jobs:
         uses: joelwmale/webhook-action@cc1a66f987e1591785273fd6f9d2f7a9d8d7c9cd
         with:
           url: ${{ inputs.resumeUrl }}
-          body: '{"status": "Finished"}'
+          body: '{"result": "${{ needs.build-image.result }}"}'
           github_event_payload: true
 
