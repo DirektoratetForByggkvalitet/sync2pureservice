@@ -63,15 +63,15 @@ jobs:
           type=raw,value=alpine
           # Kort SHA > 'sha-xxxxxx'
           # type=sha,format=short
-    - name: Bygg og push
-      uses: docker/build-push-action@v6
-      with:
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        file: Dockerfile
-        context: .
-        platforms: linux/amd64,linux/arm64
-        cache-to: type=gha,mode=max
+    # - name: Bygg og push
+    #   uses: docker/build-push-action@v6
+    #   with:
+    #     push: true
+    #     tags: ${{ steps.meta.outputs.tags }}
+    #     file: Dockerfile
+    #     context: .
+    #     platforms: linux/amd64,linux/arm64
+    #     cache-to: type=gha,mode=max
 
   send-webhook:
     needs: build-image
