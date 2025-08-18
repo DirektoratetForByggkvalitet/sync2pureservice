@@ -2,8 +2,13 @@ name: Bygging av Docker-image
 
 on:
   workflow_dispatch:
+    inputs:
+      resumeUrl:
+        required: false
   schedule:
     - cron: "15 23 * * 0"
+
+
 
 permissions:
   id-token: write
