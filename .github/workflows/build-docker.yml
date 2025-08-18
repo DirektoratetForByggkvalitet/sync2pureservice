@@ -81,7 +81,7 @@ jobs:
       - macOS
     steps:
       - name: Webhook
-        uses: joelwmale/webhook-action@${{ env.webhookSha }}
+        uses: joelwmale/webhook-action@cc1a66f
         with:
           url: ${{ inputs.resumeUrl }}
           body: '{"status": "Finished"}'
