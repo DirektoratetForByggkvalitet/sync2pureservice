@@ -5,8 +5,8 @@ on:
     inputs:
       resumeUrl:
         required: false
-  schedule:
-    - cron: "15 23 * * 0"
+  # schedule:
+  #   - cron: "15 23 * * 0"
 
 
 
