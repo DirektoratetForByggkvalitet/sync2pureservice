@@ -20,7 +20,6 @@ permissions:
 
 jobs:
   build-image:
-    continue-on-error: true
     runs-on:
       - self-hosted
       - docker
@@ -34,6 +33,7 @@ jobs:
 
     - name: Lås opp nøkkelring
       run: |
+        exit 1 # Test failure
         security -v unlock-keychain -p ${{secrets.MACOS_KC_PASS}} ~/Library/Keychains/login.keychain-db
   
     # - name: Innlogging til Azure CLI (OIDC)
@@ -75,7 +75,7 @@ jobs:
 
   send-webhook:
     needs: build-image
-    if: ${{ inputs.resumeUrl != 'none'}}
+    if: ${{ inputs.resumeUrl != 'none' }}
     runs-on:
       - self-hosted
       - docker
