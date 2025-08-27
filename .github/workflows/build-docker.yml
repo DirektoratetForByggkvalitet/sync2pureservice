@@ -2,10 +2,6 @@ name: Bygging av Docker-image
 
 on:
   workflow_dispatch:
-    inputs:
-      resumeUrl:
-        required: false
-        default: 'none'
   # schedule:
   #   - cron: "15 23 * * 0"
 
@@ -20,7 +16,6 @@ permissions:
 
 jobs:
   build-image:
-    continue-on-error: true
     runs-on:
       - self-hosted
       - docker
@@ -28,7 +23,7 @@ jobs:
     concurrency:
       group: docker_builder
       cancel-in-progress: true
-
+    continue-on-error: true
     steps:
     - uses: actions/checkout@v4
 
@@ -74,18 +69,17 @@ jobs:
     #     platforms: linux/amd64,linux/arm64
     #     cache-to: type=gha,mode=max
 
-  send-webhook:
+  on-error:
     needs: build-image
-    if: ${{ inputs.resumeUrl != 'none' }}
+    if: ${{ failure() }}
     runs-on:
       - self-hosted
-      - docker
-      - macOS
     steps:
-      - name: Webhook
-        uses: joelwmale/webhook-action@cc1a66f987e1591785273fd6f9d2f7a9d8d7c9cd
+      - name: Send til n8n
+        uses: distributhor/workflow-webhook@v3
         with:
-          url: ${{ inputs.resumeUrl }}
-          body: '{"result": "${{ needs.build-image.result }}", "workflow": "${{ github.workflow }}"}'
-          github_event_payload: true
+          webhook_url: ${{ secrets.N8N_WEBHOOK_URL }}
+          webhook_auth_type: "header"
+          data: '{"status": "failure"}'
+          webhook_auth: ${{ secrets.N8N_WEBHOOK_AUTH }}
 
