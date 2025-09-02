@@ -188,7 +188,7 @@ class API {
         // Venter ved 429-status
         while ($retry):
             $response = $this->prepRequest($accept, null, $toFile)->get($uri, $query);
-            if ($response->getStatus() == 429):
+            if ($response->getStatusCode() == 429):
                 $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
                 sleep($wait);
             else:
@@ -231,7 +231,7 @@ class API {
         $retry = true;
         while ($retry):
             $response = $this->prepRequest($accept, $contentType, $toFile)->post($uri, $body);
-            if ($response->getStatus() == 429):
+            if ($response->getStatusCode() == 429):
                 $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
                 sleep($wait);
             else:
@@ -258,7 +258,7 @@ class API {
         $retry = true;
         while ($retry):
             $response = $this->prepRequest($accept, $contentType, $toFile)->patch($uri, $body);
-            if ($response->getStatus() == 429):
+            if ($response->getStatusCode() == 429):
                 $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
                 sleep($wait);
             else:
@@ -283,7 +283,7 @@ class API {
         $retry = true;
         while ($retry):
             $response = $this->prepRequest($accept, $contentType)->put($uri, $body);
-            if ($response->getStatus() == 429):
+            if ($response->getStatusCode() == 429):
                 $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
                 sleep($wait);
             else:
@@ -305,7 +305,7 @@ class API {
         $retry = true;
         while ($retry):
             $response = $this->prepRequest($accept)->delete($uri, $body);
-            if ($response->getStatus() == 429):
+            if ($response->getStatusCode() == 429):
                 $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
                 sleep($wait);
             else:
