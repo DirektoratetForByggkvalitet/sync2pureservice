@@ -10,7 +10,7 @@ jobs:
 
     runs-on: 
       - ubuntu-latest
-    container: ghcr.io/${{ github.repository }}
+    container: ghcr.io/direktoratetforbyggkvalitet/sync2pureservice
     concurrency:
       group: jamf2pureservice
       cancel-in-progress: true
