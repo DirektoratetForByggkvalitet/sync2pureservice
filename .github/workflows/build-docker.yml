@@ -23,13 +23,13 @@ jobs:
     concurrency:
       group: sync2pureservice_docker_build
       cancel-in-progress: true
-    continue-on-error: true
+    # continue-on-error: true
+
     steps:
     - uses: actions/checkout@v4
 
     - name: Lås opp nøkkelring
       run: |
-        exit 1 # Test failure
         security -v unlock-keychain -p ${{secrets.MACOS_KC_PASS}} ~/Library/Keychains/login.keychain-db
   
     # - name: Innlogging til Azure CLI (OIDC)
