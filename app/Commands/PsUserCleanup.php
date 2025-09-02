@@ -93,6 +93,7 @@ class PsUserCleanup extends Command {
         $this->info(Tools::L1.'Vi fant '.$userCount.' sluttbrukere. Starter behandling...');
         $this->newLine();
         User::lazy()->each(function (User $psUser, int $key) {
+            $starttime = microtime(true);
             $fullName = $psUser->firstName.' '.$psUser->lastName;
             $this->info(Tools::L2.'ID '.$psUser->id.' \''.$fullName.'\': '.$psUser->email);
             $updateMe = false;
@@ -140,6 +141,8 @@ class PsUserCleanup extends Command {
                 $this->line(Tools::L3.' Brukeren deaktiveres: E-postadressen er i et domene som ikke er i bruk lenger.');
                 $this->ps->disableCompanyOrUser($psUser);
             endif;
+            $elapsed = microtime(true) - $starttime;
+            $this->line(Tools::L3.'Behandlingstid: '.round($elapsed, 2).' sek');
             $this->newLine();
         });
 
