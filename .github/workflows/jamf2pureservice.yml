@@ -8,7 +8,9 @@ on:
 jobs:
   jamf2pureservice:
 
-    runs-on: [self-hosted]
+    runs-on: 
+      - self-hosted
+    container: ghcr.io/${{ github.repository }}
     concurrency:
       group: jamf2pureservice
       cancel-in-progress: true
