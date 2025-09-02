@@ -112,7 +112,7 @@ class API {
         $request->timeout($this->myConf('api.timeout', config('api.timeout')));
         // Setter timeout for oppkoblingen
         $request->connectTimeout($this->myConf('api.connectTimeout', config('api.connectTimeout')));
-        $request->retry($this->myConf('api.retry', config('api.retry')), ($this->myConf('api.retryWait', config('api.retryWait', 300))));
+        // $request->retry($this->myConf('api.retry', config('api.retry')), ($this->myConf('api.retryWait', config('api.retryWait', 300))));
         // Setter headers
         $request->withHeaders([
             'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
@@ -183,7 +183,18 @@ class API {
     ): mixed {
         $uri = $this->resolveUri($uri);
         $query = is_array($query) ? $query : [];
-        $response = $this->prepRequest($accept, null, $toFile)->get($uri, $query);
+        $retry = true;
+        
+        // Venter ved 429-status
+        while ($retry):
+            $response = $this->prepRequest($accept, null, $toFile)->get($uri, $query);
+            if ($response->getStatus() == 429):
+                $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
+                sleep($wait);
+            else:
+                $retry = false;
+            endif;
+        endwhile;
         if ($response->successful()):
             if ($returnResponse) return $response;
             return $response->json();
@@ -217,6 +228,16 @@ class API {
     ): Response|bool {
         $uri = $this->resolveUri($uri);
         $response = $this->prepRequest($accept, $contentType, $toFile)->post($uri, $body);
+        $retry = true;
+        while ($retry):
+            $response = $this->prepRequest($accept, $contentType, $toFile)->post($uri, $body);
+            if ($response->getStatus() == 429):
+                $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
+                sleep($wait);
+            else:
+                $retry = false;
+            endif;
+        endwhile;
         if ($returnBool) return $response->successful();
         return $response;
     }
@@ -234,7 +255,16 @@ class API {
         $uri = $this->resolveUri($uri);
         $accept = Str::contains($returnOptions, '/') ? $returnOptions : $this->myConf('api.accept', 'application/json');
         //$contentType = $contentType ? $contentType : $this->myConf('api.contentType', $accept);
-        $response = $this->prepRequest($accept, $contentType, $toFile)->patch($uri, $body);
+        $retry = true;
+        while ($retry):
+            $response = $this->prepRequest($accept, $contentType, $toFile)->patch($uri, $body);
+            if ($response->getStatus() == 429):
+                $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
+                sleep($wait);
+            else:
+                $retry = false;
+            endif;
+        endwhile;
         return $returnOptions === true ? $response->successful() : $response;
     }
 
@@ -250,7 +280,17 @@ class API {
         $uri = $this->resolveUri($uri);
         $accept = $this->myConf('api.accept');
         $contentType = $contentType ? $contentType : $accept;
-        $response = $this->prepRequest($accept, $contentType)->put($uri, $body);
+        $retry = true;
+        while ($retry):
+            $response = $this->prepRequest($accept, $contentType)->put($uri, $body);
+            if ($response->getStatus() == 429):
+                $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
+                sleep($wait);
+            else:
+                $retry = false;
+            endif;
+        endwhile;
+                
         if ($returnBool) return $response->successful();
         return $response;
    }
@@ -262,7 +302,16 @@ class API {
         $uri = $this->resolveUri($uri);
         $accept = $this->myConf('api.accept');
         $contentType = $contentType ? $contentType : $accept;
-        $response = $this->prepRequest($accept)->delete($uri, $body);
+        $retry = true;
+        while ($retry):
+            $response = $this->prepRequest($accept)->delete($uri, $body);
+            if ($response->getStatus() == 429):
+                $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
+                sleep($wait);
+            else:
+                $retry = false;
+            endif;
+        endwhile;
         return $response->successful();
     }
 

@@ -7,10 +7,9 @@ on:
 
 jobs:
   jamf2pureservice:
-
     runs-on: 
-      - ubuntu-latest
-    container: ghcr.io/direktoratetforbyggkvalitet/sync2pureservice
+      - self-hosted
+      - php
     concurrency:
       group: jamf2pureservice
       cancel-in-progress: true
@@ -54,9 +53,11 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
+
     - name: Install dependencies
       run: composer install
-    - name: Run Jamf2Pureservice
+
+    - name: Run jamf2pureservice
       env:
         JAMFPRO_SECRET: ${{ secrets.JAMFPRO_SECRET }}
         PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
