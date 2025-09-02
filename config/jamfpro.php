@@ -11,6 +11,8 @@ return [
         'auth' => 'token',
         'dlPath' => env('JAMFPRO_TMP_PATH', 'jamfpro'),
         'timeout' => 90,
+        'retry' => 5,
+        'retryWait' => 300,
     ],
 
 ];

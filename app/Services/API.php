@@ -112,7 +112,7 @@ class API {
         $request->timeout($this->myConf('api.timeout', config('api.timeout')));
         // Setter timeout for oppkoblingen
         $request->connectTimeout($this->myConf('api.connectTimeout', config('api.connectTimeout')));
-        $request->retry($this->myConf('api.retry', config('api.retry')));
+        $request->retry($this->myConf('api.retry', config('api.retry')), ($this->myConf('api.retryWait', config('api.retryWait', 300))));
         // Setter headers
         $request->withHeaders([
             'Connection' => $this->myConf('api.headers.connection', config('api.headers.connection')),
@@ -174,7 +174,7 @@ class API {
      * @param   bool    $returnResponse Returnerer Response-objektet, fremfor kun dataene
      * @param   string  $contentType    Setter Content-Type for forespørselen
      */
-    public function apiGet(
+    public function apiGet (
         string $uri, 
         bool $returnResponse = false, 
         string|null|false $accept = null, 

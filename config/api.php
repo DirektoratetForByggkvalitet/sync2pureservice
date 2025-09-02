@@ -12,4 +12,5 @@ return [
     'timeout' => 30,
     'connectTimeout' => 10,
     'retry' => 3,
+    'retryWait' => 300,
 ];
