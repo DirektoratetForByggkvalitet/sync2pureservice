@@ -9,8 +9,7 @@ jobs:
   jamf2pureservice:
 
     runs-on: 
-      - self-hosted
-      - docker
+      - ubuntu-latest
     container: ghcr.io/${{ github.repository }}
     concurrency:
       group: jamf2pureservice
