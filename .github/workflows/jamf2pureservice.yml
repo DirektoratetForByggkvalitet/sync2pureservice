@@ -9,7 +9,6 @@ jobs:
   jamf2pureservice:
     runs-on: 
       - self-hosted
-      - php
     concurrency:
       group: jamf2pureservice
       cancel-in-progress: true
