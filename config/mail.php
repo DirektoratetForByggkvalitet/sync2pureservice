@@ -34,7 +34,7 @@ return [
     */
 
     'mailers' => [
-        'microsoft-graph' => [
+        'msgraph' => [
             'transport' => 'microsoft-graph',
             'client_id' => env('MICROSOFT_GRAPH_CLIENT_ID', env('AZURE_SP_ID')),
             'client_secret' => env('MICROSOFT_GRAPH_CLIENT_SECRET', env('AZURE_SP_SECRET')),
@@ -97,7 +97,7 @@ return [
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
-                'microsoft-graph',
+                'msgraph',
                 'smtp',
             ],
         ],
