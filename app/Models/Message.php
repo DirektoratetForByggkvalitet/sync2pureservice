@@ -302,7 +302,7 @@ class Message extends Model {
         $ps->setTicketOptions('innsynskrav');
         $dlPath = $this->downloadPath();
         $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($dlPath.'/order.xml'))), true);
-        // dd($bestilling);
+        dd($bestilling);
         $emailtext = Storage::get($dlPath.'/emailtext');
         //dd($emailtext.PHP_EOL.Storage::get('emailtext.sample'));
         // Behandler ordrefila
