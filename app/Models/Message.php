@@ -320,7 +320,7 @@ class Message extends Model {
             return $dokument;
         });
         $bestilling['dokumenter'] = $this->processEmailText($emailtext, $dokumenter);
-        dd($bestilling['dokumenter']);
+        // dd($bestilling['dokumenter']);
         unset($dokumenter);
 
         // Befolker bestillingens dokumenter med info fra emailtext
@@ -399,31 +399,18 @@ class Message extends Model {
         $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator.$dokSeparator);
         $dokArray = explode($dokSeparator, trim($dokText));
         $prosesserteDokumenter = [];
-        $template = [
-            'saksnr' => '',
-            'dokumentnr' => '',
-            'sekvensnr' => '',
-            'saksnavn' => '',
-            'dokumentnavn' => '',
-        ];
+
         foreach ($dokArray as $dok):
             $sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), PHP_EOL));
+            // Finner dokumentet i bestillingen basert på sekvensnr
+            $dok = $dokumenter->firstWhere('journalnr', $sekvensnr);
             $saksnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Sak: '), PHP_EOL)));
             $dokumentnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Dokument: '), PHP_EOL)));
-            
-            $journalnr = $sekvensnr;
-            $dok = $dokumenter->firstWhere('journalnr', $journalnr);
+
             $dok['saksnavn'] = $saksnavn;
             $dok['dokumentnavn'] = $dokumentnavn;
 
             $prosesserteDokumenter[] = $dok;
-            // $dokument = $template;
-            // $dokument['saksnr'] = trim(Str::before(Str::after($dok, 'Saksnr: '), ' | Dok nr'));
-            // $dokument['dokumentnr'] = trim(Str::before(Str::after($dok, 'Dok nr. : '), ' | Sekvensnr'));
-            // $dokument['sekvensnr'] = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), PHP_EOL));
-            // $dokument['saksnavn'] = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Sak: '), PHP_EOL)));
-            // $dokument['dokumentnavn'] = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Dokument: '), PHP_EOL)));
-            // $dokumenter[] = $dokument;
         endforeach;
 
         return collect($prosesserteDokumenter);
