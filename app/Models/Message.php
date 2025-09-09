@@ -332,7 +332,7 @@ class Message extends Model {
         endif;
         //dd($senderUser);
         $bDokumenter = $bestilling['dokumenter'];
-        dd($bDokumenter->all());
+        dd($bestilling);
         $saker = $bestilling['dokumenter']->unique('saksnr');
         //dd($saker->all());
         $tickets = [];
