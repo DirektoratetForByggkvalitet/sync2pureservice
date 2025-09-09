@@ -318,9 +318,9 @@ class Message extends Model {
             $dokument['journalnr'] = Str::before($dokument['journalnr'], '/');
             return $dokument;
         });
-        dd($dokumenter);
+        //dd($dokumenter);
         $bestilling['dokumenter'] = $this->processEmailText($emailtext, $dokumenter);
-        // dd($bestilling['dokumenter']);
+        dd($bestilling['dokumenter']);
         unset($dokumenter);
 
         // Befolker bestillingens dokumenter med info fra emailtext
@@ -400,10 +400,15 @@ class Message extends Model {
 
         $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator.$dokSeparator);
         $dokArray = explode($dokSeparator, trim($dokText));
+        unset($dokText);
         $prosesserteDokumenter = [];
 
         foreach ($dokArray as $dok):
-            $sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), $lf));
+            $header = trim(explode(' | ', trim(Str::before(Str::after($dok, 'Saksnr: '), $lf))));
+            $saksnr = $header[0];
+            $doknr = trim(Str::after($header[1], ':'));
+            $sekvensnr = trim(Str::after($header[2], ':'));
+            //$sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), $lf));
             // Finner dokumentet i bestillingen basert på sekvensnr
             $prosessDok = $dokumenter->firstWhere('journalnr', $sekvensnr);
             $saksnavn = trim(Str::before(Str::after($dok, 'Sak: '), $lf));
