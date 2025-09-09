@@ -304,7 +304,7 @@ class Message extends Model {
         $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($dlPath.'/order.xml'))), true);
         // dd($bestilling);
         $emailtext = Storage::get($dlPath.'/emailtext');
-        //dd($emailtext);
+        dd($emailtext.PHP_EOL.Storage::get('emailtext.sample'));
         // Behandler ordrefila
         // Rydder opp i tolkingen av xml
         $dokumenter = collect($bestilling['dokumenter']['dokument']);
