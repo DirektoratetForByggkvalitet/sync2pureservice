@@ -320,7 +320,7 @@ class Message extends Model {
         });
         //dd($dokumenter);
         $bestilling['dokumenter'] = $this->processEmailText($emailtext, $dokumenter);
-        dd($bestilling['dokumenter']);
+        //dd($bestilling['dokumenter']);
         unset($dokumenter);
 
         // Befolker bestillingens dokumenter med info fra emailtext
