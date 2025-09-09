@@ -318,6 +318,7 @@ class Message extends Model {
             $dokument['journalnr'] = Str::before($dokument['journalnr'], '/');
             return $dokument;
         });
+        dd($dokumenter);
         $bestilling['dokumenter'] = $this->processEmailText($emailtext, $dokumenter);
         // dd($bestilling['dokumenter']);
         unset($dokumenter);
