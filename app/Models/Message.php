@@ -302,9 +302,9 @@ class Message extends Model {
         $ps->setTicketOptions('innsynskrav');
         $dlPath = $this->downloadPath();
         $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($dlPath.'/order.xml'))), true);
-        dd($bestilling);
+        // dd($bestilling);
         $emailtext = Storage::get($dlPath.'/emailtext');
-        //dd($emailtext.PHP_EOL.Storage::get('emailtext.sample'));
+
         // Behandler ordrefila
         // Rydder opp i tolkingen av xml
         $dokumenter = collect($bestilling['dokumenter']['dokument']);
@@ -314,8 +314,8 @@ class Message extends Model {
             $dokumenter = collect($tmp);
         endif;
         unset($bestilling['dokumenter']['dokument']);
-        dd($bestilling['dokumenter']);
         $bestilling['dokumenter'] = $this->processEmailText($emailtext, $dokumenter);
+        dd($bestilling['dokumenter']);
         unset($dokumenter);
 
         // Befolker bestillingens dokumenter med info fra emailtext
@@ -402,11 +402,13 @@ class Message extends Model {
             'dokumentnavn' => '',
         ];
         foreach ($dokArray as $dok):
+            $saksnr = trim(Str::before(Str::after($dok, "Saksnr: "), '|'));
             $sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), PHP_EOL));
             $saksnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Sak: '), PHP_EOL)));
             $dokumentnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Dokument: '), PHP_EOL)));
-
-            $dok = $dokumenter->firstWhere('journalnr', $sekvensnr);
+            // Henter journalnr = <sekvensnr>/<to siste siffer i året til saksnummeret>
+            $journalnr = $sekvensnr.'/'.Str::substr($saksnr, 2, 4);
+            $dok = $dokumenter->firstWhere('journalnr', $journalnr);
             $dok['saksnavn'] = $saksnavn;
             $dok['dokumentnavn'] = $dokumentnavn;
 
