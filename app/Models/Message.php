@@ -302,6 +302,7 @@ class Message extends Model {
         $ps->setTicketOptions('innsynskrav');
         $dlPath = $this->downloadPath();
         $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($dlPath.'/order.xml'))), true);
+        dd($bestilling);
         $emailtext = Storage::get($dlPath.'/emailtext');
         // Behandler ordrefila
         // Rydder opp i tolkingen av xml
@@ -332,7 +333,6 @@ class Message extends Model {
         endif;
         //dd($senderUser);
         $bDokumenter = $bestilling['dokumenter'];
-        dd($bestilling);
         $saker = $bestilling['dokumenter']->unique('saksnr');
         //dd($saker->all());
         $tickets = [];
