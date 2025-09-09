@@ -304,7 +304,7 @@ class Message extends Model {
         $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($dlPath.'/order.xml'))), true);
         // dd($bestilling);
         $emailtext = Storage::get($dlPath.'/emailtext');
-        dd($emailtext);
+        //dd($emailtext);
         // Behandler ordrefila
         // Rydder opp i tolkingen av xml
         $dokumenter = collect($bestilling['dokumenter']['dokument']);
@@ -334,6 +334,7 @@ class Message extends Model {
         endif;
         //dd($senderUser);
         $bDokumenter = $bestilling['dokumenter'];
+        dd($bDokumenter);
         $saker = $bestilling['dokumenter']->unique('saksnr');
         //dd($saker->all());
         $tickets = [];
@@ -388,9 +389,9 @@ class Message extends Model {
      * Prosesserer fila emailtext fra et innsynskrav og henter ut metadata for dokumentene det søkes innsyn for
      */
     public function processEmailText(string $text, Collection $dokumenter) : Collection {
-        $dokSeparator = '--------------------------------------';
-        $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator);
-        $dokArray = explode($dokSeparator.PHP_EOL, $dokText);
+        $dokSeparator = PHP_EOL.PHP_EOL;
+        $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator.$dokSeparator);
+        $dokArray = explode($dokSeparator, $dokText);
         $prosesserteDokumenter = [];
         $template = [
             'saksnr' => '',

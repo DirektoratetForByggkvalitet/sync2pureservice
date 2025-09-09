@@ -41,18 +41,18 @@ jobs:
 
         APP_DEBUG=${{ vars.APP_DEBUG }}
         EOF
-    - name: Cache dependencies
-      id: vendor-cache
-      uses: actions/cache@v4
-      env:
-        cache-name: cache-vendor-files
-      with:
-        path: ./vendor
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('./composer.lock') }}
-        restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+    # - name: Cache dependencies
+    #   id: vendor-cache
+    #   uses: actions/cache@v4
+    #   env:
+    #     cache-name: cache-vendor-files
+    #   with:
+    #     path: ./vendor
+    #     key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('./composer.lock') }}
+    #     restore-keys: |
+    #         ${{ runner.os }}-build-${{ env.cache-name }}-
+    #         ${{ runner.os }}-build-
+    #         ${{ runner.os }}-
     - name: Install dependencies
       run: composer install
     - name: Kjør Sync2Pureservice
