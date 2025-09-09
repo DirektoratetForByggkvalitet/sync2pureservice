@@ -302,8 +302,9 @@ class Message extends Model {
         $ps->setTicketOptions('innsynskrav');
         $dlPath = $this->downloadPath();
         $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($dlPath.'/order.xml'))), true);
-        dd($bestilling);
+        // dd($bestilling);
         $emailtext = Storage::get($dlPath.'/emailtext');
+        dd($emailtext);
         // Behandler ordrefila
         // Rydder opp i tolkingen av xml
         $dokumenter = collect($bestilling['dokumenter']['dokument']);
