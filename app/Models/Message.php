@@ -332,8 +332,9 @@ class Message extends Model {
         endif;
         //dd($senderUser);
         $bDokumenter = $bestilling['dokumenter'];
+        dd($bDokumenter);
         $saker = $bestilling['dokumenter']->unique('saksnr');
-        dd($saker->all());
+        //dd($saker->all());
         $tickets = [];
         $saker->each(function (array $item, int $key) use ($bestilling, &$tickets, $ps, $senderUser) {
             $subject = 'Innsynskrav for sak '. $item['saksnr'];
