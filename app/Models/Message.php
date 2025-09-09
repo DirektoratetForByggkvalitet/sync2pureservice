@@ -304,7 +304,6 @@ class Message extends Model {
         $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($dlPath.'/order.xml'))), true);
         // dd($bestilling);
         $emailtext = Storage::get($dlPath.'/emailtext');
-
         // Behandler ordrefila
         // Rydder opp i tolkingen av xml
         $dokumenter = collect($bestilling['dokumenter']['dokument']);
@@ -395,22 +394,23 @@ class Message extends Model {
      * Prosesserer fila emailtext fra et innsynskrav og henter ut metadata for dokumentene det søkes innsyn for
      */
     public function processEmailText(string $text, Collection $dokumenter) : Collection {
-        $dokSeparator = "\r\n\r\n";
+        $lf = "\r\n";
+        $dokSeparator = $lf.$lf;
+
         $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator.$dokSeparator);
         $dokArray = explode($dokSeparator, trim($dokText));
         $prosesserteDokumenter = [];
 
         foreach ($dokArray as $dok):
-            $sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), PHP_EOL));
+            $sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), $lf));
             // Finner dokumentet i bestillingen basert på sekvensnr
-            $dok = $dokumenter->firstWhere('journalnr', $sekvensnr);
-            $saksnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Sak: '), PHP_EOL)));
-            $dokumentnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Dokument: '), PHP_EOL)));
+            $prosessDok = $dokumenter->firstWhere('journalnr', $sekvensnr);
+            $saksnavn = trim(Str::before(Str::after($dok, 'Sak: '), $lf));
+            $prosessDok['saksnavn'] = $saksnavn;
+            $dokumentnavn = trim(Str::before(Str::after($dok, 'Dokument: '), $lf));
+            $prosessDok['dokumentnavn'] = $dokumentnavn;
 
-            $dok['saksnavn'] = $saksnavn;
-            $dok['dokumentnavn'] = $dokumentnavn;
-
-            $prosesserteDokumenter[] = $dok;
+            $prosesserteDokumenter[] = $prosessDok;
         endforeach;
 
         return collect($prosesserteDokumenter);
