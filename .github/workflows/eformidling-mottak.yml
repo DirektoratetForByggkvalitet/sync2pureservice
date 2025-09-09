@@ -66,3 +66,11 @@ jobs:
       run: |
         ./sync2pureservice migrate:fresh --force
         ./sync2pureservice eformidling:inn
+
+    - name: Archive storage
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: storage
+        path: |
+          storage/**
