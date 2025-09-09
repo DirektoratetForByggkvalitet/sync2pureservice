@@ -314,6 +314,11 @@ class Message extends Model {
             $dokumenter = collect($tmp);
         endif;
         unset($bestilling['dokumenter']['dokument']);
+        // Fjerner unødvendig årstall i journalnr som ødelegger for sekvensnr.
+        $dokumenter = $dokumenter->map(function (array $dokument) {
+            $dokument['journalnr'] = Str::before($dokument['journalnr'], '/');
+            return $dokument;
+        });
         $bestilling['dokumenter'] = $this->processEmailText($emailtext, $dokumenter);
         dd($bestilling['dokumenter']);
         unset($dokumenter);
@@ -402,12 +407,11 @@ class Message extends Model {
             'dokumentnavn' => '',
         ];
         foreach ($dokArray as $dok):
-            $saksnr = trim(Str::before(Str::after($dok, "Saksnr: "), '|'));
             $sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), PHP_EOL));
             $saksnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Sak: '), PHP_EOL)));
             $dokumentnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Dokument: '), PHP_EOL)));
-            // Henter journalnr = <sekvensnr>/<to siste siffer i året til saksnummeret>
-            $journalnr = $sekvensnr.'/'.Str::substr($saksnr, 2, 4);
+            
+            $journalnr = $sekvensnr;
             $dok = $dokumenter->firstWhere('journalnr', $journalnr);
             $dok['saksnavn'] = $saksnavn;
             $dok['dokumentnavn'] = $dokumentnavn;
