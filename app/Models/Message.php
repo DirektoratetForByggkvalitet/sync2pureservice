@@ -395,7 +395,7 @@ class Message extends Model {
      * Prosesserer fila emailtext fra et innsynskrav og henter ut metadata for dokumentene det søkes innsyn for
      */
     public function processEmailText(string $text, Collection $dokumenter) : Collection {
-        $lf = "\r\n";
+        $lf = PHP_EOL;
         $dokSeparator = $lf.$lf;
 
         $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator.$dokSeparator);
@@ -404,7 +404,7 @@ class Message extends Model {
         $prosesserteDokumenter = [];
 
         foreach ($dokArray as $dok):
-            $header = explode(' | ', trim(Str::before(Str::after($dok, 'Saksnr: '), $lf)));
+            $header = explode(' | ', trim(Str::between($dok, 'Saksnr: ', $lf.'  ')));
             $saksnr = $header[0];
             $doknr = trim(Str::after($header[1], ':'));
             $sekvensnr = trim(Str::after($header[2], ':'));
