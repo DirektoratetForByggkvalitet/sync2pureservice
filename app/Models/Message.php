@@ -407,7 +407,7 @@ class Message extends Model {
             $header = explode(' | ', trim(Str::between($dok, 'Saksnr: ', $lf)));
             $saksnr = $header[0];
             $doknr = trim(Str::after($header[1], ':'));
-            $sekvensnr = trim(Str::after(Str::words($header[2], 2), ':'));
+            $sekvensnr = trim(Str::after(Str::words($header[2], 2, ''), ':'));
 
             //$sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), $lf));
             // Finner dokumentet i bestillingen basert på sekvensnr
@@ -417,7 +417,7 @@ class Message extends Model {
             $dokumentnavn = trim(Str::before(Str::after($dok, 'Dokument: '), $lf));
             $prosessDok['dokumentnavn'] = $dokumentnavn;
 
-            dd($saksnr, $saksnavn, $doknr, $sekvensnr, $dokumentnavn);
+            //dd($saksnr, $saksnavn, $doknr, $sekvensnr, $dokumentnavn);
             $prosesserteDokumenter[] = $prosessDok;
         endforeach;
 
