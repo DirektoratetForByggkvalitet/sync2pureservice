@@ -408,7 +408,7 @@ class Message extends Model {
             $saksnr = $header[0];
             $doknr = trim(Str::after($header[1], ':'));
             $sekvensnr = trim(Str::after($header[2], ':'));
-            dd($saksnr, $doknr, $sekvensnr);
+
             //$sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), $lf));
             // Finner dokumentet i bestillingen basert på sekvensnr
             $prosessDok = $dokumenter->firstWhere('journalnr', $sekvensnr);
