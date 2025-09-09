@@ -404,7 +404,7 @@ class Message extends Model {
         $prosesserteDokumenter = [];
 
         foreach ($dokArray as $dok):
-            $header = trim(explode(' | ', trim(Str::before(Str::after($dok, 'Saksnr: '), $lf))));
+            $header = explode(' | ', trim(Str::before(Str::after($dok, 'Saksnr: '), $lf)));
             $saksnr = $header[0];
             $doknr = trim(Str::after($header[1], ':'));
             $sekvensnr = trim(Str::after($header[2], ':'));
