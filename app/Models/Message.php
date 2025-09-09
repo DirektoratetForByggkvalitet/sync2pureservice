@@ -333,7 +333,7 @@ class Message extends Model {
         //dd($senderUser);
         $bDokumenter = $bestilling['dokumenter'];
         $saker = $bestilling['dokumenter']->unique('saksnr');
-        //dd($saker->all());
+        dd($saker->all());
         $tickets = [];
         $saker->each(function (array $item, int $key) use ($bestilling, &$tickets, $ps, $senderUser) {
             $subject = 'Innsynskrav for sak '. $item['saksnr'];

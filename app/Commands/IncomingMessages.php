@@ -72,7 +72,7 @@ class IncomingMessages extends Command {
             $msgId = $this->ip->getMsgDocumentIdentification($m);
             $this->line(Tools::L1.$i.'/'.$subtotal.' Behandler meldingen \''.$msgId['instanceIdentifier'].'\'');
 
-            // Hopper over kvitteringsmeldinger fra eInnsyn, for nå.
+            // Hopper over kvitteringsmeldinger fra eInnsyn, inntil videre.
             if ($this->ip->getMessageDocumentType($m) == 'arkivmelding_kvittering'):
                 $this->line(Tools::L2.'Kvittering for arkivmelding, sletter den fra integrasjonspunktet');
                 $this->ip->peekIncomingMessageById($msgId['instanceIdentifier']);
