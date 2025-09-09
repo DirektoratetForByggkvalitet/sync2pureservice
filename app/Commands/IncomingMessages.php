@@ -129,7 +129,7 @@ class IncomingMessages extends Command {
         endforeach;
         unset($messages, $messagesToSkip, $dbMessage);
 
-        $this->newLine();
+        $this->newLine(2);
         $this->info(Tools::L1.'Oppretter meldinger som saker i Pureservice');
         $this->ensurePs();
         $this->info(Tools::L1.'Bruker Pureservice-instansen '.$this->ps->getBaseUrl().'.');
