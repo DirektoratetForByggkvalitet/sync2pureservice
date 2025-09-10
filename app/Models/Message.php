@@ -314,10 +314,10 @@ class Message extends Model {
         endif;
         unset($bestilling['dokumenter']['dokument']);
         // Fjerner unødvendig årstall i journalnr som ødelegger for sekvensnr.
-        $dokumenter = $dokumenter->map(function (array $dokument) {
-            $dokument['journalnr'] = Str::before($dokument['journalnr'], '/');
-            return $dokument;
-        });
+        // $dokumenter = $dokumenter->map(function (array $dokument) {
+        //     $dokument['journalnr'] = Str::before($dokument['journalnr'], '/');
+        //     return $dokument;
+        // });
         //dd($dokumenter);
         $bestilling['dokumenter'] = $this->processEmailText($emailtext, $dokumenter);
         //dd($bestilling['dokumenter']);
@@ -394,31 +394,66 @@ class Message extends Model {
     /**
      * Prosesserer fila emailtext fra et innsynskrav og henter ut metadata for dokumentene det søkes innsyn for
      */
+    // public function processEmailText(string $text, Collection $dokumenter) : Collection {
+    //     $lf = "\n";
+    //     $dokSeparator = $lf.$lf;
+
+    //     $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator.$dokSeparator);
+    //     $dokArray = explode($dokSeparator, trim($dokText));
+    //     unset($dokText);
+    //     $prosesserteDokumenter = [];
+
+    //     foreach ($dokArray as $dok):
+    //         $header = explode(' | ', trim(Str::between($dok, 'Saksnr: ', $lf)));
+    //         $saksnr = $header[0];
+    //         $doknr = trim(Str::after($header[1], ':'));
+    //         $sekvensnr = trim(Str::after(Str::words($header[2], 2, ''), ':'));
+
+    //         //$sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), $lf));
+    //         // Finner dokumentet i bestillingen basert på sekvensnr
+    //         $prosessDok = $dokumenter->firstWhere('journalnr', $sekvensnr);
+    //         $saksnavn = trim(Str::before(Str::after($dok, 'Sak: '), $lf));
+    //         $prosessDok['saksnavn'] = $saksnavn;
+    //         $dokumentnavn = trim(Str::before(Str::after($dok, 'Dokument: '), $lf));
+    //         $prosessDok['dokumentnavn'] = $dokumentnavn;
+
+    //         //dd($saksnr, $saksnavn, $doknr, $sekvensnr, $dokumentnavn);
+    //         $prosesserteDokumenter[] = $prosessDok;
+    //     endforeach;
+
+    //     return collect($prosesserteDokumenter);
+    // }
+
     public function processEmailText(string $text, Collection $dokumenter) : Collection {
         $lf = "\n";
-        $dokSeparator = $lf.$lf;
-
-        $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator.$dokSeparator);
-        $dokArray = explode($dokSeparator, trim($dokText));
-        unset($dokText);
+        $dokSeparator = '--------------------------------------';
+        $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator);
+        $dokArray = explode($dokSeparator.PHP_EOL, $dokText);
         $prosesserteDokumenter = [];
-
+        $template = [
+            'saksnr' => '',
+            'dokumentnr' => '',
+            'sekvensnr' => '',
+            'saksnavn' => '',
+            'dokumentnavn' => '',
+        ];
         foreach ($dokArray as $dok):
-            $header = explode(' | ', trim(Str::between($dok, 'Saksnr: ', $lf)));
-            $saksnr = $header[0];
-            $doknr = trim(Str::after($header[1], ':'));
-            $sekvensnr = trim(Str::after(Str::words($header[2], 2, ''), ':'));
+            $sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), $lf));
+            $saksnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Sak: '), $lf)));
+            $dokumentnavn = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Dokument: '), $lf)));
 
-            //$sekvensnr = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), $lf));
-            // Finner dokumentet i bestillingen basert på sekvensnr
-            $prosessDok = $dokumenter->firstWhere('journalnr', $sekvensnr);
-            $saksnavn = trim(Str::before(Str::after($dok, 'Sak: '), $lf));
-            $prosessDok['saksnavn'] = $saksnavn;
-            $dokumentnavn = trim(Str::before(Str::after($dok, 'Dokument: '), $lf));
-            $prosessDok['dokumentnavn'] = $dokumentnavn;
+            $dok = $dokumenter->firstWhere('journalnr', $sekvensnr);
+            $dok['saksnavn'] = $saksnavn;
+            $dok['dokumentnavn'] = $dokumentnavn;
 
-            //dd($saksnr, $saksnavn, $doknr, $sekvensnr, $dokumentnavn);
-            $prosesserteDokumenter[] = $prosessDok;
+            $prosesserteDokumenter[] = $dok;
+            // $dokument = $template;
+            // $dokument['saksnr'] = trim(Str::before(Str::after($dok, 'Saksnr: '), ' | Dok nr'));
+            // $dokument['dokumentnr'] = trim(Str::before(Str::after($dok, 'Dok nr. : '), ' | Sekvensnr'));
+            // $dokument['sekvensnr'] = trim(Str::before(Str::after($dok, 'Sekvensnr.: '), PHP_EOL));
+            // $dokument['saksnavn'] = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Sak: '), PHP_EOL)));
+            // $dokument['dokumentnavn'] = trim(Str::replace('<br/>', '', Str::before(Str::after($dok, 'Dokument: '), PHP_EOL)));
+            // $dokumenter[] = $dokument;
         endforeach;
 
         return collect($prosesserteDokumenter);
