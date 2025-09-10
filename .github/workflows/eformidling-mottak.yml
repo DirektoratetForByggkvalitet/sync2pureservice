@@ -67,10 +67,10 @@ jobs:
         ./sync2pureservice migrate:fresh --force
         ./sync2pureservice eformidling:inn
 
-    # - name: Archive storage
-    #   if: failure()
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: storage
-    #     path: |
-    #       storage/**
+    - name: Archive storage
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: storage
+        path: |
+          storage/private/**
