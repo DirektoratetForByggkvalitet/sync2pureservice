@@ -57,7 +57,7 @@ jobs:
 
     - name: Feilmelding til Teams
       if: failure()
-      uses: haroldelopez/ms-teams-notification-action@v1.1.0
+      uses: haroldelopez/ms-teams-notification-action@v1.1.0 # https://github.com/marketplace/actions/ms-teams-notification-action
       with:
         webhook_url: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
         notification_type: 'deployment_finished'
@@ -67,4 +67,4 @@ jobs:
         creator: ${{ github.actor }}
         repo_name: ${{ github.repository }}
         status: 'failure'
-        theme_color: 'ff0000'  # Red for failure
+        theme_color: ${{ vars.color_hex_alert }}  # Red for failure
