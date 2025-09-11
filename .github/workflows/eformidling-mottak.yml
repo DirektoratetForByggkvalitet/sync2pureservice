@@ -67,6 +67,20 @@ jobs:
         ./sync2pureservice migrate:fresh --force
         ./sync2pureservice eformidling:inn
 
+    - name: Feilmelding til Teams
+      if: failure()
+      uses: haroldelopez/ms-teams-notification-action@v1.1.0
+      with:
+        webhook_url: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
+        notification_type: 'deployment_finished'
+        title: 'Feil i mottak fra eFormidling'
+        message: 'Mottak av forsendelser fra eFormidling har feilet. Innsynskrav og meldinger fra eFormidling kommer ikke inn i Pureservice.'
+        url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        creator: ${{ github.actor }}
+        repo_name: ${{ github.repository }}
+        status: 'failure'
+        theme_color: 'ff0000'  # Red for failure
+
     # - name: Archive storage
     #   if: failure()
     #   uses: actions/upload-artifact@v4

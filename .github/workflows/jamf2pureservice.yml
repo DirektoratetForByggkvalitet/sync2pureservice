@@ -67,3 +67,17 @@ jobs:
       run: |
         ./sync2pureservice migrate:fresh --force
         ./sync2pureservice pureservice:sync-jamf
+
+    - name: Feilmelding til Teams
+      if: failure()
+      uses: haroldelopez/ms-teams-notification-action@v1.1.0
+      with:
+        webhook_url: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
+        notification_type: 'deployment_finished'
+        title: 'Feil i synkronisering med Jamf Pro'
+        message: 'Det har oppstått en feil under synkronisering av utstyr fra Jamf Pro til Pureservice.'
+        url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        creator: ${{ github.actor }}
+        repo_name: ${{ github.repository }}
+        status: 'failure'
+        theme_color: 'ff0000'  # Red for failure
