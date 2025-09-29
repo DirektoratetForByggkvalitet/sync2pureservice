@@ -347,14 +347,14 @@ class Message extends Model {
         $denneSak = 'ingen';
         $saker->each(function (array $item, int $key) use ($bestilling, &$tickets, $ps, $senderUser, &$denneSak) {
             // Forhindrer dobbel registrering
-            if ($denneSak != $item['saksnr']):
+            //if ($denneSak != $item['saksnr']):
                 $subject = 'Innsynskrav for sak '. $item['saksnr'];
                 $dokumenter = $bestilling['dokumenter']->where('saksnr', $item['saksnr'])->toArray();
                 $description = Blade::render(config('eformidling.in.innsynskrav'), ['dokumenter' => $dokumenter, 'sak' => $item, 'bestilling' => $bestilling]);
                 $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true);
                 $tickets[] = $ticket;
                 $denneSak = $item['saksnr'];
-            endif;
+            //endif;
         });
         return $tickets;
     }
