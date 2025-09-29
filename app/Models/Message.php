@@ -344,16 +344,16 @@ class Message extends Model {
         $saker = $bestilling['dokumenter']->unique('saksnr');
         //dd($saker->all());
         $tickets = [];
-        $lastSak = '';
-        $saker->each(function (array $item, int $key) use ($bestilling, &$tickets, $ps, $senderUser) {
+        $denneSak = '';
+        $saker->each(function (array $item, int $key) use ($bestilling, &$tickets, $ps, $senderUser, &$denneSak) {
             // Forhindrer dobbel registrering
-            if ($lastSak != $item['saksnr']):
+            if ($denneSak != $item['saksnr']):
                 $subject = 'Innsynskrav for sak '. $item['saksnr'];
                 $dokumenter = $bestilling['dokumenter']->where('saksnr', $item['saksnr'])->toArray();
                 $description = Blade::render(config('eformidling.in.innsynskrav'), ['dokumenter' => $dokumenter, 'sak' => $item, 'bestilling' => $bestilling]);
                 $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true);
                 $tickets[] = $ticket;
-                $lastSak = $item['saksnr'];
+                $denneSak = $item['saksnr'];
             endif;
         });
         return $tickets;
