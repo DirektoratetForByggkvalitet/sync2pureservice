@@ -344,7 +344,7 @@ class Message extends Model {
         $saker = $bestilling['dokumenter']->unique('saksnr');
         //dd($saker->all());
         $tickets = [];
-        $denneSak = '';
+        $denneSak = 'ingen';
         $saker->each(function (array $item, int $key) use ($bestilling, &$tickets, $ps, $senderUser, &$denneSak) {
             // Forhindrer dobbel registrering
             if ($denneSak != $item['saksnr']):
