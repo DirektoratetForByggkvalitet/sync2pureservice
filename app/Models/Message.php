@@ -190,7 +190,7 @@ class Message extends Model {
     }
 
     /**
-     * Oppretter arkivmelding.xml fra Pureservice-sak og vedlegger den til meldingen
+     * Oppretter arkivmelding.xml fra Pureservice-sak $t og vedlegger den til meldingen
      */
     public function createXmlFromTicket(Ticket|false $t = false): bool {
         if (!$t):
