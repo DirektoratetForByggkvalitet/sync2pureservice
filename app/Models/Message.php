@@ -299,6 +299,9 @@ class Message extends Model {
         if (!$ps):
             $ps = new PsApi();
         endif;
+        // Variabelen som skal returneres
+        $tickets = [];
+
         $ps->setTicketOptions('innsynskrav');
         $dlPath = $this->downloadPath();
         $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($dlPath.'/order.xml'))), true);
@@ -339,23 +342,32 @@ class Message extends Model {
             $senderUser->syncChanges();
         endif;
         //dd($senderUser);
-        $bDokumenter = $bestilling['dokumenter'];
+        //$bDokumenter = $bestilling['dokumenter'];
         // dd($bDokumenter);
-        $saker = $bestilling['dokumenter']->unique('saksnr');
+
         //dd($saker->all());
-        $tickets = [];
         $denneSak = 'ingen';
-        $saker->each(function (array $item, int $key) use ($bestilling, &$tickets, $ps, $senderUser, &$denneSak) {
-            // Forhindrer dobbel registrering
-            //if ($denneSak != $item['saksnr']):
-                $subject = 'Innsynskrav for sak '. $item['saksnr'];
-                $dokumenter = $bestilling['dokumenter']->where('saksnr', $item['saksnr'])->toArray();
-                $description = Blade::render(config('eformidling.in.innsynskrav'), ['dokumenter' => $dokumenter, 'sak' => $item, 'bestilling' => $bestilling]);
-                $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true);
-                $tickets[] = $ticket;
-                $denneSak = $item['saksnr'];
-            //endif;
+        // Grupperer bestilte dokumenter etter saksnr
+        $saker = $bestilling['dokumenter']->groupBy('saksnr');
+        // Ovenfor gir en collection med ['saksnr' => [dokumenter-for-saken]]
+        // Går gjennom hver sak og oppretter PS-sak for hver sak med tilhørende dokumenter
+        $saker->each(function (array $dokumenter, string $saksnr) use (&$tickets, $ps, $senderUser, &$denneSak, $bestilling) {
+            $subject = 'Innsynskrav for sak '. $saksnr;
+            // Henter info om saken for bruk i teksten
+            $saksinfo = $dokumenter->first();
+            $description = Blade::render(
+                config('eformidling.in.innsynskrav'), 
+                [
+                    'dokumenter' => $dokumenter->toArray(), 
+                    'sak' => $saksinfo, 
+                    'bestilling' => $bestilling
+                ]
+            );
+            // Oppretter sak i Pureservice
+            $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true);
+            $tickets[] = $ticket;
         });
+        // Returnerer oppretted(e) sak(er)
         return $tickets;
     }
 
