@@ -351,7 +351,7 @@ class Message extends Model {
         $saker = $bestilling['dokumenter']->groupBy('saksnr');
         // Ovenfor gir en collection med ['saksnr' => [dokumenter-for-saken]]
         // Går gjennom hver sak og oppretter PS-sak for hver sak med tilhørende dokumenter
-        $saker->each(function (array $dokumenter, string $saksnr) use (&$tickets, $ps, $senderUser, &$denneSak, $bestilling) {
+        $saker->each(function (Collection $dokumenter, string $saksnr) use (&$tickets, $ps, $senderUser, &$denneSak, $bestilling) {
             $subject = 'Innsynskrav for sak '. $saksnr;
             // Henter info om saken for bruk i teksten
             $saksinfo = $dokumenter->first();
