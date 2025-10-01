@@ -200,7 +200,10 @@ class PsApi extends API {
     ): array|false|Ticket {
         //if ($this->ticketOptions == []) $this->setTicketOptions();
         $uri = '/ticket';
-        $body = ['tickets' => []];
+        $body = [
+            'tickets' => []
+        ];
+        // Setter opp grunndata for saken
         $ticket = [
             'subject' => $subject,
             'description' => $description,
@@ -220,16 +223,18 @@ class PsApi extends API {
          * Hvis saken skal ha vedlegg koblet til beskrivelsen må de legges til ved oppretting
          */
         if (count($attachments)):
-            $body['linked'] = ['attachments' => []];
+            $body['linked'] = [
+                'attachments' => []
+            ];
             $ticket['links'] = [
                 'attachments' => []
             ];
             $num = 0;
             foreach ($attachments as $file):
                 $num++;
-                $tempId = 'attachment-'.$num;
+                $tempId = 'attachment-' . $num;
                 $filename = basename($file);
-                $encodedPath = $this->tempPath.'/'.$filename;
+                $encodedPath = $this->tempPath . '/' . $filename;
                 Storage::put($encodedPath, base64_encode(Storage::get($file)));
                 $body['linked']['attachments'][] = [
                     'name' => Str::beforeLast($filename, '.'),
