@@ -156,7 +156,7 @@ class IncomingMessages extends Command {
                 $this->ps->setTicketOptions('innsynskrav');
                 $this->line(Tools::L2.'Splitter innsynskravet opp basert på arkivsaker');
                 $newTickets = $message->splittInnsynskrav($this->ps);
-                if ($newTickets !== false):
+                if (count($newTickets) > 0):
                     $this->line(Tools::L2.count($newTickets).' innsynskrav ble opprettet i Pureservice:');
                     foreach ($newTickets as $i):
                         $this->line(Tools::L3.'- Sak ID '.$i->requestNumber. ' "'.$i->subject.'"');
@@ -186,7 +186,7 @@ class IncomingMessages extends Command {
             // $bar->advance();
             // Vi har tatt vare på meldingen. Sletter den fra eFormidling sin kø
             if ($deleteMessage && $this->ip->deleteIncomingMessage($message->messageId)):
-                //$this->line(Tools::L3.'Meldingen har blitt slettet fra integrasjonspunktet');
+                $this->line(Tools::L3.'Meldingen har blitt slettet fra integrasjonspunktet');
             else:
                 $this->error(Tools::L3.'Meldingen ble IKKE slettet fra integrasjonspunktet.');
                 if ($this->ps->error_json):
