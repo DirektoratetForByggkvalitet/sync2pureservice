@@ -364,8 +364,11 @@ class Message extends Model {
                 ]
             );
             // Oppretter sak i Pureservice
-            $ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true);
-            $tickets[] = $ticket;
+            if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true)):
+                $tickets[] = $ticket;
+            else:
+                return false;
+            endif;
         });
         // Returnerer oppretted(e) sak(er)
         return $tickets;
