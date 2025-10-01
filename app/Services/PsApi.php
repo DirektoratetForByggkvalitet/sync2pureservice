@@ -260,8 +260,8 @@ class PsApi extends API {
             else:
                 return $t->first();
             endif;
-    // else:
-    //     return $response->json();
+        else:
+            $this->error_json = $response->json();
         endif;
         return false;
     }
