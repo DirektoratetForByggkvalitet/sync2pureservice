@@ -142,6 +142,7 @@ class IncomingMessages extends Command {
         $msgCount = count(Message::all(['id']));
         foreach(Message::lazy() as $message):
             $it++;
+            $deleteMessage = true;
             $sender = Company::find($message->sender_id);
             $this->line(Tools::L1.$it.'/'.$msgCount.': '. $message->messageId.' - '. $message->documentType().' fra '.$sender->name.' - '.$sender->organizationNumber);
             if ($sender->name == 'Virksomhet ikke i BRREG'):
@@ -162,6 +163,7 @@ class IncomingMessages extends Command {
                     endforeach;
                     unset($newTickets);
                 else:
+                    $deleteMessage = false;
                     $this->error(Tools::L2.'Klarte ikke å splitte innsynskravet');
                     $this->newLine();
                     continue;
@@ -175,6 +177,7 @@ class IncomingMessages extends Command {
                     $this->line(Tools::L3.'- Sak ID '.$new->requestNumber. ' ble opprettet.');
                     // unset($new);
                 else:
+                    $deleteMessage = false;
                     $this->error(Tools::L2.'Klarte ikke å opprette sak i Pureservice');
                     $this->newLine();
                     continue;
@@ -182,12 +185,11 @@ class IncomingMessages extends Command {
             endif;
             // $bar->advance();
             // Vi har tatt vare på meldingen. Sletter den fra eFormidling sin kø
-            if ($this->ip->deleteIncomingMessage($message->messageId)):
+            if ($deleteMessage && $this->ip->deleteIncomingMessage($message->messageId)):
                 $this->line(Tools::L3.'Meldingen har blitt slettet fra integrasjonspunktet');
             else:
                 $this->error(Tools::L3.'Meldingen ble IKKE slettet fra integrasjonspunktet.');
-                $this->line(Tools::L3.'Enten er den allerede slettet, eller så oppsto det en feil under sletting.');
-                $this->line(Tools::L3.'Hvis det oppsto en feil KAN meldingen bli behandlet igjen neste gang vi sjekker.');
+                $this->line(Tools::L3.'Hvis det oppsto en feil vil meldingen bli behandlet igjen neste gang vi sjekker.');
             endif;
             $this->newLine();
         endforeach;
