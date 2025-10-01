@@ -204,15 +204,17 @@ class PsApi extends API {
         $ticket = [
             'subject' => $subject,
             'description' => $description,
-            'userId' => $userId,
-            'visibility' => $visibility,
-            // 'assignedDepartmentId' => $this->ticketOptions['zoneId'],
-            'assignedTeamId' => $this->ticketOptions['teamId'],
-            'sourceId' => $this->ticketOptions['sourceId'],
-            'ticketTypeId' => $this->ticketOptions['ticketTypeId'],
-            'priorityId' => $this->ticketOptions['priorityId'],
-            'statusId' => $this->ticketOptions['statusId'],
-            'requestTypeId' => $this->ticketOptions['requestTypeId'],
+            'links' => [
+                'userId' => $userId,
+                'visibility' => $visibility,
+                'assignedDepartment' => ['id' => $this->ticketOptions['zoneId']],
+                'assignedTeam' => ['id' => $this->ticketOptions['teamId']],
+                'source' => ['id' => $this->ticketOptions['sourceId']],
+                'ticketType' => ['id' => $this->ticketOptions['ticketTypeId']],
+                'priority' => ['id' => $this->ticketOptions['priorityId']],
+                'status' => ['id' => $this->ticketOptions['statusId']],
+                'requestType' => ['id' => $this->ticketOptions['requestTypeId']],
+            ],
         ];
         /**
          * Hvis saken skal ha vedlegg koblet til beskrivelsen må de legges til ved oppretting
@@ -232,13 +234,15 @@ class PsApi extends API {
                 $body['linked']['attachments'][] = [
                     'name' => Str::beforeLast($filename, '.'),
                     'fileName' => $filename,
-                    'size' => $this->human_filesize(Storage::size($file)),
-                    'contentType' => Storage::mimeType($file),
-                    'bytes' => Storage::get($encodedPath),
+                    'contentLength' => $this->human_filesize(Storage::size($file)),
                     'isVisible' => true,
+                    'bytes' => Storage::get($encodedPath),
                     'temporaryId' => $tempId,
                 ];
-                $ticket['links']['attachments'][] = ['temporaryId' => $tempId];
+                $ticket['links']['attachments'][] = [
+                    'temporaryId' => $tempId,
+                    'type' => 'attachment',
+                ];
             endforeach;
         endif;
         $body['tickets'][] = $ticket;
