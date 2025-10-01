@@ -210,7 +210,6 @@ class PsApi extends API {
             'links' => [
                 'userId' => $userId,
                 'visibility' => $visibility,
-                'assignedDepartment' => ['id' => $this->ticketOptions['zoneId']],
                 'assignedTeam' => ['id' => $this->ticketOptions['teamId']],
                 'source' => ['id' => $this->ticketOptions['sourceId']],
                 'ticketType' => ['id' => $this->ticketOptions['ticketTypeId']],
@@ -261,8 +260,8 @@ class PsApi extends API {
             else:
                 return $t->first();
             endif;
-        // else:
-        //     return $response->json();
+    // else:
+    //     return $response->json();
         endif;
         return false;
     }
