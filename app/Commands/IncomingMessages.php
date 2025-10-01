@@ -189,6 +189,10 @@ class IncomingMessages extends Command {
                 $this->line(Tools::L3.'Meldingen har blitt slettet fra integrasjonspunktet');
             else:
                 $this->error(Tools::L3.'Meldingen ble IKKE slettet fra integrasjonspunktet.');
+                if ($this->ps->error_json):
+                    $this->error(Tools::L3.'Feilmelding:');
+                    $this->info($this->ps->error_json);
+                endif;
                 $this->line(Tools::L3.'Hvis det oppsto en feil vil meldingen bli behandlet igjen neste gang vi sjekker.');
             endif;
             $this->newLine();

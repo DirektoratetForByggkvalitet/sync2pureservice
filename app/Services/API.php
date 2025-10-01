@@ -13,6 +13,7 @@ use Carbon\Carbon;
 class API {
     protected string $cKey;
     public string $base_url;
+    public null|string $error_json; // JSON med mottatt feilmelding
     private string $version = '1.5';
     protected string|false $token = false;
     protected Carbon|false $tokenExpiry = false;
@@ -32,6 +33,7 @@ class API {
      * som de vil bruke 'eformidling.testapi' for å finne innstillingene
      */
     public function setProperties(string $prefix = 'api') {
+        $this->error_json = null;
         $this->auth = $this->myConf($prefix.'.auth', false);
 
         $this->setPrefix($this->myConf($prefix.'.prefix', false));
@@ -47,6 +49,7 @@ class API {
         if ($this->auth == 'token'):
             $this->setToken();
         endif;
+
     }
 
     /**
@@ -105,6 +108,7 @@ class API {
         string|null $contentType = 'auto', 
         null|string $toFile = null
     ): PendingRequest {
+        $this->error_json = null;
         // Fornyer token dersom den trenger fornyelse
         $this->setToken();
         $request = Http::withUserAgent($this->myConf('api.user-agent', config('api.user-agent')));
