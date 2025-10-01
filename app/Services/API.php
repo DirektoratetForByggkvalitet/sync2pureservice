@@ -13,7 +13,7 @@ use Carbon\Carbon;
 class API {
     protected string $cKey;
     public string $base_url;
-    public null|string $error_json; // JSON med mottatt feilmelding
+    public null|array|string $error_json; // Mottatt feilmelding fra JSON-format
     private string $version = '1.5';
     protected string|false $token = false;
     protected Carbon|false $tokenExpiry = false;
