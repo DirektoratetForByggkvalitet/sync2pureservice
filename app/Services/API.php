@@ -13,7 +13,7 @@ use Carbon\Carbon;
 class API {
     protected string $cKey;
     public string $base_url;
-    public null|array|string $error_json; // Mottatt feilmelding fra JSON-format
+    public null|array|string $error_json = null; // Mottatt feilmelding fra JSON-format
     private string $version = '1.5';
     protected string|false $token = false;
     protected Carbon|false $tokenExpiry = false;
@@ -33,7 +33,6 @@ class API {
      * som de vil bruke 'eformidling.testapi' for å finne innstillingene
      */
     public function setProperties(string $prefix = 'api') {
-        $this->error_json = null;
         $this->auth = $this->myConf($prefix.'.auth', false);
 
         $this->setPrefix($this->myConf($prefix.'.prefix', false));
