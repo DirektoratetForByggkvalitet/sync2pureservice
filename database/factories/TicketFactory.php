@@ -38,6 +38,7 @@ class TicketFactory extends Factory
             'solution' => null,
             'eFormidling' => false,
             'attachments' => [],
+            'links' => [],
         ];
     }
 }

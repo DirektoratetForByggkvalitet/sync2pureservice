@@ -32,14 +32,15 @@ class Ticket extends Model
         'category3Id',
         'customerReference',
         'ticketTypeId',
-        'visibility',
         'emailAddress',
         'subject',
         'description',
+        'visibility',
         'solution',
         'eFormidling',
         'action',
         'pdf',
+        'links',
     ];
 
     protected $hidden = [
@@ -50,6 +51,20 @@ class Ticket extends Model
         'action',
         'pdf',
         'attachments',
+        // Felt som skal inn i links
+        'assignedAgentId',
+        'assignedTeamId',
+        'assignedDepartmentId',
+        'userId',
+        'priorityId',
+        'statusId',
+        'sourceId',
+        'category1Id',
+        'category2Id',
+        'category3Id',
+        'customerReference',
+        'ticketTypeId',
+        'emailAddress',
     ];
 
     protected $properties = [
@@ -57,10 +72,12 @@ class Ticket extends Model
         'pdf' => null,
     ];
 
-    protected $casts = [
-        'attachments' => 'array',
-    ];
-
+    protected function casts(): array {
+        return [
+            'attachments' => 'array',
+            'links' => 'object',
+        ];
+    }
 
     public function user() : HasOne {
         return $this->hasOne(User::class, 'id', 'userId');
@@ -328,7 +345,7 @@ class Ticket extends Model
         endif;
     }
 
-    public function getChangeArray(PsApi $ps = null): array {
+    public function getChangeArray(PsApi|null $ps = null): array {
         $ps = $ps ? $ps : new PsApi();
         $psTicket = $ps->getTicketFromPureservice($this->id, false);
         $psArr = $psTicket->toArray();

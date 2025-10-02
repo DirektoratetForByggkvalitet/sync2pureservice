@@ -242,8 +242,8 @@ class Message extends Model {
     public function saveToPs(PsApi|false $ps = false, bool $addAttachments = true) : Ticket|false {
         if (!$ps):
             $ps = new PsApi();
-            $ps->setTicketOptions('eformidling');
         endif;
+        $ps->setTicketOptions('eformidling');
         $sender = $this->sender();
         if ($sender->organizationNumber != config('eformidling.address.sender_id')):
             // Legg til eller oppdater avsenders virksomhet i Pureservice
@@ -282,10 +282,12 @@ class Message extends Model {
         //dd($description);
         endif;
         $ticket = $ps->createTicket(
-         $subject, $description,
-         $senderUser->id,
-         config('pureservice.visibility.invisible'), true,
-         $this->attachments
+            $subject, 
+            $description,
+            $senderUser->id,
+            config('pureservice.visibility.invisible'), 
+            true,
+            $this->attachments
         );
         return $ticket;
     }

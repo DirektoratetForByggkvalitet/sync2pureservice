@@ -251,7 +251,7 @@ class PsApi extends API {
             endforeach;
         endif;
         $body['tickets'][] = $ticket;
-        //dd($body);
+        //dd(json_encode($body));
         $response = $this->apiPost($uri, $body);
         unset($body);
         if ($response->successful()):
