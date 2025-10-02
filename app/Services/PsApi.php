@@ -226,9 +226,7 @@ class PsApi extends API {
             $body['linked'] = [
                 'attachments' => []
             ];
-            $ticket['links'] = [
-                'attachments' => []
-            ];
+            $ticket['links']['attachments'] = [];
             $num = 0;
             foreach ($attachments as $file):
                 $num++;
@@ -250,7 +248,7 @@ class PsApi extends API {
                 ];
             endforeach;
         endif;
-        dd(json_encode($ticket));
+        //dd(json_encode($ticket));
         $body['tickets'][] = $ticket;
         //dd(json_encode($body));
         $response = $this->apiPost($uri, $body);
