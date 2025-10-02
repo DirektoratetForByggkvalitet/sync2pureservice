@@ -238,7 +238,7 @@ class PsApi extends API {
                 $body['linked']['attachments'][] = [
                     'name' => Str::beforeLast($filename, '.'),
                     'fileName' => $filename,
-                    'contentLength' => $this->human_filesize(Storage::size($file)),
+                    'contentLength' => Storage::size($file),
                     'isVisible' => true,
                     'bytes' => Storage::get($encodedPath),
                     'temporaryId' => $tempId,
