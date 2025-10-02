@@ -182,7 +182,7 @@ class IncomingMessages extends Command {
                     $this->error(Tools::L2.'Klarte ikke å opprette sak i Pureservice');
                     if ($this->ps->error_json):
                         $this->error(Tools::L3.'Feilmelding:');
-                        $this->info($this->ps->error_json);
+                        $this->info(json_encode($this->ps->error_json));
                     endif;
                     $this->newLine();
                     continue;
