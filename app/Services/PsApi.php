@@ -210,6 +210,7 @@ class PsApi extends API {
             'visibility' => $visibility,
             'links' => [
                 'user' => ['id' => $userId],
+                'assignedDepartment' => ['id' => $this->ticketOptions['zoneId']],
                 'assignedTeam' => ['id' => $this->ticketOptions['teamId']],
                 'source' => ['id' => $this->ticketOptions['sourceId']],
                 'ticketType' => ['id' => $this->ticketOptions['ticketTypeId']],
