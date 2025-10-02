@@ -158,7 +158,7 @@ class IncomingMessages extends Command {
                 if (count($newTickets) > 0):
                     $this->line(Tools::L2.count($newTickets).' innsynskrav ble opprettet i Pureservice:');
                     foreach ($newTickets as $i):
-                        $this->line(Tools::L3.'- Sak ID '.$i->requestNumber. ' "'.$i->subject.'"');
+                        $this->line(Tools::L3.'- Sak ID '.$i['requestNumber']. ' "'.$i['subject'].'"');
                     endforeach;
                     unset($newTickets);
                 else:
@@ -176,7 +176,7 @@ class IncomingMessages extends Command {
                 $this->ps->setTicketOptions('eformidling');
                 if ($new = $message->saveToPs($this->ps)):
                     $tickets[] = $new;
-                    $this->line(Tools::L3.'- Sak ID '.$new->requestNumber. ' ble opprettet.');
+                    $this->line(Tools::L3.'- Sak ID '.$new['requestNumber']. ' ble opprettet.');
                     // unset($new);
                 else:
                     $this->error(Tools::L2.'Klarte ikke å opprette sak i Pureservice');

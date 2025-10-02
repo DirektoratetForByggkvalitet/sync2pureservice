@@ -242,8 +242,8 @@ class Message extends Model {
     public function saveToPs(PsApi|false $ps = false, bool $addAttachments = true) : Ticket|false {
         if (!$ps):
             $ps = new PsApi();
+            $ps->setTicketOptions('eformidling');
         endif;
-        $ps->setTicketOptions('eformidling');
         $sender = $this->sender();
         if ($sender->organizationNumber != config('eformidling.address.sender_id')):
             // Legg til eller oppdater avsenders virksomhet i Pureservice
@@ -252,9 +252,9 @@ class Message extends Model {
             $sender = $ps->getSelfCompany();
             $sender->save();
         endif;
-            // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
+        // Legg til eller oppdater avsenders eFormidling-bruker i Pureservice
         $senderUser = $sender->getEfUser();
-        $senderUser->addOrUpdatePs($ps, true);
+        $senderUser->addOrUpdatePS($ps, true);
         $senderUser->syncChanges();
 
         // Dersom mottaker ikke er oss selv (noe det vil være)
@@ -286,7 +286,7 @@ class Message extends Model {
             $description,
             $senderUser->id,
             config('pureservice.visibility.invisible'), 
-            true,
+            false,
             $this->attachments
         );
         return $ticket;
@@ -366,7 +366,7 @@ class Message extends Model {
                 ]
             );
             // Oppretter sak i Pureservice
-            if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), true)):
+            if ($ticket = $ps->createTicket($subject, $description, $senderUser->id, config('pureservice.visibility.no_receipt'), false)):
                 $tickets[] = $ticket;
             else:
                 return false;
