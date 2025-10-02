@@ -239,7 +239,7 @@ class Message extends Model {
      /**
      * Oppretter en sak i Pureservice basert på meldingen
      */
-    public function saveToPs(PsApi|false $ps = false, bool $addAttachments = true) : Ticket|false {
+    public function saveToPs(PsApi|false $ps = false, bool $addAttachments = true) : Ticket|array|false {
         if (!$ps):
             $ps = new PsApi();
             $ps->setTicketOptions('eformidling');
