@@ -19,17 +19,17 @@ return new class extends Migration
             $table->integer('assignedTeamId')->nullable();
             $table->integer('assignedDepartmentId')->nullable();
             $table->integer('userId');
-            $table->integer('priorityId');
-            $table->integer('statusId');
-            $table->integer('sourceId');
+            $table->integer('priorityId')->default(2);
+            $table->integer('statusId')->default(1);
+            $table->integer('sourceId')->default(1);
             $table->string('customerReference')->nullable();
             $table->integer('category1Id')->nullable();
             $table->integer('category2Id')->nullable();
             $table->integer('category3Id')->nullable();
-            $table->integer('ticketTypeId');
-            $table->integer('visibility');
+            $table->integer('ticketTypeId')->nullable();
+            $table->integer('visibility')->default(0);
 
-            $table->string('emailAddress');
+            $table->string('emailAddress')->nullable();
             $table->string('subject');
             $table->longText('description');
             $table->longText('solution')->nullable();
@@ -38,7 +38,6 @@ return new class extends Migration
             $table->string('action')->default('normalSend');
             $table->json('attachments')->nullable();
             $table->string('pdf')->nullable();
-
 
             $table->timestamps();
         });

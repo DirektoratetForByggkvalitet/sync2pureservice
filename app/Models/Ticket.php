@@ -75,7 +75,7 @@ class Ticket extends Model
     protected function casts(): array {
         return [
             'attachments' => 'array',
-            'links' => 'object',
+            'links' => 'array',
         ];
     }
 
@@ -364,6 +364,9 @@ class Ticket extends Model
     public function addOrUpdatePS(PsApi $ps): Ticket|null {
         $add = $this->id ? false : true;
 
+        if ($this->links == []):
+            $this->setLinksFromTicketOptions($ps);
+        endif;
         $body = $this->toArray();
         unset($body['id'], $body['requestNumber']);
         //dd($body);
@@ -375,6 +378,8 @@ class Ticket extends Model
                 $this->requestNumber = $response->json('tickets.0.requestNumber');
                 $this->save();
                 return $this;
+            else:
+                $ps->error_json = $response->json();
             endif;
         else:
             $body = $this->getChangeArray($ps);
@@ -384,11 +389,38 @@ class Ticket extends Model
                 $response = $ps->apiPatch($uri, $body, 'application/json', 'application/vnd.api+json');
                 if ($response->successful()):
                     return $this;
+                else:
+                    $ps->error_json = $response->json();
                 endif;
             else:
                 return $this;
             endif;
         endif;
         return null;
+    }
+
+    // Henter inn innstillinger for saken fra valgene satt i PsApi
+    public function setLinksFromTicketOptions(PsApi $ps) {
+        $tOptions = $ps->getTicketOptions();
+        $links = is_array($this->links) ? $this->links : [];
+        foreach ($tOptions as $option => $value):
+            $key = Str::before($option, 'Id');
+            switch ($key) {
+                case 'zone':
+                    $key = 'assignedDepartment';
+                    break;
+                
+                case 'team':
+                    $key = 'assignedTeam';
+                    break;
+                default:
+                    break;
+            }
+            $links[$key] = ['id' => $value];
+        endforeach;
+        if (isset($this->userId) && !isset($links['user'])):
+            $links['user'] = ['id' => $this->userId];
+        endif;
+        $this->links = $links;
     }
 }
