@@ -351,6 +351,7 @@ class Message extends Model {
         $denneSak = 'ingen';
         // Grupperer bestilte dokumenter etter saksnr
         $saker = $bestilling['dokumenter']->groupBy('saksnr');
+        dd($saker);
         // Ovenfor gir en collection med ['saksnr' => [dokumenter-for-saken]]
         // Går gjennom hver sak og oppretter PS-sak for hver sak med tilhørende dokumenter
         $saker->each(function (Collection $dokumenter, string $saksnr) use (&$tickets, $ps, $senderUser, &$denneSak, $bestilling) {
