@@ -359,7 +359,8 @@ class Message extends Model {
             // Henter info om saken for bruk i teksten
             $saksinfo = $dokumenter->first();
             if (!isset($saksinfo['saksnr'])):
-                $saksinfo['saksnr'] = $saksnr;
+                $ps->error_json = ['saksnr'=> $saksnr, 'feilmelding' => 'Mangler saksinfo', 'dokumenter' => $dokumenter];
+                return false;
             endif;
             $description = Blade::render(
                 config('eformidling.in.innsynskrav'), 
@@ -452,9 +453,9 @@ class Message extends Model {
 
     public function processEmailText(string $text, Collection $dokumenter) : Collection {
         $lf = "\n";
-        $dokSeparator = '--------------------------------------';
+        $dokSeparator = PHP_EOL.PHP_EOL; //'--------------------------------------';
         $dokText = Str::beforeLast(Str::after($text, 'Dokumenter:'), $dokSeparator);
-        $dokArray = explode($dokSeparator.PHP_EOL, $dokText);
+        $dokArray = explode($dokSeparator, $dokText);
         $prosesserteDokumenter = [];
         $template = [
             'saksnr' => '',
