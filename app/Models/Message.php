@@ -451,13 +451,19 @@ class Message extends Model {
     //     return collect($prosesserteDokumenter);
     // }
 
-    public function processEmailText(string $text, Collection $dokumenter) : Collection {
+    /**
+     * Prosesserer emailtext for å kunne slå opp saksnavn og dokumentnavn
+     * @param string $emailtext
+     * @param \Illuminate\Support\Collection $dokumenter
+     * @return Collection
+     */
+    public function processEmailText(string $emailtext, Collection $dokumenter) : Collection {
         // Henter ut Collection med linjene vi trenger fra $text
-        $prosesserteDokumenter = collect([]);
-        $lineCollection = collect(Str::matchAll('/(Saksnr:.*|Sak:.*|Dokument:.*|Dok.dato:.*|Journaldato:.*|Saksbehandler:.*|Enhet:.*)/', $text));
-        $tempDokumenter = $lineCollection->chunk(7);
+        $lineCollection = collect(Str::matchAll('/(Saksnr:.*|Sak:.*|Dokument:.*|Dok.dato:.*|Journaldato:.*|Saksbehandler:.*|Enhet:.*)/', $emailtext));
+        $lineDokumenter = $lineCollection->chunk(7);
+        $emailtextOppslag = collect([]);
 
-        $tempDokumenter->each(function( Collection $data) use (&$prosesserteDokumenter, $dokumenter) {   
+        $lineDokumenter->each(function( Collection $data) use (&$emailtextOppslag) {   
             $dokumentInfo = [];
             $data->each(function( $line) use (&$dokumentInfo){
                 if (Str::startsWith($line,'Saksnr:')):
@@ -467,7 +473,7 @@ class Message extends Model {
                     $dokumentInfo['sekvensnr'] = Str::trim(Str::after($saksLinje[2],': '));
                 else:
                     $key = Str::before($line, ': ');
-                    $value = Str::after($line, ': ');
+                    $value = trim(Str::after($line, ': '));
                     switch ($key):
                         case 'Sak':
                             $key = 'saksnavn';
@@ -485,15 +491,25 @@ class Message extends Model {
                     $dokumentInfo[$key] = $value;
                 endif;
             });
-            $dok = $dokumenter->firstWhere('journalnr', $dokumentInfo['sekvensnr']);
-            $dok['saksnavn'] = $dokumentInfo['saksnavn'];
-            $dok['dokumentnavn'] = $dokumentInfo['dokumentnavn'];
-
-            $prosesserteDokumenter[] = $dok;
+            $emailtextOppslag->push($dokumentInfo);
         });
-        //$dokArray = explode($dokSeparator, $dokText);
+        unset($lineCollection, $lineDokumenter, $dokumentInfo);
         
-        return collect($prosesserteDokumenter);
+        // Prosesserer $dokumenter for å populere $prosesserteDokumenter
+        $prosesserteDokumenter = collect([]);
+        $dokumenter->each(function ($dok) use (&$prosesserteDokumenter, $emailtextOppslag) {
+            $emailInfo = $emailtextOppslag->firstWhere('sekvensnr', $dok['journalnr']);
+            foreach ($emailInfo as $key => $value):
+                if (isset($dok[$key])):
+                    continue;
+                endif;
+                
+                $dok[$key] = $emailInfo[$key];
+            endforeach;
+            $prosesserteDokumenter->push($dok);
+        });
+        
+        return $prosesserteDokumenter;
     }
 
 }
