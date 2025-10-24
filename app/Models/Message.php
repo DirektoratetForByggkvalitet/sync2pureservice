@@ -499,13 +499,13 @@ class Message extends Model {
         $prosesserteDokumenter = collect([]);
         $dokumenter->each(function ($dok) use (&$prosesserteDokumenter, $emailtextOppslag) {
             $emailInfo = $emailtextOppslag->firstWhere('sekvensnr', $dok['journalnr']);
-            dd($dok, $emailInfo);
+            dd($dok, $emailtextOppslag, $emailInfo);
             foreach ($emailInfo as $key => $value):
                 if (isset($dok[$key])):
                     continue;
                 endif;
                 
-                $dok[$key] = $emailInfo[$key];
+                $dok[$key] = $value;
             endforeach;
             $prosesserteDokumenter->push($dok);
         });
