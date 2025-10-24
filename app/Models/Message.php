@@ -498,8 +498,9 @@ class Message extends Model {
         // Prosesserer $dokumenter for å populere $prosesserteDokumenter
         $prosesserteDokumenter = collect([]);
         $dokumenter->each(function ($dok) use (&$prosesserteDokumenter, $emailtextOppslag) {
-            $emailInfo = $emailtextOppslag->firstWhere('sekvensnr', $dok['journalnr']);
-            dd($dok, $emailtextOppslag, $emailInfo);
+            $sekvensnr = Str::match('(.*)\/.*/', $dok['journalnr']);
+            $emailInfo = $emailtextOppslag->firstWhere('sekvensnr', $sekvensnr);
+            // dd($dok, $emailtextOppslag, $emailInfo);
             foreach ($emailInfo as $key => $value):
                 if (isset($dok[$key])):
                     continue;
