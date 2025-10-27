@@ -307,16 +307,25 @@ class Message extends Model {
         $ps->setTicketOptions('innsynskrav');
         $dlPath = $this->downloadPath();
         $bestilling = json_decode(json_encode(simplexml_load_file(Storage::path($dlPath.'/order.xml'))), true);
+ 
+        // Henter ut dokumenter->dokument direkte fra XML
+        $order_xml = simplexml_load_file(Storage::path($dlPath.'/order.xml'));
+        $dokumenter = collect([]);
+        foreach ($order_xml->dokumenter->dokument as $dokument):
+            $dokument = json_decode(json_encode($dokument), true);
+            $dokumenter->push($dokument);
+        endforeach;
+        unset($order_xml);
         // dd($bestilling);
         $emailtext = Storage::get($dlPath.'/emailtext');
         // Behandler ordrefila
         // Rydder opp i tolkingen av xml
-        $dokumenter = collect($bestilling['dokumenter']['dokument']);
-        if (!is_array($dokumenter->first())):
-            $tmp = [];
-            $tmp[] = $dokumenter->toArray();
-            $dokumenter = collect($tmp);
-        endif;
+        //$dokumenter = collect($bestilling['dokumenter']['dokument']);
+        // if (!is_array($dokumenter->first())):
+        //     $tmp = [];
+        //     $tmp[] = $dokumenter->toArray();
+        //     $dokumenter = collect($tmp);
+        // endif;
         unset($bestilling['dokumenter']['dokument']);
         // Fjerner unødvendig årstall i journalnr som ødelegger for sekvensnr.
         // $dokumenter = $dokumenter->map(function (array $dokument) {
@@ -348,7 +357,6 @@ class Message extends Model {
         // dd($bDokumenter);
 
         //dd($saker->all());
-        $denneSak = 'ingen';
         // Grupperer bestilte dokumenter etter saksnr
         $saker = $bestilling['dokumenter']->groupBy('saksnr');
         //dd($saker);
@@ -499,7 +507,7 @@ class Message extends Model {
         $prosesserteDokumenter = collect([]);
         $dokumenter->each(function ($dok) use (&$prosesserteDokumenter, $emailtextOppslag) {
             //$sekvensnr = Str::contains($dok['jounalnr'], '/') ? Str::match('/(.*)\/.*/', $dok['journalnr']): $dok['journalnr'];
-            dd($dok, $emailtextOppslag);            
+            //dd($dok, $emailtextOppslag);            
             $emailInfo = $emailtextOppslag->firstWhere('sekvensnr', $dok['journalnr']);
 
             foreach ($emailInfo as $key => $value):
