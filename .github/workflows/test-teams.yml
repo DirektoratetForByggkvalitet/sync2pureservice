@@ -23,7 +23,7 @@ jobs:
               uses: haroldelopez/ms-teams-notification-action@v1.1.0 # https://github.com/marketplace/actions/ms-teams-notification-action
               with:
                 webhook_url: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
-                notification_type: deployment_started
+                notification_type: custom
                 title: 'Dette er en testmelding'
                 message: 'Kun for test-formål'
                 url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
