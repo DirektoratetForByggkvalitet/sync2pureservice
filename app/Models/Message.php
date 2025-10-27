@@ -500,7 +500,7 @@ class Message extends Model {
         $dokumenter->each(function ($dok) use (&$prosesserteDokumenter, $emailtextOppslag) {
             //$sekvensnr = Str::contains($dok['jounalnr'], '/') ? Str::match('/(.*)\/.*/', $dok['journalnr']): $dok['journalnr'];
             $emailInfo = $emailtextOppslag->firstWhere('sekvensnr', $dok['journalnr']);
-            // dd($dok, $emailtextOppslag, $emailInfo);
+            dd($dok, $emailtextOppslag, $emailInfo);
             foreach ($emailInfo as $key => $value):
                 if (isset($dok[$key])):
                     continue;
