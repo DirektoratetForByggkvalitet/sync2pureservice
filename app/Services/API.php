@@ -230,10 +230,11 @@ class API {
         null|string $toFile = null
     ): Response|bool {
         $uri = $this->resolveUri($uri);
-        $response = $this->prepRequest($accept, $contentType, $toFile)->post($uri, $body);
+        $request = $this->prepRequest($accept, $contentType, $toFile);
+        //$response = $request->post($uri, $body);
         $retry = true;
         while ($retry):
-            $response = $this->prepRequest($accept, $contentType, $toFile)->post($uri, $body);
+            $response = $request->post($uri, $body);
             if ($response->getStatusCode() == 429):
                 $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
                 sleep($wait);

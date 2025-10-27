@@ -199,7 +199,7 @@ class PsApi extends API {
         array $attachments = []
     ): array|false|Ticket {
         //if ($this->ticketOptions == []) $this->setTicketOptions();
-        $uri = '/ticket';
+        $uri = '/ticket/';
         $body = [];
         // Setter opp grunndata for saken
         $ticket = [
@@ -252,6 +252,8 @@ class PsApi extends API {
         unset($body);
         if ($response->successful()):
             $t = collect($response->json('tickets'));
+            // debug
+            $this->error_json = $response->json();
             if ($returnClass):
                 return $t->mapInto(Ticket::class)->first();
             else:
