@@ -20,9 +20,11 @@ jobs:
 
         steps:
             - name: Feilmelding til Teams
-              # uses: haroldelopez/ms-teams-notification-action@v1.1.0 # https://github.com/marketplace/actions/ms-teams-notification-action
-              uses: toko-bifrost/ms-teams-deploy-card@3.1.2
+              uses: carriquiry-g/ms-teams-notification@v2 # https://github.com/marketplace/actions/microsoft-teams-channel-notification
               with:
-                webhook-uri: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
-                github-token: ${{ github.token }}
+                github-token: ${{ github.token }} # this will use the runner's token.
+                ms-teams-webhook-uri: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
+                notification-summary: Testmedling
+                notification-style: good
                 timezone: Europe/Oslo
+                verbose-logging: true
