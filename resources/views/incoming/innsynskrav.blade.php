@@ -19,10 +19,10 @@
 </ul>
 <h4>Bestilt av</h4>
 <p>
-    @if ($bestilling['kontaktinfo']['navn'] != '' && !is_array($bestilling['kontaktinfo']['navn']))
+    @if (isset($bestilling['kontaktinfo']['navn']) && $bestilling['kontaktinfo']['navn'] != '' && !is_array($bestilling['kontaktinfo']['navn']))
         <strong>{{ $bestilling['kontaktinfo']['navn'] }}</strong><br/>
     @endif
-    @if ($bestilling['kontaktinfo']['organisasjon'] != '' && !is_array($bestilling['kontaktinfo']['organisasjon']))
+    @if (isset($bestilling['kontaktinfo']['organisasjon']) && $bestilling['kontaktinfo']['organisasjon'] != '' && !is_array($bestilling['kontaktinfo']['organisasjon']))
         {{ $bestilling['kontaktinfo']['organisasjon'] }}<br/>
     @endif
     E-postadresse: <strong>{{ $bestilling['kontaktinfo']['e-post'] }}</strong>
