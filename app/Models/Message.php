@@ -499,8 +499,9 @@ class Message extends Model {
         $prosesserteDokumenter = collect([]);
         $dokumenter->each(function ($dok) use (&$prosesserteDokumenter, $emailtextOppslag) {
             //$sekvensnr = Str::contains($dok['jounalnr'], '/') ? Str::match('/(.*)\/.*/', $dok['journalnr']): $dok['journalnr'];
+            dd($dok, $emailtextOppslag);            
             $emailInfo = $emailtextOppslag->firstWhere('sekvensnr', $dok['journalnr']);
-            dd($dok, $emailtextOppslag, $emailInfo);
+
             foreach ($emailInfo as $key => $value):
                 if (isset($dok[$key])):
                     continue;
