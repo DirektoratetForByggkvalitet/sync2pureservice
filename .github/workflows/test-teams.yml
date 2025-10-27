@@ -1,0 +1,33 @@
+name: Tester Teams-kobling
+
+on:
+    workflow_dispatch:
+        inputs:
+            environment:
+                description: "Target environment"
+                required: false
+                default: "production"
+
+concurrency:
+    group: manual-test-workflow
+    cancel-in-progress: true
+
+jobs:
+    test:
+        name: Test run
+        runs-on: 
+            - self-hosted
+
+        steps:
+            - name: Feilmelding til Teams
+              uses: haroldelopez/ms-teams-notification-action@v1.1.0 # https://github.com/marketplace/actions/ms-teams-notification-action
+              with:
+                webhook_url: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
+                notification_type: deployment_started
+                title: 'Dette er en testmelding'
+                message: 'Kun for test-formål'
+                url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+                creator: ${{ github.actor }}
+                repo_name: ${{ github.repository }}
+                status: in_progress
+                theme_color: 0076D7  # Red for failure
