@@ -27,4 +27,4 @@ jobs:
                 notification-summary: Testmedling
                 notification-style: good
                 timezone: Europe/Oslo
-                verbose-logging: true
+                verbose-logging: false

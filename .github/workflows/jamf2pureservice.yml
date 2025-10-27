@@ -70,14 +70,11 @@ jobs:
 
     - name: Feilmelding til Teams
       if: failure()
-      uses: haroldelopez/ms-teams-notification-action@v1.1.0 # https://github.com/marketplace/actions/ms-teams-notification-action
+      uses: carriquiry-g/ms-teams-notification@v2 # https://github.com/marketplace/actions/microsoft-teams-channel-notification
       with:
-        webhook_url: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
-        notification_type: 'deployment_finished'
-        title: 'Feil i synkronisering med Jamf Pro'
-        message: 'Det har oppstått en feil under synkronisering av utstyr fra Jamf Pro til Pureservice.'
-        url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        creator: ${{ github.actor }}
-        repo_name: ${{ github.repository }}
-        status: 'failure'
-        theme_color: ${{ vars.color_hex_alert }}  # Red for failure
+        github-token: ${{ github.token }} # this will use the runner's token.
+        ms-teams-webhook-uri: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
+        notification-summary: Feil i synkronisering med Jamf Pro
+        notification-style: attention
+        timezone: Europe/Oslo
+        verbose-logging: false
