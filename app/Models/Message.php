@@ -395,7 +395,11 @@ class Message extends Model {
             $userData = [
                 'email' => trim($kontaktinfo['e-post']),
             ];
-            if (isset($kontaktinfo['navn']) && $kontaktinfo['navn'] != '' && $kontaktinfo['navn'] != ' ' && !is_array($kontaktinfo['navn'])):
+            if (isset($kontaktinfo['navn']) && 
+                    $kontaktinfo['navn'] != '' && 
+                    $kontaktinfo['navn'] != ' ' && 
+                    !is_array($kontaktinfo['navn'])
+            ):
                 $userData['firstName'] = Str::before($kontaktinfo['navn'], ' ');
                 $userData['lastName'] = Str::after($kontaktinfo['navn'], ' ');
             else:
