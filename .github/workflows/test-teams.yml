@@ -23,6 +23,6 @@ jobs:
               # uses: haroldelopez/ms-teams-notification-action@v1.1.0 # https://github.com/marketplace/actions/ms-teams-notification-action
               uses: toko-bifrost/ms-teams-deploy-card@3.1.2
               with:
-                webhook_uri: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
+                webhook-uri: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
                 github-token: ${{ github.token }}
                 timezone: Europe/Oslo
