@@ -200,9 +200,7 @@ class PsApi extends API {
     ): array|false|Ticket {
         //if ($this->ticketOptions == []) $this->setTicketOptions();
         $uri = '/ticket';
-        $body = [
-            'tickets' => []
-        ];
+        $body = [];
         // Setter opp grunndata for saken
         $ticket = [
             'subject' => $subject,
@@ -248,7 +246,7 @@ class PsApi extends API {
                 ];
             endforeach;
         endif;
-        $body['tickets'][] = $ticket;
+        $body['tickets'] = [$ticket];
         //dd(json_encode($body));
         $response = $this->apiPost($uri, $body);
         unset($body);

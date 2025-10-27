@@ -364,7 +364,7 @@ class Ticket extends Model
     public function addOrUpdatePS(PsApi $ps): Ticket|null {
         $add = $this->id ? false : true;
 
-        if ($this->links == []):
+        if (!isset($this->links) || $this->links == []):
             $this->setLinksFromTicketOptions($ps);
         endif;
         $body = $this->toArray();
@@ -401,9 +401,9 @@ class Ticket extends Model
 
     // Henter inn innstillinger for saken fra valgene satt i PsApi
     public function setLinksFromTicketOptions(PsApi $ps) {
-        $tOptions = $ps->getTicketOptions();
+        $ticketOptions = $ps->getTicketOptions();
         $links = is_array($this->links) ? $this->links : [];
-        foreach ($tOptions as $option => $value):
+        foreach ($ticketOptions as $option => $value):
             $key = Str::before($option, 'Id');
             switch ($key) {
                 case 'zone':
