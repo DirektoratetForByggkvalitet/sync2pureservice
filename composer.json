@@ -35,7 +35,6 @@
         "microsoft/microsoft-graph": "^2.46",
         "phpoffice/phpspreadsheet": "^5.0",
         "predis/predis": "^3.2",
-        "symfony/http-client": "^7.3",
         "symfony/uid": "^7.3",
         "zanysoft/laravel-zip": "^3.0"
     },
