@@ -36,7 +36,7 @@ jobs:
         REDIS_HOST=${{ vars.REDIS_HOST }}
         CACHE_DRIVER=${{ vars.CACHE_DRIVER }}
 
-        MAIL_MAILER=${{ vars.MAILER }}
+        MAIL_MAILER=${{ vars.MAIL_MAILER }}
         MAIL_HOST=${{ vars.MAIL_HOST }}
         MAIL_USER=${{ vars.MAIL_USER }}
 
