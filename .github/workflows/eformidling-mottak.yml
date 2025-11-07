@@ -24,7 +24,7 @@ jobs:
         echo "${{ vars.LARAVEL_ENV }}" > .env
         cat <<EOF >> .env
         # Innstillinger basert på Environment/Repository
-        AZURE_SP_ID=${{vars.AZURE_SP_ID}}
+        AZURE_SP_ID=${{ vars.AZURE_SP_ID }}
         AZURE_TENANT_ID=${{ vars.AZURE_TENANT_ID }}
         MICROSOFT_GRAPH_CLIENT_ID=${{ vars.MICROSOFT_GRAPH_CLIENT_ID }}
 
