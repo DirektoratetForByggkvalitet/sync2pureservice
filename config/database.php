@@ -58,12 +58,12 @@ return [
             'engine' => null,
             'sslmode' => env('DB_SSLMODE', 'prefer'),
             'options' => (env('DB_SSL')) ? ((env('DB_SSL_IS_PAAS')) ? [
-                PDO::MYSQL_ATTR_SSL_CA                  => $cacert,   // /path/to/ca.pem
+                Pdo\Mysql::ATTR_SSL_CA                  => $cacert,   // /path/to/ca.pem
             ] : [
-                PDO::MYSQL_ATTR_SSL_KEY                 => env('DB_SSL_KEY_PATH'),  // /path/to/key.pem
-                PDO::MYSQL_ATTR_SSL_CERT                => env('DB_SSL_CERT_PATH'), // /path/to/cert.pem
-                PDO::MYSQL_ATTR_SSL_CA                  => $cacert,   // /path/to/ca.pem
-                PDO::MYSQL_ATTR_SSL_CIPHER              => env('DB_SSL_CIPHER')
+                Pdo\Mysql::ATTR_SSL_KEY                 => env('DB_SSL_KEY_PATH'),  // /path/to/key.pem
+                Pdo\Mysql::ATTR_SSL_CERT                => env('DB_SSL_CERT_PATH'), // /path/to/cert.pem
+                Pdo\Mysql::ATTR_SSL_CA                  => $cacert,   // /path/to/ca.pem
+                Pdo\Mysql::ATTR_SSL_CIPHER              => env('DB_SSL_CIPHER')
             ]) : []
         ],
 
@@ -83,7 +83,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                Pdo\Mysql::ATTR_SSL_CA => $cacert,
             ]) : [],
         ],
 
