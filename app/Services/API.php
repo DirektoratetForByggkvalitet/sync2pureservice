@@ -263,7 +263,7 @@ class API {
         while ($retry):
             $response = $this->prepRequest($accept, $contentType, $toFile)->patch($uri, $body);
             if ($response->getStatusCode() == 429):
-                $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
+                $wait = $response->getHeader('Retry-After') && !is_array($response->getHeader('Retry-After')) ? $response->getHeader('Retry-After') : 10;
                 sleep($wait);
             else:
                 $retry = false;
@@ -288,7 +288,7 @@ class API {
         while ($retry):
             $response = $this->prepRequest($accept, $contentType)->put($uri, $body);
             if ($response->getStatusCode() == 429):
-                $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
+                $wait = $response->getHeader('Retry-After') && !is_array($response->getHeader('Retry-After')) ? $response->getHeader('Retry-After') : 10;
                 sleep($wait);
             else:
                 $retry = false;
@@ -310,7 +310,7 @@ class API {
         while ($retry):
             $response = $this->prepRequest($accept)->delete($uri, $body);
             if ($response->getStatusCode() == 429):
-                $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
+                $wait = $response->getHeader('Retry-After') && !is_array($response->getHeader('Retry-After')) ? $response->getHeader('Retry-After') : 10;
                 sleep($wait);
             else:
                 $retry = false;
