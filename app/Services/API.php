@@ -236,7 +236,7 @@ class API {
         while ($retry):
             $response = $request->post($uri, $body);
             if ($response->getStatusCode() == 429):
-                $wait = $response->getHeader('Retry-After') ? $response->getHeader('Retry-After') : 10;
+                $wait = $response->getHeader('Retry-After') && !is_array($response->getHeader('Retry-After')) ? $response->getHeader('Retry-After') : 8;
                 sleep($wait);
             else:
                 $retry = false;
