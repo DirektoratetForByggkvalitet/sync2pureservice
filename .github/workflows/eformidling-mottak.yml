@@ -12,7 +12,7 @@ jobs:
 
     runs-on: 
       - self-hosted
-      - macOS
+      - Linux
     concurrency:
       group: eformidling-mottak
       cancel-in-progress: true
@@ -20,7 +20,8 @@ jobs:
       name: production
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
+
     - name: Sett opp .env
       run: |
         echo "${{ vars.LARAVEL_ENV }}" > .env
@@ -56,8 +57,16 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.5'
+        tools: composer:2
+
     - name: Install dependencies
       run: composer install
+
     - name: Kjør Sync2Pureservice
       env:
         JAMFPRO_SECRET: ${{ secrets.JAMFPRO_SECRET }}
@@ -67,8 +76,8 @@ jobs:
         MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
         EF_IP_PASSWORD: ${{ secrets.INTEGRASJONSPUNKT_PASSWORD }}
       run: |
-        ./sync2pureservice migrate:fresh --force
-        ./sync2pureservice eformidling:inn
+        php sync2pureservice migrate:fresh --force
+        php sync2pureservice eformidling:inn
 
     - name: Feilmelding til Teams
       if: failure()
