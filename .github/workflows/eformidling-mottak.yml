@@ -11,8 +11,7 @@ jobs:
   mottak:
 
     runs-on: 
-      - self-hosted
-      - macOS
+      group: permanent-runners
     concurrency:
       group: eformidling-mottak
       cancel-in-progress: true

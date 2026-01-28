@@ -9,8 +9,7 @@ jobs:
   usercleanup:
 
     runs-on: 
-      - self-hosted
-      - macOS
+      group: permanent-runners
     concurrency:
       group: usercleanup
       cancel-in-progress: true
@@ -18,7 +17,7 @@ jobs:
       name: production
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Sett opp .env
       run: |
         echo "${{ vars.LARAVEL_ENV }}" > .env
@@ -46,6 +45,11 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.5'
+        tools: composer:2
     - name: Install dependencies
       run: composer install
     - name: Rydder i sluttbrukere i Pureservice
@@ -54,8 +58,8 @@ jobs:
         MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
         PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
       run: |
-        ./sync2pureservice migrate:fresh --force
-        ./sync2pureservice pureservice:user-cleanup
+        php sync2pureservice migrate:fresh --force
+        php sync2pureservice pureservice:user-cleanup
 
     - name: Feilmelding til Teams
       if: failure()

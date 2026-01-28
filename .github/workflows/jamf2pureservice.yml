@@ -8,8 +8,7 @@ on:
 jobs:
   jamf2pureservice:
     runs-on: 
-      - self-hosted
-      - macOS
+      group: permanent-runners
     concurrency:
       group: jamf2pureservice
       cancel-in-progress: true
@@ -17,7 +16,7 @@ jobs:
       name: jamf2pureservice
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Sett opp .env
       run: |
         echo "${{ vars.LARAVEL_ENV }}" > .env
@@ -53,6 +52,12 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.5'
+        tools: composer:2
 
     - name: Install dependencies
       run: composer install

@@ -17,9 +17,8 @@ permissions:
 jobs:
   build-image:
     runs-on:
-      - self-hosted
-      - docker
       - macOS
+      - self-hosted
     concurrency:
       group: sync2pureservice_docker_build
       cancel-in-progress: true
