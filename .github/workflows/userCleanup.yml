@@ -8,7 +8,9 @@ on:
 jobs:
   usercleanup:
 
-    runs-on: [self-hosted]
+    runs-on: 
+      - self-hosted
+      - macOS
     concurrency:
       group: usercleanup
       cancel-in-progress: true

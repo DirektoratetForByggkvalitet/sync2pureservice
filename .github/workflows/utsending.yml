@@ -8,7 +8,9 @@ on:
 jobs:
   utsending:
 
-    runs-on: [self-hosted]
+    runs-on: 
+      - self-hosted
+      - macOS
     concurrency:
       group: pureservice-utsending
       cancel-in-progress: true

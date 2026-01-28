@@ -9,6 +9,7 @@ jobs:
   jamf2pureservice:
     runs-on: 
       - self-hosted
+      - macOS
     concurrency:
       group: jamf2pureservice
       cancel-in-progress: true
