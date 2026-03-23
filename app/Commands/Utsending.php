@@ -2,7 +2,7 @@
 
 namespace App\Commands;
 
-use Illuminate\Console\Scheduling\Schedule;
+// use Illuminate\Console\Scheduling\Schedule;
 use LaravelZero\Framework\Commands\Command;
 use Illuminate\Support\{Str, Collection};
 use Illuminate\Support\Facades\{Storage, Mail, Blade};
@@ -11,8 +11,7 @@ use App\Models\{Message, Company, User, Ticket};
 use App\Mail\TicketMessage;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
-class Utsending extends Command
-{
+class Utsending extends Command {
     /**
      * The name and signature of the console command.
      *
@@ -26,7 +25,7 @@ class Utsending extends Command
      * @var string
      */
     protected $description = 'Henter ut masseutsendelser som skal sendes med e-post og eFormidling, samt utgående meldinger som skal sendes med eFormidling';
-    protected string $version = '2.0';
+    protected string $version = '3.0';
     protected float $start;
     protected Collection $messages;
     protected Collection $tickets;
@@ -60,12 +59,12 @@ class Utsending extends Command
 
         // Henter inn AssetType for mottakerlistene
         $this->recipientListAssetType = $this->api->getEntityByName('assettype', config('pureservice.dispatch.assetTypeName'));
-
         $waitingStatusId = $this->api->findStatus(config('pureservice.ticket.status_message_sent'));
 
-        $uri = "/ticket/"
-        $params = [];
-        $params['filter'] = 'statusId == '.$waitingStatusId.' AND '.
+        $uri = '/ticket/';
+        $params = ['filter' => 'statusId == '. $waitingStatusId];
+        $params['filter'] .= ' AND ';
+        $params['filter'] .=
             '('.
                 'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.ef'), '"').
                 ' OR '.
@@ -73,8 +72,8 @@ class Utsending extends Command
                 ' OR '.
                 'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.email_121'), '"').
                 ' OR '.
-                'emailAddress.contains('.Str::wrap(config('pureservice.dispatch.ef_domain'), '"').')'.
-            ')';
+                'emailAddress.contains('.Str::wrap(config('pureservice.dispatch.ef_domain'), '"').
+           ')';
         $response = $this->api->apiQuery($uri, $params, true);
         if ($response->failed()):
             $this->error('Feil ved innhenting av saker');
@@ -94,7 +93,6 @@ class Utsending extends Command
         //     return Command::SUCCESS;
         // endif;
 
-
         if ($this->tickets->count() == 0):
             $this->info(Tools::L1.'Fant ingen saker som skal sende noe');
             return Command::SUCCESS;
@@ -107,7 +105,7 @@ class Utsending extends Command
         $this->sender->save();
         $this->messages = collect();
 
-        $this->tickets->each(function(Ticket $ticket, int $key)) {
+        $this->tickets->each(function(Ticket $ticket, int $key) {
             $uri = '/email/';
             $params = [
                 'sort' => 'created DESC',
@@ -115,21 +113,23 @@ class Utsending extends Command
                 'include' => 'attachments',
             ];
             $params['filter'] .= ' AND direction == '.config('pureservice.comms.direction.out').' AND '.
-            '(
-                to == '.Str::wrap(config('pureservice.dispatch.address.ef'), '"').' OR 
-                to == '.Str::wrap(config('pureservice.dispatch.address.email'), '"').' OR 
-                to == '.Str::wrap(config('pureservice.dispatch.address.email_121'), '"').
+            '('.
+                'to == '.Str::wrap(config('pureservice.dispatch.address.ef'), '"').
+                ' OR '.
+                'to == '.Str::wrap(config('pureservice.dispatch.address.email'), '"').
+                ' OR '. 
+                'to == '.Str::wrap(config('pureservice.dispatch.address.email_121'), '"').
             ')';
             $response = $this->api->apiQuery($uri, $params, true);
             if ($response->failed()):
                 $this->error('Ingen utgående meldinger for sak# '.$ticket->requestId);
                 //return Command::FAILURE;
-            else
+            else:
                 $this->messages->add(collect($response->json('emails')));
             endif;
-        }
+        }); // $this->tickets->each()
         // Debug: Oppsummerer funn uten å sende noe
-        $this->info(Tools::L1.'Fant '.$this->messages->count().' utgående melding'.($this->messages->count() == 1 ? '' : 'er').' for sak'.($this->tickets->count() == 1 ? '' : 'er'));
+        $this->info(Tools::L1.'Fant '.$this->messages->count().' utgående melding'.($this->messages->count() == 1 ? '' : 'er'));
         return Command::SUCCESS;
 
         $this->messages->each(function (array $email, int $key) {
@@ -283,4 +283,4 @@ class Utsending extends Command
         $this->line(Tools::L2.'Antall saker: '.$this->results['saker']);
         return Command::SUCCESS;
     }
-}
+} // End class
