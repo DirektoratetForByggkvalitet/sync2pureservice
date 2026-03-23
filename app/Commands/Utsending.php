@@ -61,60 +61,76 @@ class Utsending extends Command
         // Henter inn AssetType for mottakerlistene
         $this->recipientListAssetType = $this->api->getEntityByName('assettype', config('pureservice.dispatch.assetTypeName'));
 
-
-        $uri = '/email/';
-        $failedStatus = config('pureservice.email.status.failed');
-        $params = [
-            //'filter' => 'status == '.$failedStatus,
-            'sort' => 'created DESC',
-            'include' => 'attachments,ticket',
-        ];
-
         $waitingStatusId = $this->api->findStatus(config('pureservice.ticket.status_message_sent'));
-        $params['filter'] = 'direction == '.config('pureservice.comms.direction.out').' AND '.
-            'ticket.statusId == '.$waitingStatusId. ' AND '.
+
+        $uri = "/ticket/"
+        $params = [];
+        $params['filter'] = 'statusId == '.$waitingStatusId.' AND '.
             '('.
-                'to == '.Str::wrap(config('pureservice.dispatch.address.ef'), '"').
+                'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.ef'), '"').
                 ' OR '.
-                'to == '.Str::wrap(config('pureservice.dispatch.address.email'),'"').
+                'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.email'), '"').
                 ' OR '.
-                'to == '.Str::wrap(config('pureservice.dispatch.address.email_121'),'"').
+                'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.email_121'), '"').
                 ' OR '.
-                'to.contains('.Str::wrap(config('pureservice.dispatch.ef_domain'), '"').')'.
+                'emailAddress.contains('.Str::wrap(config('pureservice.dispatch.ef_domain'), '"').')'.
             ')';
-
         $response = $this->api->apiQuery($uri, $params, true);
-
         if ($response->failed()):
-            $this->error('Feil ved innhenting av meldinger');
+            $this->error('Feil ved innhenting av saker');
             return Command::FAILURE;
         endif;
-        $this->messages = collect($response->json('emails'));
-        $this->tickets = collect($response->json('linked.tickets'))->mapInto(Ticket::class);
-        $msgCount = $this->messages->count();
-        if ($msgCount == 0):
-            $this->info(Tools::L1.'Ingen meldinger ble funnet.');
+        $this->tickets = collect($response->json('tickets'))->mapInto(Ticket::class);
+
+        // if ($response->failed()):
+        //     $this->error('Feil ved innhenting av meldinger');
+        //     return Command::FAILURE;
+        // endif;
+        // $this->messages = collect($response->json('emails'));
+        
+        // $msgCount = $this->messages->count();
+        // if ($msgCount == 0):
+        //     $this->info(Tools::L1.'Ingen meldinger ble funnet.');
+        //     return Command::SUCCESS;
+        // endif;
+
+
+        if ($this->tickets->count() == 0):
+            $this->info(Tools::L1.'Fant ingen saker som skal sende noe');
             return Command::SUCCESS;
         endif;
-        // $this->messages = $messages->filter(function (array $item, int $key) {
-        //     if ($item['to'] == config('pureservice.dispatch.address_email') ||
-        //         $item['to'] == config('pureservice.dispatch.address_ef') ||
-        //         Str::endsWith($item['to'], config('pureservice.user.ef_domain'))):
-        //         return true;
-        //     endif;
-        // });
-        // unset($messages);
 
-        if ($msgCount == 0):
-            $this->info(Tools::L1.'Fant ingen meldinger som kan sendes');
-            return Command::SUCCESS;
-        endif;
-
-        $this->info(Tools::L1.'Fant '.$msgCount.' melding(er) som skal sendes');
+        $this->info(Tools::L1.'Fant '.$this->tickets->count().' sak'.($this->tickets->count() == 1 ? '' : 'er').' som skal sende noe');
         //dd($this->messages);
         $this->ef = new Eformidling();
         $this->sender = $this->api->getSelfCompany();
         $this->sender->save();
+        $this->messages = collect();
+
+        $this->tickets->each(function(Ticket $ticket, int $key)) {
+            $uri = '/email/';
+            $params = [
+                'sort' => 'created DESC',
+                'filter' => 'ticketId == '.$ticket->id,
+                'include' => 'attachments',
+            ];
+            $params['filter'] .= ' AND direction == '.config('pureservice.comms.direction.out').' AND '.
+            '(
+                to == '.Str::wrap(config('pureservice.dispatch.address.ef'), '"').' OR 
+                to == '.Str::wrap(config('pureservice.dispatch.address.email'), '"').' OR 
+                to == '.Str::wrap(config('pureservice.dispatch.address.email_121'), '"').
+            ')';
+            $response = $this->api->apiQuery($uri, $params, true);
+            if ($response->failed()):
+                $this->error('Ingen utgående meldinger for sak# '.$ticket->requestId);
+                //return Command::FAILURE;
+            else
+                $this->messages->add(collect($response->json('emails')));
+            endif;
+        }
+        // Debug: Oppsummerer funn uten å sende noe
+        $this->info(Tools::L1.'Fant '.$this->messages->count().' utgående melding'.($this->messages->count() == 1 ? '' : 'er').' for sak'.($this->tickets->count() == 1 ? '' : 'er'));
+        return Command::SUCCESS;
 
         $this->messages->each(function (array $email, int $key) {
             $ticket = $this->tickets->firstWhere('id', $email['ticketId']); // $this->api->getTicketFromPureservice($email['ticketId'], false);
