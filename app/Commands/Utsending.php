@@ -64,16 +64,15 @@ class Utsending extends Command {
         $uri = '/ticket/';
         $params = ['filter' => 'statusId == '. $waitingStatusId];
         $params['filter'] .= ' AND ';
-        $params['filter'] .=
-            '('.
-                'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.ef'), '"').
-                ' OR '.
-                'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.email'), '"').
-                ' OR '.
-                'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.email_121'), '"').
-                ' OR '.
-                'emailAddress.contains('.Str::wrap(config('pureservice.dispatch.ef_domain'), '"').
-           ')';
+        $params['filter'] .= '('.
+            'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.ef'), '"').
+            ' OR '.
+            'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.email'), '"').
+            ' OR '.
+            'emailAddress == '.Str::wrap(config('pureservice.dispatch.address.email_121'), '"').
+            ' OR '.
+            'emailAddress.contains('.Str::wrap(config('pureservice.dispatch.ef_domain'), '"').')'.
+        ')';
         $response = $this->api->apiQuery($uri, $params, true);
         if ($response->failed()):
             $this->error('Feil ved innhenting av saker');
