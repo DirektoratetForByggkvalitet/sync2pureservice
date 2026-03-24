@@ -123,7 +123,10 @@ class Utsending extends Command {
             if ($response->failed()):
                 $this->error('Ingen utgående meldinger for sak# '.$ticket->requestId);
             else:
-                $this->messages->add(collect($response->json('emails')));
+                $msgs = collect($response->json('emails'));
+                $msgs->each(function(array $msg, int $key) {
+                    $this->messages->push($msg);
+                });
             endif;
         }); // $this->tickets->each()
         // Debug: Oppsummerer funn uten å sende noe
