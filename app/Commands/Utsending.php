@@ -75,8 +75,7 @@ class Utsending extends Command {
         ')';
         $response = $this->api->apiQuery($uri, $params, true);
         if ($response->failed()):
-            $this->error('Feil ved innhenting av saker');
-            $this->info($response->body());
+            $this->error('Feil ved innhenting av saker: '.$response->json('message'));
             return Command::FAILURE;
         endif;
         $this->tickets = collect($response->json('tickets'))->mapInto(Ticket::class);
@@ -129,7 +128,8 @@ class Utsending extends Command {
         }); // $this->tickets->each()
         // Debug: Oppsummerer funn uten å sende noe
         $this->info(Tools::L1.'Fant '.$this->messages->count().' utgående melding'.($this->messages->count() == 1 ? '' : 'er'));
-        return Command::SUCCESS;
+        // Mulighet til å stoppe prosesseringen før utsending
+        //return Command::SUCCESS;
 
         $this->messages->each(function (array $email, int $key) {
             $ticket = $this->tickets->firstWhere('id', $email['ticketId']); // $this->api->getTicketFromPureservice($email['ticketId'], false);
