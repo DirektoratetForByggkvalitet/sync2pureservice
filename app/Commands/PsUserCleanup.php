@@ -42,20 +42,18 @@ class PsUserCleanup extends Command {
         $this->line($this->description);
         $this->newLine(2);
 
-        $this->debug = true; // config('app.debug');
+        $this->debug = config('app.debug');
         $this->report = [
             'Antall brukere' => 0,
             'Navn endret' => 0,
             'Koblet til firma' => 0,
         ];
         $this->ps = new PsApi();
-        $userCount = 0;
 
         $this->info(Tools::L1.'Henter brukerdata fra \''.$this->ps->base_url.'\'');
         $uri = '/user/';
-        $AND = ' && ';
         $query = [
-            'filter' => 'role == '.config('pureservice.user.role_id') . $AND . '!disabled',
+            'filter' => 'role == '.config('pureservice.user.role_id').' && !disabled',
             'include' => 'emailaddress',
             'limit' => 250,
             'start' => 0,
@@ -63,30 +61,29 @@ class PsUserCleanup extends Command {
         ];
         $batchCount = 250;
         $rTotal = 0;
-        while ($batchCount == 250):
+        while ($batchCount > 0):
             $response = $this->ps->apiQuery($uri, $query, true);
-            if ($response->successful()):
-                $batchCount = count($response->json('users'));
-                $emails = collect($response->json('linked.emailaddresses'));
-                collect($response->json('users'))
-                    ->mapInto(User::class)
-                    ->each(function (User $user) use ($emails) {
-                    if ($user != User::firstWhere('id', $user->id)):
-                        $email = $emails->firstWhere('userId', $user->id);
-                        $user->email = $email['email'];
+            if (!$response->successful()):
+                break;
+            endif;
+            $batchCount = count($response->json('users'));
+            $emails = collect($response->json('linked.emailaddresses'))->keyBy('userId');
+            $batchUsers = collect($response->json('users'));
+            $existingIds = User::whereIn('id', $batchUsers->pluck('id'))->pluck('id');
+            $batchUsers->mapInto(User::class)
+                ->each(function (User $user) use ($emails, $existingIds) {
+                    if (!$existingIds->contains($user->id)):
+                        $user->email = $emails->get($user->id)['email'] ?? null;
                         $user->save();
                     endif;
                 });
-                $rTotal += $batchCount;
-                $this->info(Tools::L2.$rTotal.' hentet');
-            else:
-                continue;
-            endif;
-            $query['start'] = $query['start'] + $query['limit'];
+            $rTotal += $batchCount;
+            $this->info(Tools::L2.$rTotal.' hentet');
+            $query['start'] += $query['limit'];
         endwhile;
         unset($response, $batchCount);
 
-        $userCount = User::all('id')->count();
+        $userCount = User::count();
         $this->report['Antall brukere'] = $userCount;
         $this->newLine();
         $this->changeCount = 0;
@@ -100,8 +97,6 @@ class PsUserCleanup extends Command {
             $deleteMe = false;
             $companyChanged = false;
             $deleteMe = in_array(Str::after($psUser->email, '@',), config('pureservice.domain_disable'));
-            // $email = $this->emailAddresses->firstWhere('userId', $psUser->id);
-            // $psUser->email = $email['email'];
             if (Str::contains($fullName, ['@', '.com', '.biz', '.net', '.ru']) || $psUser->firstName == '' || $psUser->lastName == ''):
                 $newName = Tools::nameFromEmail($psUser->email);
                 $updateMe = true;
