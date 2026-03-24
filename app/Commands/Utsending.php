@@ -77,6 +77,7 @@ class Utsending extends Command {
         $response = $this->api->apiQuery($uri, $params, true);
         if ($response->failed()):
             $this->error('Feil ved innhenting av saker');
+            $this->info($response->body());
             return Command::FAILURE;
         endif;
         $this->tickets = collect($response->json('tickets'))->mapInto(Ticket::class);
@@ -123,7 +124,6 @@ class Utsending extends Command {
             $response = $this->api->apiQuery($uri, $params, true);
             if ($response->failed()):
                 $this->error('Ingen utgående meldinger for sak# '.$ticket->requestId);
-                //return Command::FAILURE;
             else:
                 $this->messages->add(collect($response->json('emails')));
             endif;
