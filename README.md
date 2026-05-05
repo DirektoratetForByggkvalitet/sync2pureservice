@@ -26,7 +26,7 @@ Vi videreutvikler og fikser stadig på koden til sync2pureservice. Følgende er 
 
 ### Database
 
-Det er ikke nødvendig å koble løsningen til en database-tjener. Løsningen bruker en Sqlite3-database for å mellomlagre data for tyngre oppgaver. Data i databasen er ikke ment å være tilgjengelige, databasen bør nullstilles for hver funksjon som kjøres. 
+Det er ikke nødvendig å koble løsningen til en database-tjener. Løsningen bruker en Sqlite3-database for å mellomlagre data for tyngre oppgaver. Data i databasen er ikke ment å være tilgjengelige, databasen bør nullstilles for hver funksjon som kjøres.
 
 ### Oppsett for mellomlagring
 
@@ -36,9 +36,9 @@ Du kan også se på [cache-oppsett](docs/caching.md) for Laravel, men det er ikk
 
 Det er mange miljøvariabler som må til for å integrere mellom ulike systemer og Pureservice. For i det hele tatt å kunne snakke med Pureservice må vi ha disse:
 
-| Variabel | Kommentar |
-|----|----|
-| PURESERVICE_URL | Denne må settes til din instans av Pureservice, typisk https://firma.pureservice.com |
+| Variabel           | Kommentar                                                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| PURESERVICE_URL    | Denne må settes til din instans av Pureservice, typisk https://firma.pureservice.com                                             |
 | PURESERVICE_APIKEY | Du må opprette en API-nøkkel i Pureservice og oppgi den her for at sync2pureservice skal ha tilgang til å snakke med Pureservice |
 
 ## Kjøring i Github Actions (evt. Bitbucket Pipelines)
@@ -60,4 +60,5 @@ Det er selvsagt også mulig å kjøre dette direkte på egen maskin. Her kan vi 
 1. Du er nå klar for å kjøre sync2pureservice (gitt at .env inneholder det du trenger)
 
 # Lisens
+
 Dette prosjektet publiseres som åpen kildekode lisensiert under [MIT license](https://opensource.org/licenses/MIT).

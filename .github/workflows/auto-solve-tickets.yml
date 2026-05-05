@@ -1,0 +1,76 @@
+name: Pureservice - auto-løs saker
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * 1-5"
+
+jobs:
+  auto-solve-tickets:
+    runs-on:
+      group: permanent-runners
+    concurrency:
+      group: auto-solve-tickets
+      cancel-in-progress: true
+    environment:
+      name: production
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Sett opp .env
+        run: |
+          echo "${{ vars.LARAVEL_ENV }}" > .env
+          cat <<EOF >> .env
+          # Innstillinger basert på Environment/Repository
+          PURESERVICE_URL=${{ vars.PURESERVICE_URL }}
+
+          REDIS_HOST=${{ vars.REDIS_HOST }}
+          CACHE_DRIVER=${{ vars.CACHE_DRIVER }}
+
+          MAIL_MAILER=${{ vars.MAIL_MAILER }}
+          MAIL_HOST=${{ vars.MAIL_HOST }}
+          MAIL_USER=${{ vars.MAIL_USER }}
+
+          EOF
+      - name: Cache dependencies
+        id: vendor-cache
+        uses: actions/cache@v5
+        env:
+          cache-name: cache-vendor-files
+        with:
+          path: ./vendor
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('./composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          tools: composer:2
+      - name: Install dependencies
+        run: composer install
+      - name: Løs kvitteringer fra ikke-svar@dfo.no automatisk
+        env:
+          REDIS_PASSWORD: ${{ secrets.REDIS_SECRET }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
+        run: php sync2pureservice pureservice:auto-løs-kvitteringer
+      - name: Løs gamle supportsaker fra regnskap@dfo.no automatisk
+        env:
+          REDIS_PASSWORD: ${{ secrets.REDIS_SECRET }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
+        run: php sync2pureservice pureservice:auto-løs-supportsaker
+
+      - name: Feilmelding til Teams
+        if: failure()
+        uses: carriquiry-g/ms-teams-notification@v2
+        with:
+          github-token: ${{ github.token }}
+          ms-teams-webhook-uri: ${{ secrets.TEAMS_DRIFTSMELDINGER_WEBHOOK_URI }}
+          notification-summary: Feil under auto-løsing av saker i Pureservice
+          notification-style: attention
+          timezone: Europe/Oslo
+          verbose-logging: false

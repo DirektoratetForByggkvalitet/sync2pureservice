@@ -147,7 +147,7 @@ class PsApi extends API {
             $response = $this->apiQuery($entity, $query, true);
             if ($response->successful()):
                 $category = $response->json($entities.'.0');
-                $categories[$entity.$level.'Id'] = $category['id'];
+                if ($category) $categories[$entity.$level.'Id'] = $category['id'];
             endif;
         endforeach;
         return count($categories) ? $categories : false;
