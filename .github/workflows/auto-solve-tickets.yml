@@ -63,6 +63,12 @@ jobs:
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
           PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
         run: php sync2pureservice pureservice:auto-løs-supportsaker
+      - name: Løs Digdir-varsler fra noreply@varsel.digdir.no automatisk
+        env:
+          REDIS_PASSWORD: ${{ secrets.REDIS_SECRET }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
+        run: php sync2pureservice pureservice:auto-solve-digdir-tickets
 
       - name: Feilmelding til Teams
         if: failure()
