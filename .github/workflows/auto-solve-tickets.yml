@@ -3,7 +3,7 @@ name: Pureservice - auto-løs saker
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 7 * * 1-5"
+    - cron: "0 4 * * 1-5"
 
 jobs:
   auto-solve-tickets:
