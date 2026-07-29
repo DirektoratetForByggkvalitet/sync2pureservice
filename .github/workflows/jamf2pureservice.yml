@@ -3,7 +3,7 @@ name: Jamf Pro > Pureservice
 on:
   workflow_dispatch:
   schedule:
-    - cron: "48 6,11,14 * * 1-5"
+    - cron: "15 */6 * * 1-5"
 
 jobs:
   jamf2pureservice:

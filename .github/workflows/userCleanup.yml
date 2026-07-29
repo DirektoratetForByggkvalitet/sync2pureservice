@@ -3,7 +3,7 @@ name: Pureservice - brukeropprydding
 on:
   workflow_dispatch:
   schedule:
-    - cron: "14 6,11 * * 1-5"
+    - cron: "14 4 * * 1-5"
 
 jobs:
   usercleanup:

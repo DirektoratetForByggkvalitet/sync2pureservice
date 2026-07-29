@@ -3,7 +3,7 @@ name: Pureservice - utsending
 on:
   workflow_dispatch:
   schedule:
-    - cron: "29 8-16 * * 1-5"
+    - cron: "*/45 9-16 * * 1-5"
 
 jobs:
   utsending:
