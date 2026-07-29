@@ -50,7 +50,8 @@ jobs:
           php-version: "8.5"
           tools: composer:2
       - name: Install dependencies
-        run: composer install
+        run: composer install --no-dev --no-interaction
+
       - name: Løs kvitteringer fra ikke-svar@dfo.no automatisk
         env:
           REDIS_PASSWORD: ${{ secrets.REDIS_SECRET }}

@@ -50,8 +50,10 @@ jobs:
       with:
         php-version: '8.5'
         tools: composer:2
+        
     - name: Install dependencies
-      run: composer install
+      run: composer install --no-dev --no-interaction
+
     - name: Rydder i sluttbrukere i Pureservice
       env:
         REDIS_PASSWORD: ${{ secrets.REDIS_SECRET }}

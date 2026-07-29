@@ -33,7 +33,7 @@
         "intonate/tinker-zero": "^1.2",
         "laravel-zero/framework": "^12.0",
         "microsoft/microsoft-graph": "^2.46",
-        "phpoffice/phpspreadsheet": "^5.0",
+        "phpoffice/phpspreadsheet": "^5.8",
         "predis/predis": "^3.2",
         "symfony/uid": "^7.3",
         "zanysoft/laravel-zip": "^3.0"

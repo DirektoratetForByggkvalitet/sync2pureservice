@@ -54,8 +54,10 @@ jobs:
       with:
         php-version: '8.5'
         tools: composer:2
+        
     - name: Install dependencies
-      run: composer install
+      run: composer install --no-dev --no-interaction
+
     - name: Run Jamf2Pureservice
       env:
         PURESERVICE_APIKEY: ${{ secrets.PURESERVICE_APIKEY }}
