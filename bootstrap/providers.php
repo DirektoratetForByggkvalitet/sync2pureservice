@@ -3,6 +3,7 @@
 return [
     App\Providers\AppServiceProvider::class,
     Barryvdh\DomPDF\ServiceProvider::class,
+    InnoGE\LaravelMsGraphMail\MsGraphMailServiceProvider::class,
     Illuminate\Translation\TranslationServiceProvider::class,
     Illuminate\View\ViewServiceProvider::class,
     Illuminate\Mail\MailServiceProvider::class,
